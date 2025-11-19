@@ -25,6 +25,19 @@ def _write_file(executor: Executor, args: List[str]):
     
     target_path = executor.resolve_path(raw_path)
     
+    # 获取旧内容用于 diff
+    old_content = ""
+    if target_path.exists():
+        try:
+            old_content = target_path.read_text(encoding='utf-8')
+        except Exception:
+            old_content = "[Binary or Unreadable]"
+
+    # 请求确认
+    if not executor.request_confirmation(target_path, old_content, content):
+        logger.warning(f"❌ [Skip] 用户取消写入: {raw_path}")
+        return
+
     # 确保父目录存在
     target_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -57,9 +70,14 @@ def _replace(executor: Executor, args: List[str]):
         # 这是一个常见错误，提示用户检查上下文
         raise ExecutionError(f"在文件 {raw_path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。")
     
-    # 执行替换 (默认只替换第一个匹配项，以防误伤)
+    # 在内存中执行替换
     new_content = content.replace(old_str, new_str, 1)
     
+    # 请求确认
+    if not executor.request_confirmation(target_path, content, new_content):
+        logger.warning(f"❌ [Skip] 用户取消替换: {raw_path}")
+        return
+
     with open(target_path, 'w', encoding='utf-8') as f:
         f.write(new_content)
         

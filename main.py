@@ -41,7 +41,14 @@ def main(
             "--parser", "-p",
             help=f"选择解析器语法。可用: {list_parsers()}",
         )
-    ] = "backtick"
+    ] = "backtick",
+    yolo: Annotated[
+        bool,
+        typer.Option(
+            "--yolo", "-y",
+            help="跳过所有确认步骤，直接执行 (You Only Look Once)。",
+        )
+    ] = False
 ):
     """
     Axon: 执行 Markdown 文件中的操作指令。
@@ -49,6 +56,8 @@ def main(
     logger.info(f"正在加载指令文件: {file}")
     logger.info(f"工作区根目录: {work_dir}")
     logger.info(f"使用解析器: {parser_name}")
+    if yolo:
+        logger.warning("⚠️  YOLO 模式已开启：将自动确认所有修改。")
 
     try:
         # 1. 读取内容
@@ -64,7 +73,7 @@ def main(
             raise typer.Exit()
 
         # 3. 初始化执行器并注册能力
-        executor = Executor(root_dir=work_dir)
+        executor = Executor(root_dir=work_dir, yolo=yolo)
         register_basic_acts(executor)
 
         # 4. 执行

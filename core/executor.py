@@ -1,4 +1,6 @@
 import logging
+import difflib
+import typer
 from pathlib import Path
 from typing import Dict, Callable, List, Any
 from .types import Statement
@@ -15,8 +17,9 @@ class Executor:
     维护文件操作的安全边界。
     """
 
-    def __init__(self, root_dir: Path):
+    def __init__(self, root_dir: Path, yolo: bool = False):
         self.root_dir = root_dir.resolve()
+        self.yolo = yolo
         self._acts: Dict[str, ActFunction] = {}
         
         # 确保根目录存在
@@ -48,6 +51,42 @@ class Executor:
             raise ExecutionError(f"安全警告：路径 '{clean_rel}' 试图访问工作区外部: {abs_path}")
             
         return abs_path
+
+    def request_confirmation(self, file_path: Path, old_content: str, new_content: str) -> bool:
+        """
+        生成 diff 并请求用户确认。
+        如果 self.yolo 为 True，则自动返回 True。
+        """
+        if self.yolo:
+            return True
+
+        # 生成 Diff
+        diff = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile=f"a/{file_path.name}",
+            tofile=f"b/{file_path.name}",
+        ))
+
+        if not diff:
+            logger.info("⚠️  内容无变化")
+            return True
+
+        # 打印 Diff (手动简单的着色)
+        typer.echo("\n🔍 变更预览:")
+        for line in diff:
+            if line.startswith('+'):
+                typer.secho(line.strip('\n'), fg=typer.colors.GREEN)
+            elif line.startswith('-'):
+                typer.secho(line.strip('\n'), fg=typer.colors.RED)
+            elif line.startswith('^'):
+                typer.secho(line.strip('\n'), fg=typer.colors.BLUE)
+            else:
+                typer.echo(line.strip('\n'))
+        
+        typer.echo("") # 空行
+
+        return typer.confirm(f"❓ 是否对 {file_path.name} 执行上述修改?", default=True)
 
     def execute(self, statements: List[Statement]):
         """执行语句序列"""
