@@ -7,6 +7,7 @@ from logger_config import setup_logging
 from core.parser import get_parser, list_parsers
 from core.executor import Executor
 from acts.basic import register_basic_acts
+from acts.check import register_check_acts
 from config import DEFAULT_WORK_DIR
 
 # 初始化日志
@@ -75,6 +76,7 @@ def main(
         # 3. 初始化执行器并注册能力
         executor = Executor(root_dir=work_dir, yolo=yolo)
         register_basic_acts(executor)
+        register_check_acts(executor)
 
         # 4. 执行
         executor.execute(statements)
