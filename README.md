@@ -228,4 +228,17 @@ pytest
 *   `delete_file`: 删除文件或目录。`[path]`
 
 #### 记忆 (`acts/memory.py`)
-*   `log_thought`: 记录思维日志到 `.axon/memory.md`。`[content]`
+*   `log_thought`: 记录思维日志到 `.axon/memory.md`。`[content]`### 🚀 高级用法：管道与重定向
+
+Axon 支持标准的 Unix 管道操作，这使得它可以轻松集成到其他工具链中（例如直接接收 LLM 的 API 输出）。
+
+```bash
+# 从管道读取
+echo "..." | axon
+
+# 文件重定向
+axon < generated_plan.md
+
+# 结合 LLM 工具 (示例)
+llm "Refactor main.py to use classes" | axon -y
+```
