@@ -31,12 +31,12 @@ class TestArgStrategy:
         executor.execute(stmts)
         assert received_args == ["inline_1"]
 
-    # --- 2. Smart Mode Tests ---
+    # --- 2. Exclusive Mode Tests (Formerly Smart) ---
 
-    def test_smart_mode_inline_priority(self, executor):
-        """测试 Smart 模式：如果有行内参数，应忽略块"""
+    def test_exclusive_mode_inline_priority(self, executor):
+        """测试 Exclusive 模式：如果有行内参数，应忽略块"""
         received_args = []
-        executor.register("op", lambda exc, args: received_args.extend(args), arg_mode="smart")
+        executor.register("op", lambda exc, args: received_args.extend(args), arg_mode="exclusive")
         
         stmts = [{
             "act": "op inline_1 inline_2",
@@ -46,10 +46,10 @@ class TestArgStrategy:
         # 块被忽略
         assert received_args == ["inline_1", "inline_2"]
 
-    def test_smart_mode_fallback_to_block(self, executor):
-        """测试 Smart 模式：如果无行内参数，应使用块"""
+    def test_exclusive_mode_fallback_to_block(self, executor):
+        """测试 Exclusive 模式：如果无行内参数，应使用块"""
         received_args = []
-        executor.register("op", lambda exc, args: received_args.extend(args), arg_mode="smart")
+        executor.register("op", lambda exc, args: received_args.extend(args), arg_mode="exclusive")
         
         stmts = [{
             "act": "op",

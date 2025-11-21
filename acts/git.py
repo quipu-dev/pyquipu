@@ -8,19 +8,19 @@ logger = logging.getLogger(__name__)
 
 def register_git_acts(executor: Executor):
     """注册 Git 相关操作"""
-    # git_init: 无参数，Smart/Hybrid 皆可，Smart 更安全
-    executor.register("git_init", _git_init, arg_mode="smart")
+    # git_init: 无参数，Exclusive 模式更安全，防止误吸入后续块
+    executor.register("git_init", _git_init, arg_mode="exclusive")
     
-    # git_add: Smart 模式
+    # git_add: Exclusive 模式
     # 写法 A: git_add file1 file2 (忽略块)
     # 写法 B: git_add (读取块)
-    executor.register("git_add", _git_add, arg_mode="smart")
+    executor.register("git_add", _git_add, arg_mode="exclusive")
     
     # git_commit: Block Only 模式
     # 强制忽略行内参数，防止 AI 写 git_commit -m "msg" 导致解析混乱，强制要求消息在块中
     executor.register("git_commit", _git_commit, arg_mode="block_only")
     
-    executor.register("git_status", _git_status, arg_mode="smart")
+    executor.register("git_status", _git_status, arg_mode="exclusive")
 
 def _run_git_cmd(executor: Executor, cmd_args: List[str]) -> str:
     """
@@ -65,7 +65,7 @@ def _git_add(executor: Executor, args: List[str]):
         target = "."
         targets = [target]
     else:
-        # Smart 模式下，args 可能来源：
+        # Exclusive 模式下，args 可能来源：
         # 1. 行内参数: ["file1", "file2"]
         # 2. 块参数: ["file1\nfile2"]
         # 我们需要统一展平

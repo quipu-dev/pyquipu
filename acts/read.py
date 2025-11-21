@@ -13,7 +13,8 @@ def register_read_acts(executor: Executor):
     """注册读取与检索操作"""
     executor.register("read_file", _read_file, arg_mode="hybrid")
     executor.register("list_files", _list_files, arg_mode="hybrid")
-    executor.register("search_files", _search_files, arg_mode="hybrid")
+    # search_files 使用 exclusive 模式，以支持在行内指定参数时忽略后续无关块（流式处理优化）
+    executor.register("search_files", _search_files, arg_mode="exclusive")
 
 def _search_files(executor: Executor, args: List[str]):
     """

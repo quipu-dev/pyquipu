@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def register_shell_acts(executor: Executor):
     """注册 Shell 相关操作"""
-    executor.register("run_command", _run_command, arg_mode="smart")
+    executor.register("run_command", _run_command, arg_mode="exclusive")
 
 def _run_command(executor: Executor, args: List[str]):
     """

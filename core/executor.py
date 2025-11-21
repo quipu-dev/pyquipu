@@ -38,10 +38,10 @@ class Executor:
         注册一个新的操作
         :param arg_mode: 参数解析模式
                          - "hybrid": (默认) 合并行内参数和块内容 (inline + blocks)
-                         - "smart": 优先使用行内参数；若无行内参数，则使用块内容。互斥。
+                         - "exclusive": 互斥模式。优先使用行内参数；若无行内参数，则使用块内容。绝不混合。
                          - "block_only": 仅使用块内容，强制忽略行内参数。
         """
-        valid_modes = {"hybrid", "smart", "block_only"}
+        valid_modes = {"hybrid", "exclusive", "block_only"}
         if arg_mode not in valid_modes:
             raise ValueError(f"Invalid arg_mode: {arg_mode}. Must be one of {valid_modes}")
             
@@ -163,12 +163,12 @@ class Executor:
                 # 贪婪模式：合并所有来源
                 final_args = inline_args + block_contexts
                 
-            elif arg_mode == "smart":
-                # 智能/排他模式：有行内用行内，否则用块
+            elif arg_mode == "exclusive":
+                # 互斥模式：有行内用行内，否则用块
                 if inline_args:
                     final_args = inline_args
                     if block_contexts:
-                        logger.debug(f"ℹ️  [{act_name} - Smart] 检测到行内参数，已忽略随后的 {len(block_contexts)} 个 Block。")
+                        logger.debug(f"ℹ️  [{act_name} - Exclusive] 检测到行内参数，已忽略随后的 {len(block_contexts)} 个 Block。")
                 else:
                     final_args = block_contexts
                     

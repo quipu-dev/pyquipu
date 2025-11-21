@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def register_refactor_acts(executor: Executor):
     """注册重构类操作"""
     executor.register("move_file", _move_file, arg_mode="hybrid")
-    executor.register("delete_file", _delete_file, arg_mode="smart")
+    executor.register("delete_file", _delete_file, arg_mode="exclusive")
 
 def _move_file(executor: Executor, args: List[str]):
     """
