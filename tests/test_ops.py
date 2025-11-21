@@ -146,3 +146,62 @@ class TestBasicActs:
             append_func(executor, ["ghost.txt", "content"])
             
         assert "文件不存在" in str(excinfo.value)
+class TestHybridArgs:
+    """测试 Act 块内参数与 Context 块参数的混合使用"""
+    
+    def test_inline_write_file(self, executor: Executor, isolated_vault: Path):
+        """测试 write_file path 在 act 块中"""
+        # 模拟解析器结果：act="write_file inline.txt", contexts=["content"]
+        # 我们不能直接测 parser -> executor 链路，因为 parser 不会改，
+        # 重点是 executor.execute 如何处理这种 Statement 结构
+        
+        stmts = [{
+            "act": "write_file inline.txt",
+            "contexts": ["Inline Content"]
+        }]
+        
+        executor.execute(stmts)
+        
+        f = isolated_vault / "inline.txt"
+        assert f.read_text(encoding='utf-8') == "Inline Content"
+
+    def test_inline_quoted_args(self, executor: Executor, isolated_vault: Path):
+        """测试带引号的文件名"""
+        stmts = [{
+            "act": 'write_file "name with spaces.txt"',
+            "contexts": ["Hello"]
+        }]
+        
+        executor.execute(stmts)
+        
+        f = isolated_vault / "name with spaces.txt"
+        assert f.exists()
+
+    def test_mixed_git_commit(self, executor: Executor):
+        """测试 git_commit -m message (纯 act 块)"""
+        # 我们 mock 一下 git_commit，因为不想真的跑 git
+        called_args = []
+        def mock_commit(exc, args):
+            called_args.extend(args)
+            
+        executor.register("mock_commit", mock_commit)
+        
+        stmts = [{
+            "act": 'mock_commit -m "fix bug"',
+            "contexts": []
+        }]
+        
+        executor.execute(stmts)
+        
+        assert called_args == ["-m", "fix bug"]
+
+    def test_act_parsing_error(self, executor: Executor):
+        """测试引号未闭合的错误"""
+        stmts = [{
+            "act": 'write_file "unclosed string',
+            "contexts": []
+        }]
+        
+        with pytest.raises(ExecutionError) as exc:
+            executor.execute(stmts)
+        assert "Act 命令行解析错误" in str(exc.value)

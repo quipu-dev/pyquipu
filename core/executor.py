@@ -1,6 +1,7 @@
 import logging
 import difflib
 import typer
+import shlex
 from pathlib import Path
 from typing import Dict, Callable, List, Any
 from .types import Statement
@@ -97,16 +98,34 @@ class Executor:
         logger.info(f"开始执行 {len(statements)} 个操作...")
         
         for i, stmt in enumerate(statements):
-            act_name = stmt["act"]
-            contexts = stmt["contexts"]
+            raw_act_line = stmt["act"]
+            block_contexts = stmt["contexts"]
+            
+            # 1. 解析 Act 行：分离命令名和行内参数
+            try:
+                # 使用 shlex 支持引号，例如: write_file "my file.txt"
+                tokens = shlex.split(raw_act_line)
+            except ValueError as e:
+                # 通常是引号未闭合
+                raise ExecutionError(f"Act 命令行解析错误: {raw_act_line} ({e})")
+            
+            if not tokens:
+                logger.warning(f"跳过空指令 [{i+1}/{len(statements)}]")
+                continue
+                
+            act_name = tokens[0]
+            inline_args = tokens[1:]
+            
+            # 2. 合并参数：行内参数在前，Block参数在后
+            final_args = inline_args + block_contexts
             
             if act_name not in self._acts:
                 logger.warning(f"跳过未知操作 [{i+1}/{len(statements)}]: {act_name}")
                 continue
 
             try:
-                logger.info(f"执行操作 [{i+1}/{len(statements)}]: {act_name}")
-                self._acts[act_name](self, contexts)
+                logger.info(f"执行操作 [{i+1}/{len(statements)}]: {act_name} (Args: {len(final_args)})")
+                self._acts[act_name](self, final_args)
             except Exception as e:
                 logger.error(f"执行失败 '{act_name}': {e}")
                 # 根据策略，这里可以选择抛出异常终止整个流程，或者继续
