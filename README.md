@@ -2,7 +2,9 @@
 
 > **The Effector for AI Agents.**
 
-Axon 是一个基于 Markdown 块流（Block Stream）的文件系统操作执行器。它旨在作为 AI 模型的“轴突”，将 AI 生成的思维链（Chain of Thought）或指令转化为实际的文件系统副作用。
+Axon 是一个 Markdown 原生的执行器，它诞生于一个关键的观察：通过 API 访问的 AI 模型，其能力和稳定性常常不如其经过优化的 Web 界面。Axon 正是为了弥补这一鸿沟而生，它将一个简单的 Markdown 文件转变为一份**可执行文档 (Executable Document)**。
+
+这意味着你的 `plan.md` 不再仅仅是一个静态的计划，而是一个可复现、可版本控制的脚本。你可以把它看作是 Jupyter Notebook 的一个轻量级替代品，但它更专注于文件系统的操作与编排。通过这种方式，Axon 为 AI 提供了一个可靠的“效应器（Effector）”，将高层级的策略思想，转化为具体、可验证、且稳定执行的文件修改。
 
 ## 🧠 核心理念
 
