@@ -229,7 +229,7 @@ pytest
 *   `tests/`: 单元测试。
 *   `main.py`: CLI 入口。
 
----### 扩展操作 (Shell/Read/Refactor/Memory)
+### 扩展操作 (Shell/Read/Refactor/Memory)
 
 #### 系统命令 (`acts/shell.py`)
 *   `run_command`: 执行 Shell 命令。`[command]`
