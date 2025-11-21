@@ -10,6 +10,7 @@ def register_basic_acts(executor: Executor):
     """注册基础文件系统操作"""
     executor.register("write_file", _write_file)
     executor.register("replace", _replace)
+    executor.register("append_file", _append_file)
 
 def _write_file(executor: Executor, args: List[str]):
     """
@@ -82,3 +83,37 @@ def _replace(executor: Executor, args: List[str]):
         f.write(new_content)
         
     logger.info(f"✅ [Replace] 文件内容已更新: {target_path.relative_to(executor.root_dir)}")
+
+def _append_file(executor: Executor, args: List[str]):
+    """
+    Act: append_file
+    Args: [path, content]
+    """
+    if len(args) < 2:
+        raise ExecutionError("append_file 需要至少两个参数: [path, content]")
+    
+    raw_path = args[0]
+    content = args[1]
+    
+    target_path = executor.resolve_path(raw_path)
+    
+    if not target_path.exists():
+        raise ExecutionError(f"文件不存在，无法追加: {raw_path}")
+    
+    # 获取旧内容用于 diff
+    try:
+        old_content = target_path.read_text(encoding='utf-8')
+    except Exception:
+        old_content = "[Binary or Unreadable]"
+
+    new_content = old_content + content
+
+    # 请求确认
+    if not executor.request_confirmation(target_path, old_content, new_content):
+        logger.warning(f"❌ [Skip] 用户取消追加: {raw_path}")
+        return
+
+    with open(target_path, 'a', encoding='utf-8') as f:
+        f.write(content)
+    
+    logger.info(f"✅ [Append] 内容已追加到: {target_path.relative_to(executor.root_dir)}")

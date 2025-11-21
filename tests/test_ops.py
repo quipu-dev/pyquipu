@@ -124,3 +124,25 @@ class TestBasicActs:
             replace_func(executor, ["wrong.txt", "BBB", "CCC"])
         
         assert "未找到指定的旧文本" in str(excinfo.value)
+
+    def test_append_file(self, executor: Executor, isolated_vault: Path):
+        # 准备初始文件
+        f = isolated_vault / "log.txt"
+        f.write_text("Line 1\n", encoding='utf-8')
+        
+        # 执行追加
+        # 注意：这里假设 _acts 字典中已经有了 'append_file'，
+        # 这通常通过 conftest.py 中的 register_basic_acts 自动完成
+        append_func = executor._acts['append_file']
+        append_func(executor, ["log.txt", "Line 2"])
+        
+        # 验证
+        assert f.read_text(encoding='utf-8') == "Line 1\nLine 2"
+
+    def test_append_fail_not_found(self, executor: Executor):
+        append_func = executor._acts['append_file']
+        
+        with pytest.raises(ExecutionError) as excinfo:
+            append_func(executor, ["ghost.txt", "content"])
+            
+        assert "文件不存在" in str(excinfo.value)
