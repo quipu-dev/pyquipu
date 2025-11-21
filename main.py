@@ -8,6 +8,7 @@ from core.parser import get_parser, list_parsers, detect_best_parser
 from core.executor import Executor
 from acts.basic import register_basic_acts
 from acts.check import register_check_acts
+from acts.git import register_git_acts
 from config import DEFAULT_WORK_DIR
 
 # 初始化日志
@@ -85,6 +86,7 @@ def main(
         executor = Executor(root_dir=work_dir, yolo=yolo)
         register_basic_acts(executor)
         register_check_acts(executor)
+        register_git_acts(executor)
 
         # 4. 执行
         executor.execute(statements)
