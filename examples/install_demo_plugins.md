@@ -11,7 +11,7 @@ write_file
 ~~~
 
 ~~~path
-.axon/acts/README.md
+README.md
 ~~~
 
 ~~~~~~~content
