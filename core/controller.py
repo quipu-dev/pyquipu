@@ -101,11 +101,12 @@ def run_axon(
             # 捕获后，status 逻辑上变为 CLEAN，current_node 更新为 CaptureNode
         
         # 记录执行前的状态，作为 Plan 的 input_tree
-        if not engine.current_node:
-             # 理论上 capture_drift 后一定有 node，除非极端的 git 错误
-             raise RuntimeError("Engine failed to lock state.")
-             
-        input_tree_hash = engine.current_node.output_tree
+        if engine.current_node:
+            input_tree_hash = engine.current_node.output_tree
+        else:
+            # 此处处理创世状态：当 align() 返回 CLEAN 但 current_node 为 None 时。
+            # 输入哈希就是当前的（空的）哈希。
+            input_tree_hash = current_hash
 
         # --- Phase 3: Action (Execution) ---
         

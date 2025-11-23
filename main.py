@@ -307,18 +307,46 @@ def log(
     for node in nodes:
         ts = node.timestamp.strftime('%Y-%m-%d %H:%M:%S')
         
-        # 颜色和标签
         color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
         tag = f"[{node.node_type.upper()}]"
         
-        # 摘要
-        first_line = node.content.strip().split('\n')[0]
-        # 尝试从 plan 中提取 act 名称作为摘要
-        if node.node_type == 'plan' and 'act' in first_line:
-            summary = first_line
-        else:
-             summary = (first_line[:70] + '...') if len(first_line) > 70 else first_line
+        summary = ""
+        content_lines = node.content.strip().split('\n')
+        
+        if node.node_type == 'plan':
+            # 查找第一个非空的 act 内容行作为摘要
+            in_act_block = False
+            for line in content_lines:
+                if line.strip().startswith(('~~~act', '```act')):
+                    in_act_block = True
+                    continue
+                if in_act_block and line.strip():
+                    summary = line.strip()
+                    break
+            if not summary:
+                summary = "Plan executed" # Fallback
+        
+        elif node.node_type == 'capture':
+            # 查找 diff 摘要
+            in_diff_block = False
+            diff_summary_lines = []
+            for line in content_lines:
+                if "变更文件摘要" in line:
+                    in_diff_block = True
+                    continue
+                if in_diff_block and line.strip().startswith('```'):
+                    break # 结束块
+                if in_diff_block and line.strip():
+                    diff_summary_lines.append(line.strip())
+            
+            if diff_summary_lines:
+                # 只显示文件名和变更统计，忽略插入/删除行数
+                files_changed = [l.split('|')[0].strip() for l in diff_summary_lines]
+                summary = f"Changes captured in: {', '.join(files_changed)}"
+            else:
+                summary = "Workspace changes captured" # Fallback
 
+        summary = (summary[:75] + '...') if len(summary) > 75 else summary
 
         typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False, err=True)
         typer.echo(f" - {summary}", err=True)

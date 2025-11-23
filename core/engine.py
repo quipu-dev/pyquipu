@@ -52,19 +52,25 @@ class Engine:
         
         # 2. 获取当前物理状态
         current_hash = self.git_db.get_tree_hash()
+
+        # 3. 特殊情况：处理创世状态 (空仓库)
+        EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        if current_hash == EMPTY_TREE_HASH and not self.history_graph:
+            logger.info("✅ 状态对齐：检测到创世状态 (空仓库)。")
+            self.current_node = None # 此时没有物理节点
+            return "CLEAN"
         
-        # 3. 在逻辑图谱中定位
+        # 4. 在逻辑图谱中定位
         if current_hash in self.history_graph:
             self.current_node = self.history_graph[current_hash]
             logger.info(f"✅ 状态对齐：当前工作区匹配节点 {self.current_node.short_hash}")
             return "CLEAN"
         
         # 未找到匹配节点，进入漂移检测
-        # (后续将实现 Capture 逻辑)
         logger.warning(f"⚠️  状态漂移：当前 Tree Hash {current_hash[:7]} 未在历史中找到。")
         
         if not self.history_graph:
-            return "ORPHAN" # 历史为空，无法判断从何而来
+            return "ORPHAN" # 历史为空，但工作区非空
         
         return "DIRTY"
 
