@@ -7,6 +7,7 @@ from typing import Optional
 from .result import AxonResult
 from .engine import Engine
 from .executor import Executor, ExecutionError
+from .exceptions import ExecutionError as CoreExecutionError # Alias to avoid conflict
 from .parser import get_parser, detect_best_parser
 from .plugin_loader import load_plugins
 
@@ -144,7 +145,7 @@ def run_axon(
 
         return AxonResult(success=True, exit_code=0, message="✨ 执行成功")
 
-    except ExecutionError as e:
+    except (ExecutionError, CoreExecutionError) as e:
         # 预期的执行错误 (如文件找不到，Git 冲突等)
         logger.error(f"❌ 操作失败: {e}")
         return AxonResult(success=False, exit_code=1, message=str(e), error=e)

@@ -44,9 +44,10 @@ def sync(
     setup_logging()
     work_dir = work_dir.resolve()
     
-    if not (work_dir / ".git").is_dir():
-        typer.secho(f"❌ 错误: '{work_dir}' 不是一个 Git 仓库。", fg=typer.colors.RED, err=True)
-        ctx.exit(1)
+    # Git 仓库检查已移至 Engine/GitDB 初始化中，会自动触发
+    # if not (work_dir / ".git").is_dir():
+    #     typer.secho(f"❌ 错误: '{work_dir}' 不是一个 Git 仓库。", fg=typer.colors.RED, err=True)
+    #     ctx.exit(1)
 
     refspec = "refs/axon/history:refs/axon/history"
     

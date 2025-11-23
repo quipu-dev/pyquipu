@@ -1,9 +1,11 @@
 import os
 import subprocess
 import logging
+import shutil
 from pathlib import Path
 from typing import Optional, Dict
 from contextlib import contextmanager
+from .exceptions import ExecutionError
 
 logger = logging.getLogger(__name__)
 
@@ -13,16 +15,18 @@ class GitDB:
     负责与 Git 对象数据库交互，维护 Shadow Index 和 Refs。
     """
     def __init__(self, root_dir: Path):
+        if not shutil.which("git"):
+            raise ExecutionError("未找到 'git' 命令。请安装 Git 并确保它在系统的 PATH 中。")
+
         self.root = root_dir.resolve()
         self.axon_dir = self.root / ".axon"
-        self._ensure_git_init()
+        self._ensure_git_repo()
 
-    def _ensure_git_init(self):
+    def _ensure_git_repo(self):
         """确保目标是一个 Git 仓库"""
-        if not (self.root / ".git").exists():
-            # 在测试环境中可能需要自动 init，但在生产中通常只抛出错误
-            # 这里为了健壮性，暂不做自动 init，假设外部已处理
-            pass
+        if not (self.root / ".git").is_dir():
+            # 这是一个关键的前置条件检查
+            raise ExecutionError(f"工作目录 '{self.root}' 不是一个有效的 Git 仓库。请先运行 'git init'。")
 
     def _run(self, args: list[str], env: Optional[Dict] = None, check: bool = True, log_error: bool = True) -> subprocess.CompletedProcess:
         """执行 git 命令的底层封装，返回完整的 CompletedProcess 对象"""

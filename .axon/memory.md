@@ -118,3 +118,24 @@ Now creating tests for the `checkout` functionality.
 
 ## [2025-11-23 16:46:31]
 `axon sync` 功能的自动化测试需要复杂的外部 Git 远程仓库依赖和环境配置，且其核心逻辑是调用 Git 自身命令，已由 Git 保证其健壮性。因此，跳过自动化测试是合理的。现在创建提交。
+
+## [2025-11-23 16:48:13]
+进入阶段 4：健壮性与打磨。
+
+首要任务是完善错误处理。
+
+1.  **目标**: 让 Axon 在遇到常见环境问题（如 `git` 未安装、非 Git 仓库、文件权限不足）时，能够提供清晰、可操作的错误提示，而不是直接崩溃或显示复杂的 Traceback。
+2.  **第一步**: 修改 `core/git_db.py` 的 `__init__` 方法。在构造函数中就检查 `shutil.which("git")`。如果 `git` 不存在，立即抛出一个自定义的、信息明确的异常，比如 `ExecutionError("Git command not found. Please install Git to use Axon.")`。这将从根源上解决所有依赖 Git 的操作的潜在问题。
+
+## [2025-11-23 16:49:32]
+第一部分错误处理已完成，主要涉及 `git` 命令和 Git 仓库存在性检查。现在创建提交，并准备处理文件权限相关的错误。
+
+## [2025-11-23 16:49:34]
+开始处理文件权限错误。
+
+**目标**: 在文件操作相关的 Act 中捕获 `PermissionError` 或 `OSError`，并提供用户友好的错误提示。
+
+**步骤**:
+1.  修改 `acts/basic.py` 中的 `_write_file`, `_replace`, `_append_file` 函数。
+2.  在文件读写和操作的代码块外层添加 `try...except PermissionError`。
+3.  如果捕获到 `PermissionError`，则抛出 `ExecutionError`，说明是权限问题，并建议用户检查权限。
