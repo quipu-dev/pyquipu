@@ -51,13 +51,12 @@
 
 ---
 
-### ➡️ 阶段 3: 用户体验与核心功能 (当前阶段)
+### ✅ 阶段 3: 用户体验与核心功能 (已完成)
 
 当核心循环跑通后，我们将添加让用户能够与历史图谱交互的核心功能。
 
 *   [x] **历史查看 (`axon log`)**
     *   [x] 实现一个新的 CLI 命令 `axon log`，用于列出 `.axon/history` 中的所有节点。
-    *   [ ] (可选) 实现 `--graph` 标志，以 TUI 形式可视化历史分支。
 *   [x] **时间旅行 (`axon checkout`)**
     *   [x] 实现 CLI 命令 `axon checkout <node_hash>`。
     *   [x] 在 `GitDB` 中添加 `checkout_tree(tree_hash)` 方法，用于将工作区硬重置到指定状态。
@@ -65,6 +64,10 @@
     *   [x] 实现 `axon discard` 命令，用于一键恢复到上一个干净状态，清理失败 Plan 留下的变更。
 *   [x] **分布式协作 (`axon sync`)**
     *   [x] 实现 `axon sync` 命令，用于 `git push/pull` `refs/axon/history` 引用。
+*   [x] **CLI 图导航 (`undo`, `redo`, `prev`, `next`)**
+    *   [x] 实现快捷命令，允许在历史图谱中进行相对移动。
+*   [x] **交互式 TUI (`axon ui`)**
+    *   [x] 集成 Textual，提供一个可视化的历史浏览器和检出工具。
 
 ---
 

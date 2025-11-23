@@ -1,4 +1,5 @@
 typer>=0.9.0
 pathlib
 pytest>=7.0.0
-pyyaml>=6.0
+pyyaml>=6.0 # TUI (Optional Dependency)
+textual>=0.58.0
