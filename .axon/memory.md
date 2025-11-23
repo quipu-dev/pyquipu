@@ -285,3 +285,6 @@ The user wants to document the new `axon discard` feature.
 1.  **Update CLI Reference**: Modify `docs/03_user_guide/02_cli_reference.md` to add a detailed section for the `axon discard` command. This is the most critical documentation change. I will place it after `checkout` as it's also a state-manipulation command.
 2.  **Update Roadmap**: Modify `TODO.md` to mark this user-experience feature as complete. This keeps our project tracking up-to-date.
 3.  **Commit**: Create a `docs` commit that includes both updated files.
+
+## [2025-11-23 22:04:57]
+The user reported that an idempotent node (where input_tree == output_tree) was successfully created but did not appear in the TUI. This suggests a potential bug in `ui/tui.py` related to how the node graph is calculated, sorted, or rendered. Specifically, the logic might not be correctly handling cases where a node's parent is itself (conceptually) or when filtering nodes. While this plan focuses on versioning cleanup, this UI behavior should be investigated in a future step.

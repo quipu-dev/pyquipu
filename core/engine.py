@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Engine:
     """
-    Axon v4.2 状态引擎。
+    Axon 状态引擎。
     负责协调 Git 物理状态和 Axon 逻辑图谱。
     """
     def __init__(self, root_dir: Path):
@@ -143,7 +143,7 @@ class Engine:
         """
         将一次成功的 Plan 执行固化为历史节点。
         """
-        # v4.3 策略变更：即使状态未发生变更 (Idempotent)，也记录节点。
+        # 即使状态未发生变更 (Idempotent)，也记录节点。
         # 这允许记录 "Run Tests", "Git Commit" 等无文件副作用但有语义价值的操作。
         if input_tree == output_tree:
             logger.info(f"📝 记录幂等操作节点 (Idempotent Node): {output_tree[:7]}")
