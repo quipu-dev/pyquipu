@@ -130,27 +130,29 @@ class TestGitDBPlumbing:
         assert db.is_ancestor(c2, c1) is False
         
         # 验证日志清洁度
-        assert "Git plumbing error" not in caplog.text    def test_checkout_tree(self, git_repo: Path, db: GitDB):
-        """Test the low-level hard reset functionality of checkout_tree."""
-        # 1. Create State A
-        (git_repo / "file1.txt").write_text("version 1", "utf-8")
-        (git_repo / "common.txt").write_text("shared", "utf-8")
-        hash_a = db.get_tree_hash()
-        
-        # Create a file inside .axon to ensure it's not deleted
-        axon_dir = git_repo / ".axon"
-        axon_dir.mkdir(exist_ok=True)
-        (axon_dir / "preserve.me").touch()
+        assert "Git plumbing error" not in caplog.text    
 
-        # 2. Create State B
-        (git_repo / "file1.txt").write_text("version 2", "utf-8")
-        (git_repo / "file2.txt").write_text("new file", "utf-8")
-        
-        # 3. Checkout to State A
-        db.checkout_tree(hash_a)
-        
-        # 4. Assertions
-        assert (git_repo / "file1.txt").read_text("utf-8") == "version 1"
-        assert (git_repo / "common.txt").exists()
-        assert not (git_repo / "file2.txt").exists(), "file2.txt should have been cleaned"
-        assert (axon_dir / "preserve.me").exists(), ".axon directory should be preserved"
+    def test_checkout_tree(self, git_repo: Path, db: GitDB):
+            """Test the low-level hard reset functionality of checkout_tree."""
+            # 1. Create State A
+            (git_repo / "file1.txt").write_text("version 1", "utf-8")
+            (git_repo / "common.txt").write_text("shared", "utf-8")
+            hash_a = db.get_tree_hash()
+            
+            # Create a file inside .axon to ensure it's not deleted
+            axon_dir = git_repo / ".axon"
+            axon_dir.mkdir(exist_ok=True)
+            (axon_dir / "preserve.me").touch()
+
+            # 2. Create State B
+            (git_repo / "file1.txt").write_text("version 2", "utf-8")
+            (git_repo / "file2.txt").write_text("new file", "utf-8")
+            
+            # 3. Checkout to State A
+            db.checkout_tree(hash_a)
+            
+            # 4. Assertions
+            assert (git_repo / "file1.txt").read_text("utf-8") == "version 1"
+            assert (git_repo / "common.txt").exists()
+            assert not (git_repo / "file2.txt").exists(), "file2.txt should have been cleaned"
+            assert (axon_dir / "preserve.me").exists(), ".axon directory should be preserved"
