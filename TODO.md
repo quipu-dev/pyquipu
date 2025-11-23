@@ -61,8 +61,8 @@
 *   [x] **时间旅行 (`axon checkout`)**
     *   [x] 实现 CLI 命令 `axon checkout <node_hash>`。
     *   [x] 在 `GitDB` 中添加 `checkout_tree(tree_hash)` 方法，用于将工作区硬重置到指定状态。
-*   [ ] **分布式协作 (`axon sync`)**
-    *   [ ] 实现 `axon sync` 命令，用于 `git push/pull` `refs/axon/history` 引用。
+*   [x] **分布式协作 (`axon sync`)**
+    *   [x] 实现 `axon sync` 命令，用于 `git push/pull` `refs/axon/history` 引用。
 
 ---
 

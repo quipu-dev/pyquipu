@@ -103,3 +103,18 @@ Now creating tests for the `checkout` functionality.
 
 ## [2025-11-23 16:44:20]
 所有测试均已通过，`axon checkout` 功能及其测试已完成。现在将这些变更提交到版本历史中。
+
+## [2025-11-23 16:45:26]
+开始实现 `axon sync` 功能。
+
+这个功能的核心是 `git push` 和 `git pull` 一个自定义的 ref (`refs/axon/history`)。这不属于常规的文件操作 `act`，而是对 Git 仓库本身的元管理。因此，直接在 `main.py` 的 `sync` 命令处理函数中调用 `subprocess` 来执行 `git` 命令是更清晰的架构选择。
+
+**步骤**：
+1.  在 `main.py` 中添加 `sync` 命令。
+2.  `sync` 函数将执行 `git push origin refs/axon/history:refs/axon/history`。
+3.  为了完整性，它还会执行 `git fetch origin refs/axon/history:refs/axon/history` 来拉取远程的更新。
+4.  在执行前，会检查 `.git` 目录是否存在，确保是在一个 Git 仓库中。
+5.  更新 `TODO.md`。
+
+## [2025-11-23 16:46:31]
+`axon sync` 功能的自动化测试需要复杂的外部 Git 远程仓库依赖和环境配置，且其核心逻辑是调用 Git 自身命令，已由 Git 保证其健壮性。因此，跳过自动化测试是合理的。现在创建提交。

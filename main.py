@@ -12,6 +12,7 @@ from core.executor import Executor
 from core.engine import Engine
 from core.history import load_history_graph
 import inspect
+import subprocess
 
 # 注意：不要在模块级别直接调用 setup_logging()，
 # 否则会导致 CliRunner 测试中的 I/O 流过早绑定/关闭问题。
@@ -19,6 +20,77 @@ logger = logging.getLogger(__name__)
 
 # 将主应用改名为 app，并将旧的 cli 命令重命名为 'run'
 app = typer.Typer(add_completion=False, name="axon")
+
+@app.command()
+def sync(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w",
+            help="操作执行的根目录（工作区）",
+            file_okay=False,
+            dir_okay=True,
+            resolve_path=True
+        )
+    ] = DEFAULT_WORK_DIR,
+    remote: Annotated[str, typer.Option(help="Git 远程仓库的名称")] = "origin",
+):
+    """
+    与远程仓库同步 Axon 历史图谱。
+
+    此命令会推送本地的 Axon 历史记录，并拉取远程的更新。
+    """
+    setup_logging()
+    work_dir = work_dir.resolve()
+    
+    if not (work_dir / ".git").is_dir():
+        typer.secho(f"❌ 错误: '{work_dir}' 不是一个 Git 仓库。", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
+    refspec = "refs/axon/history:refs/axon/history"
+    
+    def run_git_command(args: list[str]):
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            if result.stdout:
+                typer.echo(result.stdout, err=True)
+            if result.stderr:
+                typer.echo(result.stderr, err=True)
+        except subprocess.CalledProcessError as e:
+            typer.secho(f"❌ Git 命令执行失败: git {' '.join(args)}", fg=typer.colors.RED, err=True)
+            typer.secho(e.stderr, fg=typer.colors.YELLOW, err=True)
+            ctx.exit(1)
+        except FileNotFoundError:
+            typer.secho("❌ 错误: 未找到 'git' 命令。", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+
+    # 1. Fetch from remote
+    typer.secho(f"⬇️  正在从 '{remote}' 拉取 Axon 历史...", fg=typer.colors.BLUE, err=True)
+    run_git_command(["fetch", remote, refspec])
+
+    # 2. Push to remote
+    typer.secho(f"⬆️  正在向 '{remote}' 推送 Axon 历史...", fg=typer.colors.BLUE, err=True)
+    run_git_command(["push", remote, refspec])
+    
+    typer.secho("\n✅ Axon 历史同步完成。", fg=typer.colors.GREEN, err=True)
+    
+    # Check for fetch config and provide guidance if missing
+    config_get_res = subprocess.run(
+        ["git", "config", "--get", f"remote.{remote}.fetch"],
+        cwd=work_dir, capture_output=True, text=True
+    )
+    if refspec not in config_get_res.stdout:
+        typer.secho("\n💡 提示: 为了让 `git pull` 自动同步 Axon 历史，请执行以下命令:", fg=typer.colors.YELLOW, err=True)
+        typer.echo(f'  git config --add remote.{remote}.fetch "{refspec}"')
+
 
 @app.command()
 def checkout(
