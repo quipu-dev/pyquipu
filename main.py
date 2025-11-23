@@ -9,6 +9,7 @@ from core.controller import run_axon
 from config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
 from core.plugin_loader import load_plugins
 from core.executor import Executor
+from core.engine import Engine
 from core.history import load_history_graph
 import inspect
 
@@ -18,6 +19,80 @@ logger = logging.getLogger(__name__)
 
 # 将主应用改名为 app，并将旧的 cli 命令重命名为 'run'
 app = typer.Typer(add_completion=False, name="axon")
+
+@app.command()
+def checkout(
+    ctx: typer.Context,
+    hash_prefix: Annotated[str, typer.Argument(help="目标状态节点的哈希前缀。")],
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w",
+            help="操作执行的根目录（工作区）",
+            file_okay=False,
+            dir_okay=True,
+            resolve_path=True
+        )
+    ] = DEFAULT_WORK_DIR,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force", "-f",
+            help="强制执行，跳过确认提示。"
+        )
+    ] = False,
+):
+    """
+    将工作区恢复到指定的历史节点状态。
+    """
+    setup_logging()
+    
+    # 1. 查找节点
+    history_dir = work_dir.resolve() / ".axon" / "history"
+    graph = load_history_graph(history_dir)
+    
+    matches = [node for sha, node in graph.items() if sha.startswith(hash_prefix)]
+    
+    if not matches:
+        typer.secho(f"❌ 错误: 未找到哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+    if len(matches) > 1:
+        typer.secho(f"❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {len(matches)} 个节点。", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+    
+    target_node = matches[0]
+    target_tree_hash = target_node.output_tree
+    
+    # 2. 安全捕获当前状态
+    engine = Engine(work_dir)
+    status = engine.align()
+    current_hash = engine.git_db.get_tree_hash()
+
+    if current_hash == target_tree_hash:
+        typer.secho(f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
+        ctx.exit(0)
+
+    if status in ["DIRTY", "ORPHAN"]:
+        typer.secho("⚠️  检测到当前工作区存在未记录的变更，将自动创建捕获节点...", fg=typer.colors.YELLOW, err=True)
+        engine.capture_drift(current_hash)
+        typer.secho("✅ 变更已捕获。", fg=typer.colors.GREEN, err=True)
+
+    # 3. 确认
+    if not force:
+        confirm = typer.confirm(
+            f"🚨 即将重置工作区到状态 {target_node.short_hash} ({target_node.timestamp})。\n"
+            f"此操作会覆盖未提交的更改。是否继续？",
+            abort=True
+        )
+
+    # 4. 执行
+    try:
+        engine.git_db.checkout_tree(target_tree_hash)
+        typer.secho(f"✅ 已成功将工作区恢复到节点 {target_node.short_hash}。", fg=typer.colors.GREEN, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 恢复状态失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
 
 @app.command()
 def log(

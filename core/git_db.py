@@ -135,3 +135,23 @@ class GitDB:
         """
         result = self._run(["diff-tree", "--stat", old_tree, new_tree])
         return result.stdout.strip()
+
+    def checkout_tree(self, tree_hash: str):
+        """
+        将工作区强制重置为目标 Tree 的状态。
+        这是一个底层方法，上层应确保工作区的未提交更改已被处理。
+        """
+        logger.info(f"Executing hard checkout to tree: {tree_hash[:7]}")
+        
+        # 1. 使用 read-tree 更新索引，这是一个安全的操作
+        self._run(["read-tree", tree_hash])
+        
+        # 2. 从更新后的索引检出文件，-a (all) -f (force)
+        self._run(["checkout-index", "-a", "-f"])
+        
+        # 3. 清理工作区中多余的文件和目录
+        # -d: 目录, -f: 强制, -x: 包含忽略文件
+        # -e .axon: 排除 .axon 目录，防止自毁
+        self._run(["clean", "-dfx", "-e", ".axon"])
+        
+        logger.info("✅ Workspace reset to target state.")

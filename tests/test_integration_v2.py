@@ -22,25 +22,25 @@ def reset_logging():
         root.removeHandler(h)
         h.close()
 
+@pytest.fixture
+def workspace(tmp_path):
+    """准备一个带 git 的工作区"""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    
+    # 初始化 git (Engine 需要)
+    import subprocess
+    subprocess.run(["git", "init"], cwd=ws, check=True, capture_output=True)
+    # 设置 user 避免 commit 报错
+    subprocess.run(["git", "config", "user.email", "test@axon.dev"], cwd=ws, check=True)
+    subprocess.run(["git", "config", "user.name", "Axon Test"], cwd=ws, check=True)
+    
+    return ws
+
 # --- 1. Controller Layer Tests (The Core) ---
 # 这些测试直接验证业务逻辑，不涉及 CLI 参数解析干扰
 
 class TestController:
-    
-    @pytest.fixture
-    def workspace(self, tmp_path):
-        """准备一个带 git 的工作区"""
-        ws = tmp_path / "ws"
-        ws.mkdir()
-        
-        # 初始化 git (Engine 需要)
-        import subprocess
-        subprocess.run(["git", "init"], cwd=ws, check=True, capture_output=True)
-        # 设置 user 避免 commit 报错
-        subprocess.run(["git", "config", "user.email", "test@axon.dev"], cwd=ws, check=True)
-        subprocess.run(["git", "config", "user.name", "Axon Test"], cwd=ws, check=True)
-        
-        return ws
 
     def test_run_axon_success(self, workspace):
         """测试正常执行流程"""
@@ -124,12 +124,13 @@ class TestCLIWrapper:
         import subprocess
         subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
         
-        result = runner.invoke(app, [str(plan_file), "--work-dir", str(tmp_path), "--yolo"])
+        result = runner.invoke(app, ["run", str(plan_file), "--work-dir", str(tmp_path), "--yolo"])
         
         # 只要不是 Python traceback 导致的 Crash (exit_code != 0 and not handled) 就行
         # 我们的 Controller 会捕获异常返回 exit_code 1
-        assert result.exit_code in [0, 1]
-        assert "ValueError" not in str(result.exception)
+        # 这里的 'end' act 是一个无害操作，应该返回 0
+        assert result.exit_code == 0
+        assert result.exception is None
 
     def test_cli_no_input_shows_usage(self, monkeypatch, tmp_path):
         """测试无输入时显示用法"""
@@ -141,13 +142,102 @@ class TestCLIWrapper:
         # 2. 同时确保 STDIN 不是 TTY，也不是管道（模拟纯交互式空运行）
         # CliRunner 默认就是这种状态，但为了保险起见，我们什么都不输入
         
-        result = runner.invoke(app, []) # 无参数，无管道
+        result = runner.invoke(app, ["run"]) # 无参数，无管道
         
         assert result.exit_code == 0
         assert "用法示例" in result.stderr
 
     def test_cli_list_acts(self):
         """测试 --list-acts"""
-        result = runner.invoke(app, ["--list-acts"])
+        # --list-acts 是 'run' 命令的一个选项
+        result = runner.invoke(app, ["run", "--list-acts"])
         assert result.exit_code == 0
         assert "write_file" in result.stderr
+
+class TestCheckoutCLI:
+
+    @pytest.fixture
+    def populated_workspace(self, workspace):
+        """
+        Create a workspace with two distinct, non-overlapping history nodes.
+        State A contains only a.txt.
+        State B contains only b.txt.
+        """
+        # State A: Create a.txt
+        plan_a = "~~~act\nwrite_file a.txt\n~~~\n~~~content\nState A\n~~~"
+        run_axon(content=plan_a, work_dir=workspace, yolo=True)
+        
+        # Find the hash for State A. It's the latest one at this point.
+        history_nodes_a = list(sorted((workspace / ".axon" / "history").glob("*.md"), key=lambda p: p.stat().st_mtime))
+        hash_a = history_nodes_a[-1].name.split("_")[1]
+
+        # Manually create State B by removing a.txt and adding b.txt
+        # This ensures State B is distinct from State A, not an addition.
+        (workspace / "a.txt").unlink()
+        plan_b = "~~~act\nwrite_file b.txt\n~~~\n~~~content\nState B\n~~~"
+        run_axon(content=plan_b, work_dir=workspace, yolo=True)
+
+        # Find the hash for State B. It's the newest node now.
+        history_nodes_b = list(sorted((workspace / ".axon" / "history").glob("*.md"), key=lambda p: p.stat().st_mtime))
+        hash_b = history_nodes_b[-1].name.split("_")[1]
+        
+        # The workspace is now physically in State B before the test starts.
+        return workspace, hash_a, hash_b
+
+    def test_cli_checkout_success(self, populated_workspace):
+        """Test checking out from State B to State A."""
+        workspace, hash_a, hash_b = populated_workspace
+        
+        # Pre-flight check: we are in state B
+        assert not (workspace / "a.txt").exists()
+        assert (workspace / "b.txt").exists()
+
+        result = runner.invoke(app, ["checkout", hash_a[:8], "--work-dir", str(workspace), "--force"])
+        
+        assert result.exit_code == 0
+        assert "✅ 已成功将工作区恢复到节点" in result.stderr
+        
+        # Post-flight check: we are now in state A
+        assert (workspace / "a.txt").exists()
+        assert (workspace / "a.txt").read_text() == "State A"
+        assert not (workspace / "b.txt").exists()
+
+    def test_cli_checkout_with_safety_capture(self, populated_workspace):
+        """Test that a dirty state is captured before checkout."""
+        workspace, hash_a, hash_b = populated_workspace
+        
+        # Make the workspace dirty
+        (workspace / "c_dirty.txt").write_text("uncommitted change")
+        
+        history_dir = workspace / ".axon" / "history"
+        num_nodes_before = len(list(history_dir.glob("*.md")))
+
+        result = runner.invoke(app, ["checkout", hash_a[:8], "--work-dir", str(workspace), "--force"])
+
+        assert result.exit_code == 0
+        assert "⚠️  检测到当前工作区存在未记录的变更" in result.stderr
+        
+        num_nodes_after = len(list(history_dir.glob("*.md")))
+        assert num_nodes_after == num_nodes_before + 1, "A new capture node should have been created"
+
+        # Check final state is correct
+        assert (workspace / "a.txt").exists()
+        assert not (workspace / "c_dirty.txt").exists()
+
+    def test_cli_checkout_not_found(self, populated_workspace):
+        """Test checkout with a non-existent hash."""
+        workspace, _, _ = populated_workspace
+        
+        result = runner.invoke(app, ["checkout", "deadbeef", "--work-dir", str(workspace), "--force"])
+        
+        assert result.exit_code == 1
+        assert "❌ 错误: 未找到哈希前缀" in result.stderr
+
+    def test_cli_checkout_already_on_state(self, populated_workspace):
+        """Test checking out to the current state does nothing."""
+        workspace, _, hash_b = populated_workspace
+        
+        result = runner.invoke(app, ["checkout", hash_b[:8], "--work-dir", str(workspace), "--force"])
+        
+        assert result.exit_code == 0
+        assert "✅ 工作区已处于目标状态" in result.stderr
