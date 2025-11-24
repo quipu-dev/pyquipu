@@ -136,7 +136,7 @@ class TestCLIWrapper:
         """测试无输入时显示用法"""
         # 1. 临时修改 main 模块中的默认入口文件引用，防止读取当前目录下的 o.md
         # 注意：必须 patch 'main' 模块，而不是 'config' 模块，因为 main 采用了 from import
-        import main
+        from quipu.cli import main
         monkeypatch.setattr(main, "DEFAULT_ENTRY_FILE", tmp_path / "non_existent.md")
         
         # 2. 同时确保 STDIN 不是 TTY，也不是管道（模拟纯交互式空运行）

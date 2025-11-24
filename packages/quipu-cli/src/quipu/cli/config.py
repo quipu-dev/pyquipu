@@ -3,8 +3,29 @@ from pathlib import Path
 
 # 全局配置中心
 
+def _find_project_root() -> Path:
+    """
+    向上递归查找项目根目录。
+    依据：存在 'acts' 目录 或 顶层 'pyproject.toml'。
+    """
+    current = Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / "acts").exists() and (parent / "packages").exists():
+            return parent
+        if (parent / "pyproject.toml").exists():
+            # 简单的检查，看是否是顶层配置
+            try:
+                content = (parent / "pyproject.toml").read_text()
+                if 'name = "quipu-dev"' in content:
+                    return parent
+            except Exception:
+                pass
+    # Fallback: 如果找不到（比如已安装到 site-packages），则指向当前文件所在目录
+    # 这种情况下，acts 可能需要以其他方式加载（待定）
+    return Path(__file__).parent.resolve()
+
 # 项目根目录（代码所在位置）
-PROJECT_ROOT: Path = Path(__file__).parent.resolve()
+PROJECT_ROOT: Path = _find_project_root()
 
 # 默认的工作区根目录，可以通过环境变量覆盖
 # 在实际运行时，通常由 CLI 参数指定
