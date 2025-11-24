@@ -11,6 +11,9 @@ o
 t
 tmpfile
 
+# Scaffoldings
+collectPrompt.sh
+
 # axon
 # .axon
 
