@@ -65,3 +65,12 @@ axon.log
 vault/
 temp/
 scratch/
+# --- Quipu Dev Infra ---
+.envs/
+.uv/
+sandbox/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/

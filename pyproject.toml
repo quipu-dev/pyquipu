@@ -1,11 +1,14 @@
+[project]
+name = "quipu-monorepo"
+version = "0.1.0"
+description = "Quipu Development Monorepo"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+# 将 packages 下的所有包纳入工作区管理
+workspace.members = ["packages/*"]
+
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-# Root configuration for tools only.
-# To install the development environment, run: pip install -r dev-requirements.txt
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-log_cli = true
-log_cli_level = "INFO"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

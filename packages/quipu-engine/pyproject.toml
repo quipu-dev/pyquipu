@@ -21,6 +21,9 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[tool.uv.sources]
+quipu-interfaces = { workspace = true }
+
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
