@@ -1,47 +1,37 @@
-# fix: 修复集成测试中的查找条件
+# feat: 提交可插拔摘要功能的更改
 
 ## 用户需求
-在 `test_storage_integration.py` 中，`test_full_workflow_with_git_object_storage` 测试用例失败。
-原因是我们更新了摘要生成逻辑，节点摘要从原始 Act 文本变成了语义化的 "Write: a.txt"，但测试中的 `quipu find` 命令仍然使用旧的搜索关键词 "write_file a.txt"，导致找不到节点，进而导致后续的解析代码索引越界。
-
-## 评论
-这是集成测试中常见的数据不一致问题。在修改了数据生成逻辑（Writer）后，必须同步更新数据查询逻辑（Reader/Finder）。
+用户希望将实现“可插拔摘要生成逻辑”及其相关测试修复的代码提交到版本控制系统。
 
 ## 目标
-更新 `tests/test_storage_integration.py` 中的搜索条件，使其与新的摘要格式匹配。
-
-## 基本原理
-将搜索关键词从 `write_file a.txt` 改为 `Write: a.txt`。
+执行 `git add` 和 `git commit`。
 
 ## 标签
-#comp/tests #scope/dx #fix
+#git #commit
 
 ---
 
 ## Script
 
-### Acts 1: 更新 test_storage_integration.py
+### Acts 1: 提交代码
+
+将所有修改添加到暂存区并提交。
 
 ~~~~~act
-replace tests/test_storage_integration.py
+git_add .
 ~~~~~
 
-~~~~~python
-        # 4. Use `find` and `checkout` to go back to state A
-        # --- REFACTOR START ---
-        # Use the robust find_nodes API via CLI to get the target hash
-        res_find = runner.invoke(app, ["find", "--summary", "write_file a.txt", "-w", str(git_workspace)])
-        assert res_find.exit_code == 0
-        
-        # Parse the output to get the full hash
+~~~~~act
+git_commit
 ~~~~~
 
-~~~~~python
-        # 4. Use `find` and `checkout` to go back to state A
-        # --- REFACTOR START ---
-        # Use the robust find_nodes API via CLI to get the target hash
-        res_find = runner.invoke(app, ["find", "--summary", "Write: a.txt", "-w", str(git_workspace)])
-        assert res_find.exit_code == 0
-        
-        # Parse the output to get the full hash
+~~~~~content
+feat: implement pluggable summarizer for semantic history logs
+
+- interfaces: define Summarizer type in ActContext
+- runtime: update Executor to support summarizer registration and execution
+- acts: add semantic summarizers for write_file, replace, append_file, and git_commit
+- engine: update HistoryWriter to accept external summary overrides
+- cli: integrate summarization logic into the main controller flow
+- tests: fix unit and integration tests to align with new Executor API and summary format
 ~~~~~
