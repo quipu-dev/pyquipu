@@ -11,8 +11,14 @@ def register(executor: Executor):
     """注册 Git 相关操作"""
     executor.register("git_init", _git_init, arg_mode="exclusive")
     executor.register("git_add", _git_add, arg_mode="exclusive")
-    executor.register("git_commit", _git_commit, arg_mode="block_only")
+    executor.register("git_commit", _git_commit, arg_mode="block_only", summarizer=_summarize_commit)
     executor.register("git_status", _git_status, arg_mode="exclusive")
+
+def _summarize_commit(args: List[str], contexts: List[str]) -> str:
+    msg = contexts[0] if contexts else "No message"
+    # Keep it short
+    summary = (msg[:50] + '...') if len(msg) > 50 else msg
+    return f"Git Commit: {summary}"
 
 def _run_git_cmd(ctx: ActContext, cmd_args: List[str]) -> str:
     """在工作区根目录执行 git 命令的辅助函数。"""

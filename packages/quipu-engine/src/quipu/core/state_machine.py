@@ -267,7 +267,13 @@ class Engine:
         logger.info(f"✅ 捕获完成，新节点已创建: {new_node.filename.name}")
         return new_node
 
-    def create_plan_node(self, input_tree: str, output_tree: str, plan_content: str) -> QuipuNode:
+    def create_plan_node(
+        self, 
+        input_tree: str, 
+        output_tree: str, 
+        plan_content: str,
+        summary_override: Optional[str] = None
+    ) -> QuipuNode:
         if input_tree == output_tree:
             logger.info(f"📝 记录幂等操作节点 (Idempotent Node): {output_tree[:7]}")
         else:
@@ -277,7 +283,8 @@ class Engine:
             node_type="plan",
             input_tree=input_tree,
             output_tree=output_tree,
-            content=plan_content
+            content=plan_content,
+            summary_override=summary_override
         )
 
         self.history_graph[output_tree] = new_node

@@ -20,7 +20,8 @@ class Executor:
     def __init__(self, root_dir: Path, yolo: bool = False):
         self.root_dir = root_dir.resolve()
         self.yolo = yolo
-        self._acts: Dict[str, tuple[ActFunction, str]] = {}
+        # Map: name -> (func, arg_mode, summarizer)
+        self._acts: Dict[str, tuple[ActFunction, str, Any]] = {}
         
         if not self.root_dir.exists():
             try:
@@ -28,24 +29,57 @@ class Executor:
             except Exception as e:
                 logger.warning(f"无法创建根目录 {self.root_dir}: {e}")
 
-    def register(self, name: str, func: ActFunction, arg_mode: str = "hybrid"):
+    def register(self, name: str, func: ActFunction, arg_mode: str = "hybrid", summarizer: Any = None):
         """
         注册一个新的操作
         :param arg_mode: 参数解析模式
                          - "hybrid": (默认) 合并行内参数和块内容 (inline + blocks)
                          - "exclusive": 互斥模式。优先使用行内参数；若无行内参数，则使用块内容。绝不混合。
                          - "block_only": 仅使用块内容，强制忽略行内参数。
+        :param summarizer: 可选的 Summarizer 函数 (args, context_blocks) -> str
         """
         valid_modes = {"hybrid", "exclusive", "block_only"}
         if arg_mode not in valid_modes:
             raise ValueError(f"Invalid arg_mode: {arg_mode}. Must be one of {valid_modes}")
             
-        self._acts[name] = (func, arg_mode)
+        self._acts[name] = (func, arg_mode, summarizer)
         logger.debug(f"注册 Act: {name} (Mode: {arg_mode})")
 
     def get_registered_acts(self) -> Dict[str, str]:
         """获取所有已注册的 Act 及其文档字符串"""
         return {name: data[0].__doc__ for name, data in self._acts.items()}
+
+    def summarize_statement(self, stmt: Statement) -> str | None:
+        """
+        尝试为给定的语句生成摘要。
+        如果找不到 Act 或 Act 没有 summarizer，返回 None。
+        """
+        raw_act_line = stmt["act"]
+        try:
+            tokens = shlex.split(raw_act_line)
+        except ValueError:
+            return None
+            
+        if not tokens:
+            return None
+            
+        act_name = tokens[0]
+        inline_args = tokens[1:]
+        contexts = stmt["contexts"]
+        
+        if act_name not in self._acts:
+            return None
+            
+        _, _, summarizer = self._acts[act_name]
+        
+        if not summarizer:
+            return None
+            
+        try:
+            return summarizer(inline_args, contexts)
+        except Exception as e:
+            logger.warning(f"Summarizer for '{act_name}' failed: {e}")
+            return None
 
     def resolve_path(self, rel_path: str) -> Path:
         """
@@ -133,7 +167,7 @@ class Executor:
                 logger.warning(f"Skipping unknown operation [{i+1}/{len(statements)}]: {act_name}")
                 continue
 
-            func, arg_mode = self._acts[act_name]
+            func, arg_mode, _ = self._acts[act_name]
 
             final_args = []
             if arg_mode == "hybrid":

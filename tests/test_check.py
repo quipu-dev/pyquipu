@@ -17,7 +17,7 @@ class TestCheckActs:
         (isolated_vault / "src/main.py").touch()
         
         file_list = "config.json\nsrc/main.py"
-        func, _ = executor._acts['check_files_exist']
+        func, _, _ = executor._acts['check_files_exist']
         ctx = ActContext(executor)
         func(ctx, [file_list]) # No exception should be raised
 
@@ -26,7 +26,7 @@ class TestCheckActs:
         file_list = "exists.txt\nmissing.txt"
         
         with pytest.raises(ExecutionError) as excinfo:
-            func, _ = executor._acts['check_files_exist']
+            func, _, _ = executor._acts['check_files_exist']
             ctx = ActContext(executor)
             func(ctx, [file_list])
         
@@ -36,7 +36,7 @@ class TestCheckActs:
 
     def test_check_cwd_match_success(self, executor: Executor, isolated_vault: Path):
         real_path = str(isolated_vault.resolve())
-        func, _ = executor._acts['check_cwd_match']
+        func, _, _ = executor._acts['check_cwd_match']
         ctx = ActContext(executor)
         func(ctx, [real_path]) # No exception should be raised
 
@@ -44,7 +44,7 @@ class TestCheckActs:
         wrong_path = "/this/path/does/not/exist"
         
         with pytest.raises(ExecutionError) as excinfo:
-            func, _ = executor._acts['check_cwd_match']
+            func, _, _ = executor._acts['check_cwd_match']
             ctx = ActContext(executor)
             func(ctx, [wrong_path])
             

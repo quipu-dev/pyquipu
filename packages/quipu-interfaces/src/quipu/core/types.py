@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import TypedDict, List, Callable
+from typing import TypedDict, List, Callable, Optional, Union
 from pathlib import Path
 from .exceptions import ExecutionError
 
 # --- Forward declaration to avoid circular imports ---
-# The real Executor class is in quipu.core.executor
 class Executor: ...
 
 class ActContext:
@@ -39,6 +38,10 @@ class ActContext:
 
 # Act 函数签名定义: (context, args) -> None
 ActFunction = Callable[[ActContext, List[str]], None]
+
+# Summarizer 函数签名定义: (args, context_blocks) -> str
+# 用于根据指令参数生成单行摘要
+Summarizer = Callable[[List[str], List[str]], str]
 
 class Statement(TypedDict):
     """表示解析后的单个操作语句"""

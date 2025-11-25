@@ -18,7 +18,7 @@ class TestReadActs:
         (isolated_vault / "readme.md").write_text("Nothing here", encoding='utf-8')
 
         caplog.set_level(logging.INFO)
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         search_func(ctx, ["SECRET_KEY"])
 
@@ -32,7 +32,7 @@ class TestReadActs:
         (isolated_vault / "main.rs").write_text('fn main() { println!("Hello Quipu"); }', encoding='utf-8')
 
         caplog.set_level(logging.INFO)
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         search_func(ctx, ['println!'])
 
@@ -49,7 +49,7 @@ class TestReadActs:
         (src_dir / "inner.txt").write_text("target_function", encoding='utf-8')
 
         caplog.set_level(logging.INFO)
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         search_func(ctx, ["target_function", "--path", "src"])
 
@@ -65,7 +65,7 @@ class TestReadActs:
         monkeypatch.setattr(shutil, "which", lambda x: None)
         (isolated_vault / "file.txt").write_text("some content", encoding='utf-8')
         caplog.set_level(logging.INFO)
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         search_func(ctx, ["non_existent_pattern"])
         assert "No matches found" in caplog.text
@@ -74,7 +74,7 @@ class TestReadActs:
         monkeypatch.setattr(shutil, "which", lambda x: None)
         binary_file = isolated_vault / "data.bin"
         binary_file.write_bytes(b'\x80\x81\xff')
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         try:
             search_func(ctx, ["pattern"])
@@ -82,7 +82,7 @@ class TestReadActs:
             pytest.fail(f"搜索过程因二进制文件崩溃: {e}")
 
     def test_search_args_error(self, executor: Executor):
-        search_func, _ = executor._acts['search_files']
+        search_func, _, _ = executor._acts['search_files']
         ctx = ActContext(executor)
         with pytest.raises(ExecutionError) as exc:
             search_func(ctx, ["pattern", "--unknown-flag"])

@@ -13,7 +13,7 @@ class TestGitActs:
         register_git_acts(executor)
         
         # 执行初始化
-        func, _ = executor._acts['git_init']
+        func, _, _ = executor._acts['git_init']
         func(executor, [])
         
         # 配置测试用的 user，防止 CI/Test 环境报错
@@ -26,7 +26,7 @@ class TestGitActs:
         target_file.write_text("# Test Repo", encoding="utf-8")
         
         # 2. Git Add
-        git_add, _ = executor._acts['git_add']
+        git_add, _, _ = executor._acts['git_add']
         git_add(executor, ["README.md"])
         
         # 验证状态 (porcelain 输出 ?? 代表未追踪，A 代表已添加)
@@ -34,7 +34,7 @@ class TestGitActs:
         assert "A  README.md" in status
         
         # 3. Git Commit
-        git_commit, _ = executor._acts['git_commit']
+        git_commit, _, _ = executor._acts['git_commit']
         git_commit(executor, ["Initial commit"])
         
         # 验证提交日志
@@ -50,7 +50,7 @@ class TestGitActs:
         import logging
         caplog.set_level(logging.INFO)
         
-        func, _ = executor._acts['git_init']
+        func, _, _ = executor._acts['git_init']
         func(executor, [])
         assert "Git 仓库已存在" in caplog.text
 

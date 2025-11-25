@@ -85,7 +85,7 @@ print("hello")
 class TestBasicActs:
     def test_write_file(self, executor: Executor, isolated_vault: Path):
         contexts = ["docs/readme.md", "# Hello"]
-        write_func, _ = executor._acts['write_file']
+        write_func, _, _ = executor._acts['write_file']
         ctx = ActContext(executor)
         write_func(ctx, contexts)
         
@@ -97,7 +97,7 @@ class TestBasicActs:
         f = isolated_vault / "main.py"
         f.write_text('print("Hello World")', encoding='utf-8')
         
-        replace_func, _ = executor._acts['replace']
+        replace_func, _, _ = executor._acts['replace']
         ctx = ActContext(executor)
         replace_func(ctx, ["main.py", 'print("Hello World")', 'print("Hello AI")'])
         
@@ -107,7 +107,7 @@ class TestBasicActs:
         f = isolated_vault / "wrong.txt"
         f.write_text("AAA", encoding='utf-8')
         
-        replace_func, _ = executor._acts['replace']
+        replace_func, _, _ = executor._acts['replace']
         ctx = ActContext(executor)
         
         with pytest.raises(ExecutionError) as excinfo:
@@ -119,14 +119,14 @@ class TestBasicActs:
         f = isolated_vault / "log.txt"
         f.write_text("Line 1\n", encoding='utf-8')
         
-        append_func, _ = executor._acts['append_file']
+        append_func, _, _ = executor._acts['append_file']
         ctx = ActContext(executor)
         append_func(ctx, ["log.txt", "Line 2"])
         
         assert f.read_text(encoding='utf-8') == "Line 1\nLine 2"
 
     def test_append_fail_not_found(self, executor: Executor):
-        append_func, _ = executor._acts['append_file']
+        append_func, _, _ = executor._acts['append_file']
         ctx = ActContext(executor)
         
         with pytest.raises(ExecutionError) as excinfo:

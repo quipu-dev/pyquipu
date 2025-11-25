@@ -8,11 +8,23 @@ logger = logging.getLogger(__name__)
 
 def register(executor: Executor):
     """注册基础文件系统操作"""
-    executor.register("write_file", _write_file, arg_mode="hybrid")
-    executor.register("replace", _replace, arg_mode="hybrid")
-    executor.register("append_file", _append_file, arg_mode="hybrid")
+    executor.register("write_file", _write_file, arg_mode="hybrid", summarizer=_summarize_write)
+    executor.register("replace", _replace, arg_mode="hybrid", summarizer=_summarize_replace)
+    executor.register("append_file", _append_file, arg_mode="hybrid", summarizer=_summarize_append)
     executor.register("end", _end, arg_mode="hybrid")
     executor.register("echo", _echo, arg_mode="hybrid")
+
+def _summarize_write(args: List[str], contexts: List[str]) -> str:
+    path = args[0] if args else (contexts[0] if contexts else "???")
+    return f"Write: {path}"
+
+def _summarize_replace(args: List[str], contexts: List[str]) -> str:
+    path = args[0] if args else (contexts[0] if contexts else "???")
+    return f"Replace in: {path}"
+
+def _summarize_append(args: List[str], contexts: List[str]) -> str:
+    path = args[0] if args else (contexts[0] if contexts else "???")
+    return f"Append to: {path}"
 
 def _end(ctx: ActContext, args: List[str]):
     """

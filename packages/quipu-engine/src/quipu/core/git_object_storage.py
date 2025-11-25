@@ -263,6 +263,10 @@ class GitObjectHistoryWriter(HistoryWriter):
         **kwargs: Any,
     ) -> str:
         """根据节点类型生成单行摘要。"""
+        # 1. 如果传入了显式的摘要，直接使用
+        if kwargs.get("summary_override"):
+            return kwargs["summary_override"]
+
         if node_type == "plan":
             # 优先从 act 块中提取摘要
             summary = ""

@@ -119,12 +119,12 @@ class TestGitObjectWorkflow:
         res_log = runner.invoke(app, ["log", "-w", str(git_workspace)])
         assert res_log.exit_code == 0
         assert "add b.txt" in res_log.stderr  # Summary of the save message
-        assert "write_file a.txt" in res_log.stderr # Summary of the plan
+        assert "Write: a.txt" in res_log.stderr # Summary of the plan (Updated format)
         
         # 4. Use `find` and `checkout` to go back to state A
         # --- REFACTOR START ---
         # Use the robust find_nodes API via CLI to get the target hash
-        res_find = runner.invoke(app, ["find", "--summary", "write_file a.txt", "-w", str(git_workspace)])
+        res_find = runner.invoke(app, ["find", "--summary", "Write: a.txt", "-w", str(git_workspace)])
         assert res_find.exit_code == 0
         
         # Parse the output to get the full hash
@@ -160,7 +160,7 @@ class TestFindCliCommand:
         assert result.exit_code == 0
         assert "[PLAN]" in result.stderr
         assert "[CAPTURE]" not in result.stderr
-        assert "write_file a.txt" in result.stderr
+        assert "Write: a.txt" in result.stderr
 
     def test_find_cli_by_summary(self, runner, populated_workspace):
         result = runner.invoke(app, ["find", "-s", "snapshot", "-w", str(populated_workspace)])

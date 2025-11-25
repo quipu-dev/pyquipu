@@ -130,6 +130,11 @@ def run_quipu(
 
         # --- Phase 4: Recording (Plan Crystallization) ---
         
+        # 尝试生成智能摘要 (使用第一个指令)
+        smart_summary = None
+        if statements:
+            smart_summary = executor.summarize_statement(statements[0])
+
         # 执行成功后，计算新的状态
         output_tree_hash = engine.git_db.get_tree_hash()
         
@@ -138,7 +143,8 @@ def run_quipu(
         engine.create_plan_node(
             input_tree=input_tree_hash,
             output_tree=output_tree_hash,
-            plan_content=content
+            plan_content=content,
+            summary_override=smart_summary
         )
 
         return QuipuResult(success=True, exit_code=0, message="✨ 执行成功")
