@@ -1,38 +1,90 @@
-# chore 为 CLI 逻辑收束创建提交
+# refactor: 将核心模块物理拆分为独立的包
 
 ## 目标
-将已成功完成的 CLI 逻辑收束工作 (步骤 1.4) 提交到版本控制。
+根据重构手册的阶段 2 规划，将 `core/` 目录以及根目录下的相关文件，物理迁移到 `packages/` 目录下，形成 `quipu-interfaces`、`quipu-engine`、`quipu-runtime` 和 `quipu-cli` 四个独立的 Python 包。
 
 ## 基本原理
-重命名 `controller.py` 为 `cli_controller.py` 并更新所有引用后，系统测试已通过。创建一个原子提交来记录这一变更，标志着逻辑解耦阶段的圆满完成，并为后续的物理拆分阶段建立了稳定的基础。
+这是“星座模型”架构的核心步骤。通过将不同职责的代码物理隔离到独立的包中，我们强制执行了模块间的依赖关系，消除了循环引用的可能性，并为每个组件的独立发布和测试奠定了基础。文件名中的前缀 (如 `intf_`, `eng_`) 在迁移后被移除，恢复了它们在各自包内的标准命名。
 
 ## 标签
- #chore #git #refactor #cli
+完成核心模块的重构。 #refactor #core #packages
 
 ---
 
 ## Script
 
-### Act 1: 暂存所有变更
+### Act 1: 迁移接口包 (quipu-interfaces)
 
-将所有相关的重命名和引用修改添加到 Git 暂存区。
-
-~~~~~act
-git_add .
-~~~~~
-
-### Act 2: 创建提交
-
-使用标准化的提交信息记录本次重构。
+将所有 `intf_` 前缀的接口定义文件移动到 `quipu-interfaces` 包中，并移除前缀。
 
 ~~~~~act
-git_commit
+move_file core/intf_exceptions.py packages/quipu-interfaces/src/quipu/core/exceptions.py
 ~~~~~
 
+~~~~~act
+move_file core/intf_models.py packages/quipu-interfaces/src/quipu/core/models.py
 ~~~~~
-refactor(cli): 明确 controller 为 CLI 胶水层
 
-将 core/controller.py 重命名为 core/cli_controller.py，并更新所有相关引用。
+~~~~~act
+move_file core/intf_result.py packages/quipu-interfaces/src/quipu/core/result.py
+~~~~~
 
-此举完成了逻辑解耦的第一阶段，明确了该模块作为连接引擎层与运行时层的唯一协调者角色，为后续物理拆分到 quipu-cli 包做准备。
+~~~~~act
+move_file core/intf_types.py packages/quipu-interfaces/src/quipu/core/types.py
+~~~~~
+
+### Act 2: 迁移引擎包 (quipu-engine)
+
+将所有 `eng_` 前缀的状态与历史引擎文件移动到 `quipu-engine` 包中，并移除前缀。
+
+~~~~~act
+move_file core/eng_config.py packages/quipu-engine/src/quipu/core/config.py
+~~~~~
+
+~~~~~act
+move_file core/eng_git_db.py packages/quipu-engine/src/quipu/core/git_db.py
+~~~~~
+
+~~~~~act
+move_file core/eng_history.py packages/quipu-engine/src/quipu/core/history.py
+~~~~~
+
+~~~~~act
+move_file core/eng_state_machine.py packages/quipu-engine/src/quipu/core/state_machine.py
+~~~~~
+
+### Act 3: 迁移运行时包 (quipu-runtime)
+
+将所有 `rt_` 前缀的解析与执行文件移动到 `quipu-runtime` 包中，并移除前缀。
+
+~~~~~act
+move_file core/rt_executor.py packages/quipu-runtime/src/quipu/core/executor.py
+~~~~~
+
+~~~~~act
+move_file core/rt_parser.py packages/quipu-runtime/src/quipu/core/parser.py
+~~~~~
+
+~~~~~act
+move_file core/rt_plugin_loader.py packages/quipu-runtime/src/quipu/core/plugin_loader.py
+~~~~~
+
+### Act 4: 迁移 CLI 包 (quipu-cli)
+
+将控制器、主入口及相关配置文件移动到 `quipu-cli` 包中。
+
+~~~~~act
+move_file core/cli_controller.py packages/quipu-cli/src/quipu/cli/controller.py
+~~~~~
+
+~~~~~act
+move_file main.py packages/quipu-cli/src/quipu/cli/main.py
+~~~~~
+
+~~~~~act
+move_file config.py packages/quipu-cli/src/quipu/cli/config.py
+~~~~~
+
+~~~~~act
+move_file logger_config.py packages/quipu-cli/src/quipu/cli/logger_config.py
 ~~~~~
