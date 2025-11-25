@@ -62,19 +62,15 @@ def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[
         typer.secho("💡  请先运行 'quipu save' 创建一个快照，再进行导航。", fg=typer.colors.YELLOW, err=True)
     return node
 
-def _execute_checkout(ctx: typer.Context, target_node: QuipuNode, work_dir: Path):
-    """通过子进程调用 checkout 命令以复用逻辑"""
-    typer.secho(f"🚀 正在导航到节点: {target_node.short_hash} ({target_node.timestamp})", err=True)
-    result = subprocess.run(
-        [sys.executable, "-m", "quipu.cli.main", "checkout", target_node.output_tree, "--work-dir", str(work_dir), "--force"],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        typer.secho("❌ 导航操作失败:", fg=typer.colors.RED, err=True)
-        typer.secho(result.stderr, err=True)
+def _execute_visit(ctx: typer.Context, engine: Engine, target_hash: str, description: str):
+    """辅助函数：执行 engine.visit 并处理结果"""
+    typer.secho(f"🚀 {description}", err=True)
+    try:
+        engine.visit(target_hash)
+        typer.secho(f"✅ 已成功切换到状态 {target_hash[:7]}。", fg=typer.colors.GREEN, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 导航操作失败: {e}", fg=typer.colors.RED, err=True)
         ctx.exit(1)
-    else:
-        typer.secho(result.stderr, err=True)
 
 # --- 核心命令 ---
 
@@ -103,9 +99,7 @@ def ui(
         ctx.exit(1)
         
     setup_logging()
-    # 关键修复: 我们需要两种数据结构
-    # 1. 完整的节点列表 (all_nodes) -> 用于 UI 渲染
-    # 2. 从哈希到最新节点的映射 (graph) -> 用于 checkout 查找
+    
     from quipu.core.history import load_all_history_nodes, load_history_graph
     
     real_root = _resolve_root(work_dir)
@@ -123,10 +117,10 @@ def ui(
     selected_hash = app_instance.run()
 
     if selected_hash:
-        # 现在 'graph' 变量已定义, 这段代码可以正常工作
         if selected_hash in graph:
             typer.secho(f"\n> TUI 请求检出到: {selected_hash[:7]}", err=True)
-            _execute_checkout(ctx, graph[selected_hash], work_dir)
+            # 使用 visit 替代子进程调用，更高效且能复用 Engine
+            _execute_visit(ctx, engine, selected_hash, f"正在导航到 TUI 选定节点: {selected_hash[:7]}")
         else:
             typer.secho(f"❌ 错误: 无法在历史图谱中找到目标哈希 {selected_hash[:7]}", fg=typer.colors.RED, err=True)
             ctx.exit(1)
@@ -241,8 +235,19 @@ def discard(
     if not graph:
         typer.secho("❌ 错误: 找不到任何历史记录，无法确定要恢复到哪个状态。", fg=typer.colors.RED, err=True)
         ctx.exit(1)
-    latest_node = max(graph.values(), key=lambda n: n.timestamp)
-    target_tree_hash = latest_node.output_tree
+    
+    # 逻辑上，discard 应该是恢复到 HEAD 指向的 clean state，而不是时间上最新的。
+    # 但如果 HEAD 丢失，回退到 max timestamp 也是一种策略。
+    # 为了保持行为一致性，我们尝试读 HEAD
+    target_tree_hash = engine._read_head()
+    if not target_tree_hash or target_tree_hash not in graph:
+        # Fallback
+        latest_node = max(graph.values(), key=lambda n: n.timestamp)
+        target_tree_hash = latest_node.output_tree
+        typer.secho(f"⚠️  HEAD 指针丢失或无效，将恢复到最新历史节点: {latest_node.short_hash}", fg=typer.colors.YELLOW, err=True)
+    else:
+        latest_node = graph[target_tree_hash]
+
     current_hash = engine.git_db.get_tree_hash()
     if current_hash == target_tree_hash:
         typer.secho(f"✅ 工作区已经是干净状态 ({latest_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
@@ -262,7 +267,9 @@ def discard(
             raise typer.Abort()
 
     try:
-        engine.checkout(target_tree_hash)
+        # 这里使用 visit 还是 checkout? 
+        # Discard 也是一种状态重置，为了让 back 能撤销 discard，应该用 visit。
+        engine.visit(target_tree_hash)
         typer.secho(f"✅ 工作区已成功恢复到节点 {latest_node.short_hash}。", fg=typer.colors.GREEN, err=True)
     except Exception as e:
         typer.secho(f"❌ 恢复状态失败: {e}", fg=typer.colors.RED, err=True)
@@ -332,14 +339,10 @@ def checkout(
             typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
             raise typer.Abort()
 
-    try:
-        engine.checkout(target_tree_hash)
-        typer.secho(f"✅ 已成功将工作区恢复到节点 {target_node.short_hash}。", fg=typer.colors.GREEN, err=True)
-    except Exception as e:
-        typer.secho(f"❌ 恢复状态失败: {e}", fg=typer.colors.RED, err=True)
-        ctx.exit(1)
+    # 使用 visit 代替 checkout，记录访问历史
+    _execute_visit(ctx, engine, target_tree_hash, f"正在导航到节点: {target_node.short_hash}")
 
-# --- 导航命令 ---
+# --- 结构化导航命令 ---
 @app.command()
 def undo(
     ctx: typer.Context,
@@ -350,7 +353,7 @@ def undo(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    向上移动到当前状态的父节点 (类似 Ctrl+Z)。
+    [结构化导航] 向上移动到当前状态的父节点。
     """
     setup_logging()
     real_root = _resolve_root(work_dir)
@@ -366,7 +369,8 @@ def undo(
             if target_node == current_node: ctx.exit(0)
             break
         target_node = target_node.parent
-    _execute_checkout(ctx, target_node, work_dir)
+    
+    _execute_visit(ctx, engine, target_node.output_tree, f"正在撤销到父节点: {target_node.short_hash}")
 
 @app.command()
 def redo(
@@ -378,7 +382,7 @@ def redo(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    向下移动到子节点 (类似 Ctrl+Y)。默认选择最新的子节点。
+    [结构化导航] 向下移动到子节点 (默认最新)。
     """
     setup_logging()
     real_root = _resolve_root(work_dir)
@@ -396,7 +400,8 @@ def redo(
         target_node = target_node.children[-1]
         if len(current_node.children) > 1:
             typer.secho(f"💡 当前节点有多个分支，已自动选择最新分支 -> {target_node.short_hash}", fg=typer.colors.YELLOW, err=True)
-    _execute_checkout(ctx, target_node, work_dir)
+    
+    _execute_visit(ctx, engine, target_node.output_tree, f"正在重做到子节点: {target_node.short_hash}")
 
 @app.command()
 def prev(
@@ -407,7 +412,7 @@ def prev(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    在同一父节点的兄弟分支间，切换到上一个 (更旧的) 节点。
+    [结构化导航] 切换到上一个兄弟分支。
     """
     setup_logging()
     real_root = _resolve_root(work_dir)
@@ -425,7 +430,7 @@ def prev(
             typer.secho("✅ 已在最旧的兄弟分支。", fg=typer.colors.GREEN, err=True)
             ctx.exit(0)
         target_node = siblings[idx - 1]
-        _execute_checkout(ctx, target_node, work_dir)
+        _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到上一个兄弟节点: {target_node.short_hash}")
     except ValueError: pass
 
 @app.command()
@@ -437,7 +442,7 @@ def next(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    在同一父节点的兄弟分支间，切换到下一个 (更新的) 节点。
+    [结构化导航] 切换到下一个兄弟分支。
     """
     setup_logging()
     real_root = _resolve_root(work_dir)
@@ -455,8 +460,61 @@ def next(
             typer.secho("✅ 已在最新的兄弟分支。", fg=typer.colors.GREEN, err=True)
             ctx.exit(0)
         target_node = siblings[idx + 1]
-        _execute_checkout(ctx, target_node, work_dir)
+        _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到下一个兄弟节点: {target_node.short_hash}")
     except ValueError: pass
+
+# --- 时序性导航命令 (新增) ---
+
+@app.command()
+def back(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option("--work-dir", "-w", help="工作区根目录。")
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    [时序性导航] 后退：回到上一次访问的历史状态。
+    """
+    setup_logging()
+    real_root = _resolve_root(work_dir)
+    engine = Engine(real_root)
+    
+    try:
+        result_hash = engine.back()
+        if result_hash:
+            typer.secho(f"✅ 已后退到状态: {result_hash[:7]}", fg=typer.colors.GREEN, err=True)
+        else:
+            typer.secho("⚠️  已到达访问历史的起点。", fg=typer.colors.YELLOW, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 后退操作失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
+@app.command()
+def forward(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option("--work-dir", "-w", help="工作区根目录。")
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    [时序性导航] 前进：撤销后退操作。
+    """
+    setup_logging()
+    real_root = _resolve_root(work_dir)
+    engine = Engine(real_root)
+    
+    try:
+        result_hash = engine.forward()
+        if result_hash:
+            typer.secho(f"✅ 已前进到状态: {result_hash[:7]}", fg=typer.colors.GREEN, err=True)
+        else:
+            typer.secho("⚠️  已到达访问历史的终点。", fg=typer.colors.YELLOW, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 前进操作失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
 
 @app.command()
 def log(

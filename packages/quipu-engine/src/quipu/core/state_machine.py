@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Tuple
 import yaml
 import re
 from datetime import datetime
@@ -61,6 +61,10 @@ class Engine:
         self.history_dir = self.quipu_dir / "history"
         self.head_file = self.quipu_dir / "HEAD"
         
+        # Navigation History Files
+        self.nav_log_file = self.quipu_dir / "nav_log"
+        self.nav_ptr_file = self.quipu_dir / "nav_ptr"
+        
         # 确保目录结构存在
         self.history_dir.mkdir(parents=True, exist_ok=True)
         
@@ -91,6 +95,132 @@ class Engine:
             self.head_file.write_text(tree_hash, encoding="utf-8")
         except Exception as e:
             logger.warning(f"⚠️  无法更新 HEAD 指针: {e}")
+
+    # --- Navigation History Logic ---
+
+    def _read_nav(self) -> Tuple[List[str], int]:
+        """读取导航日志和指针。如果文件不存在则返回空列表和-1。"""
+        log = []
+        ptr = -1
+        
+        if self.nav_log_file.exists():
+            try:
+                content = self.nav_log_file.read_text(encoding="utf-8").strip()
+                if content:
+                    log = content.splitlines()
+            except Exception: pass
+            
+        if self.nav_ptr_file.exists():
+            try:
+                ptr = int(self.nav_ptr_file.read_text(encoding="utf-8").strip())
+            except Exception: pass
+            
+        # 简单的完整性检查
+        if not log:
+            ptr = -1
+        elif ptr < 0:
+            ptr = 0
+        elif ptr >= len(log):
+            ptr = len(log) - 1
+            
+        return log, ptr
+
+    def _write_nav(self, log: List[str], ptr: int):
+        """写入导航日志和指针。"""
+        try:
+            self.nav_log_file.write_text("\n".join(log), encoding="utf-8")
+            self.nav_ptr_file.write_text(str(ptr), encoding="utf-8")
+        except Exception as e:
+            logger.warning(f"⚠️  无法更新导航历史: {e}")
+
+    def _append_nav(self, tree_hash: str):
+        """
+        核心逻辑：访问新状态。
+        1. 如果是全新的历史（空 log），且当前有 HEAD，先将当前 HEAD 记入（作为起点）。
+        2. 截断当前指针之后的所有记录（类似浏览器访问新页面）。
+        3. 追加新记录。
+        4. 移动指针到末尾。
+        """
+        log, ptr = self._read_nav()
+        
+        # 处理初始化：如果 log 为空，但我们已经在某个状态了（比如 HEAD），应该把起点也记下来
+        if not log:
+            current_head = self._read_head()
+            # 只有当 current_head 存在且不等于我们要去的新 hash 时才记录起点
+            # 如果等于，说明是原地踏步或者初始化同步，直接记一个就行
+            if current_head and current_head != tree_hash:
+                log.append(current_head)
+                ptr = 0
+        
+        # 截断历史
+        if ptr < len(log) - 1:
+            log = log[:ptr+1]
+        
+        # 避免连续重复记录 (Idempotency)
+        if log and log[-1] == tree_hash:
+            # 已经在目标状态，且是在末尾，不需要重复记录，但要确保指针正确
+            ptr = len(log) - 1
+            self._write_nav(log, ptr)
+            return
+
+        log.append(tree_hash)
+        ptr = len(log) - 1
+        
+        # 可选：限制日志长度（例如保留最近 100 条）
+        MAX_LOG_SIZE = 100
+        if len(log) > MAX_LOG_SIZE:
+            log = log[-MAX_LOG_SIZE:]
+            ptr = len(log) - 1
+            
+        self._write_nav(log, ptr)
+
+    # --- Public Navigation API ---
+
+    def visit(self, target_hash: str):
+        """
+        高级导航：切换到目标状态，并将其记入访问历史。
+        用于 checkout, undo, redo 等用户显式操作。
+        """
+        # 1. 先执行物理切换 (可能会失败)
+        self.checkout(target_hash)
+        # 2. 成功后记录历史
+        self._append_nav(target_hash)
+
+    def back(self) -> Optional[str]:
+        """
+        时序后退：移动指针到上一个记录，并切换状态。
+        """
+        log, ptr = self._read_nav()
+        if ptr > 0:
+            new_ptr = ptr - 1
+            target_hash = log[new_ptr]
+            
+            logger.info(f"🔙 Back to: {target_hash[:7]} (History: {new_ptr + 1}/{len(log)})")
+            self.checkout(target_hash)
+            
+            # 只有 checkout 成功才更新指针
+            self._write_nav(log, new_ptr)
+            return target_hash
+        return None
+
+    def forward(self) -> Optional[str]:
+        """
+        时序前进：移动指针到下一个记录，并切换状态。
+        """
+        log, ptr = self._read_nav()
+        if ptr < len(log) - 1:
+            new_ptr = ptr + 1
+            target_hash = log[new_ptr]
+            
+            logger.info(f"🔜 Forward to: {target_hash[:7]} (History: {new_ptr + 1}/{len(log)})")
+            self.checkout(target_hash)
+            
+            # 只有 checkout 成功才更新指针
+            self._write_nav(log, new_ptr)
+            return target_hash
+        return None
+
+    # --- Existing Methods ---
 
     def align(self) -> str:
         """
@@ -150,8 +280,6 @@ class Engine:
         
         # 获取父 Commit 用于 Git 锚定
         last_commit_hash = None
-        # 这里逻辑简化：不再依赖 rev-parse refs/quipu/history，而是尝试通过 input_hash 找关系
-        # 但为了保持兼容，我们还是尝试获取
         res = self.git_db._run(["rev-parse", "refs/quipu/history"], check=False)
         if res.returncode == 0:
             last_commit_hash = res.stdout.strip()
@@ -200,6 +328,9 @@ class Engine:
         # 7. 关键：更新 HEAD 指向新的捕获节点
         self._write_head(current_hash)
         
+        # 8. 导航日志更新
+        self._append_nav(current_hash)
+        
         logger.info(f"✅ 捕获完成，新节点已创建: {filename.name}")
         return new_node
 
@@ -227,7 +358,7 @@ class Engine:
         
         filename.write_text(frontmatter + body, "utf-8")
         
-        # Git 锚定逻辑保持不变...
+        # Git 锚定逻辑...
         parent_commit = None
         try:
             res = self.git_db._run(["rev-parse", "refs/quipu/history"], check=False)
@@ -255,6 +386,9 @@ class Engine:
         
         # 关键：更新 HEAD
         self._write_head(output_tree)
+
+        # 导航日志更新
+        self._append_nav(output_tree)
         
         logger.info(f"✅ Plan 已归档: {filename.name}")
         return new_node
@@ -262,6 +396,7 @@ class Engine:
     def checkout(self, target_hash: str):
         """
         将工作区重置到指定状态，并更新 HEAD 指针。
+        注意：此方法不负责更新导航日志，它是底层操作。
         """
         # 1. 执行物理检出
         self.git_db.checkout_tree(target_hash)
@@ -270,8 +405,6 @@ class Engine:
         self._write_head(target_hash)
         
         # 3. 尝试更新内存中的当前节点状态
-        # 注意：如果 history_graph 尚未加载，这里不会更新 current_node，
-        # 但这通常没问题，因为下一次操作会重新 align
         if target_hash in self.history_graph:
             self.current_node = self.history_graph[target_hash]
         

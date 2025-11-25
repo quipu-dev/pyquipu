@@ -195,7 +195,7 @@ class TestCheckoutCLI:
         result = runner.invoke(app, ["checkout", hash_a[:8], "--work-dir", str(workspace), "--force"])
         
         assert result.exit_code == 0
-        assert "✅ 已成功将工作区恢复到节点" in result.stderr
+        assert "✅ 已成功切换到状态" in result.stderr
         
         # Post-flight check: we are now in state A
         assert (workspace / "a.txt").exists()
