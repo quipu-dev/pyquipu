@@ -1,60 +1,145 @@
-# build: 采用依赖委托模式正确配置 Monorepo
+# refactor-runtime 迁移核心 Acts 到 Runtime 包
 
 ## 目标
-修改根 `pyproject.toml`，从“包发现”模式切换到“依赖委托”模式，以正确地在开发环境中安装所有子包，并最终解决 `quipu` 命令的 `ModuleNotFoundError`。
+将根目录下的 `acts/` 模块迁移至 `packages/quipu-runtime/src/quipu/acts/`，并修改 `quipu-cli` 的加载逻辑，使其直接从 `quipu-runtime` 包中加载核心 Acts。
 
 ## 基本原理
-`setuptools` 的 `find_packages` 功能难以处理我们这种包含多个 `src`-layout 的 Monorepo 结构，导致开发模式 (`pip install -e .`) 安装不完整。
-
-我们将改变策略：不再让顶层包自己去寻找所有模块，而是让它通过 `[project.dependencies]` 明确声明对本地子包的依赖。`pip` 会解析这些本地依赖，并分别对每个子包执行正确的、独立的开发模式安装。这确保了每个子包的 `src` 目录都被正确地链接到 Python 环境中，从而构建出完整的 `quipu` 命名空间。
+当前核心 Acts（如 `write_file`, `replace`）作为松散文件存在于根目录，导致通过 `pip` 安装 `quipu-runtime` 后，用户缺少这些基础能力。将它们打包进 `quipu-runtime` 并提供统一的注册入口，可以确保用户环境开箱即用，并符合 Monorepo 的模块化设计。
 
 ## 标签
-#fix #build #chore
+#refactor #runtime #cli
 
 ---
 
 ## Script
 
-### Act 1: 重构根 pyproject.toml 以使用本地路径依赖
+### Act 1: 创建 Runtime Acts 注册入口
 
-此操作将移除 `[tool.setuptools.packages.find]` 并添加 `[project.dependencies]`，将安装逻辑委托给各个子包。
+在 `quipu-runtime` 包中创建 `__init__.py`，负责导入并注册所有核心 Act 模块。
 
 ~~~~~act
-write_file pyproject.toml
+write_file
 ~~~~~
 
-~~~~~toml
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+~~~~~path
+packages/quipu-runtime/src/quipu/acts/__init__.py
+~~~~~
 
-[project]
-name = "quipu-dev"
-version = "0.1.0"
-description = "Metapackage for the Quipu monorepo development environment."
-requires-python = ">=3.8"
-dependencies = [
-    "quipu-interfaces @ file:./packages/quipu-interfaces",
-    "quipu-engine @ file:./packages/quipu-engine",
-    "quipu-runtime @ file:./packages/quipu-runtime",
-    "quipu-cli @ file:./packages/quipu-cli",
-]
+~~~~~python
+from . import basic, check, git, memory, read, refactor, shell
 
-[project.scripts]
-quipu = "quipu.cli.main:app"
+def register_core_acts(executor):
+    """注册所有核心 Acts"""
+    basic.register(executor)
+    check.register(executor)
+    git.register(executor)
+    memory.register(executor)
+    read.register(executor)
+    refactor.register(executor)
+    shell.register(executor)
+~~~~~
 
-[tool.setuptools]
-py-modules = []
+### Act 2: 迁移 Act 文件
 
-[tool.pytest.ini_options]
-pythonpath = [
-    ".",
-    "packages/quipu-interfaces/src",
-    "packages/quipu-engine/src",
-    "packages/quipu-runtime/src",
-    "packages/quipu-cli/src",
-]
-testpaths = ["tests"]
-log_cli = true
-log_cli_level = "INFO"
+将 7 个核心 Act 模块从根目录移动到 `quipu-runtime` 包内。
+
+~~~~~act
+move_file acts/basic.py packages/quipu-runtime/src/quipu/acts/basic.py
+~~~~~
+
+~~~~~act
+move_file acts/check.py packages/quipu-runtime/src/quipu/acts/check.py
+~~~~~
+
+~~~~~act
+move_file acts/git.py packages/quipu-runtime/src/quipu/acts/git.py
+~~~~~
+
+~~~~~act
+move_file acts/memory.py packages/quipu-runtime/src/quipu/acts/memory.py
+~~~~~
+
+~~~~~act
+move_file acts/read.py packages/quipu-runtime/src/quipu/acts/read.py
+~~~~~
+
+~~~~~act
+move_file acts/refactor.py packages/quipu-runtime/src/quipu/acts/refactor.py
+~~~~~
+
+~~~~~act
+move_file acts/shell.py packages/quipu-runtime/src/quipu/acts/shell.py
+~~~~~
+
+### Act 3: 更新 CLI Controller
+
+修改控制器，不再从文件系统加载根目录的 `acts`，而是调用 `quipu.acts.register_core_acts`。
+
+~~~~~act
+replace packages/quipu-cli/src/quipu/cli/controller.py
+~~~~~
+
+~~~~~python
+from .config import PROJECT_ROOT
+
+logger = logging.getLogger(__name__)
+~~~~~
+
+~~~~~python
+from .config import PROJECT_ROOT
+from quipu.acts import register_core_acts
+
+logger = logging.getLogger(__name__)
+~~~~~
+
+~~~~~act
+replace packages/quipu-cli/src/quipu/cli/controller.py
+~~~~~
+
+~~~~~python
+        # 加载插件
+        load_plugins(executor, PROJECT_ROOT / "acts") # 内置
+        _load_extra_plugins(executor, project_root)       # 外部 (也基于 project_root)
+~~~~~
+
+~~~~~python
+        # 加载插件
+        register_core_acts(executor) # 内置 (从 runtime 包加载)
+        _load_extra_plugins(executor, project_root)       # 外部 (也基于 project_root)
+~~~~~
+
+### Act 4: 更新 CLI Config
+
+修改项目根目录查找逻辑，移除对 `acts` 目录存在的依赖。
+
+~~~~~act
+replace packages/quipu-cli/src/quipu/cli/config.py
+~~~~~
+
+~~~~~python
+    """
+    current = Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / "acts").exists() and (parent / "packages").exists():
+            return parent
+        if (parent / "pyproject.toml").exists():
+            # 简单的检查，看是否是顶层配置
+~~~~~
+
+~~~~~python
+    """
+    current = Path(__file__).resolve()
+    for parent in [current] + list(current.parents):
+        if (parent / "packages").exists() and (parent / "pyproject.toml").exists():
+            return parent
+        if (parent / "pyproject.toml").exists():
+            # 简单的检查，看是否是顶层配置
+~~~~~
+
+### Act 5: 清理旧 Acts 目录
+
+删除根目录下残留的 `acts` 目录（包含旧的 `__init__.py`）。
+
+~~~~~act
+delete_file acts
 ~~~~~
