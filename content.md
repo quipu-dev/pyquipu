@@ -1,49 +1,41 @@
-# fix: Handle None message in capture summary generation
+# chore: 提交存储集成相关的修复
 
 ## 用户需求
-在修复了上一个测试问题后，`test_capture_drift_git_object` 测试用例再次失败，这次抛出了 `AttributeError: 'NoneType' object has no attribute 'strip'`。
-
-错误发生在 `GitObjectHistoryWriter` 的 `_generate_summary` 方法中。当 `engine.capture_drift(dirty_hash)`被调用时（未提供 `message` 参数），`kwargs['message']` 的值为 `None`。`kwargs.get("message", "")` 表达式因此返回 `None` 而不是预期的空字符串 `""`，导致在 `None` 上调用 `.strip()` 方法时程序崩溃。
+用户请求将最近完成的、关于存储层集成和相关测试修复的所有代码变更提交到版本控制中。
 
 ## 评论
-这是一个典型的边界情况处理错误。虽然看起来微小，但它阻止了新存储后端的 `capture` 节点在没有用户附带消息时的创建流程，是一个阻塞性的缺陷。修复这个问题将使核心的 `capture_drift` 功能恢复正常。
+这个提交将固化我们为集成 Git 对象存储后端所做的工作，包括对测试套件的重构以及在测试过程中发现并修复的关键错误。创建一个清晰的提交点是软件开发中的一个良好实践。
 
 ## 目标
-修改 `GitObjectHistoryWriter._generate_summary` 方法，使其能够健壮地处理 `message` 参数为 `None` 的情况，确保代码不会因 `AttributeError` 而崩溃。
+将所有已修改的文件暂存，并使用一条清晰的提交信息创建一个新的 Git 提交，以保存当前的工作进度。
 
 ## 基本原理
-问题的根源在于 `kwargs.get("message", "")` 的行为。当 `kwargs` 字典中存在 `message` 键且其值为 `None` 时，`.get()` 方法会返回 `None`，而不是第二个参数指定的默认值。
-
-正确的处理方式是使用 `(kwargs.get("message") or "")` 这个 Python 惯用法。如果 `kwargs.get("message")` 的结果是 `None`（一个 "falsy" 值），`or` 表达式会取其右侧的值，即 `""`。这样，`.strip()` 方法将始终在一个安全的字符串上被调用，从而避免错误。
+通过标准的 `git add .` 命令暂存工作目录下的所有变更，然后使用 `git_commit` 命令并附上一个描述性的消息来创建一个原子性的提交。
 
 ## 标签
-#comp/engine #concept/history #scope/core
+#comp/engine #comp/tests #scope/dx
 
 ---
 
 ## Script
 
-### Acts 1: 修复 `_generate_summary` 中的空指针问题
-
-我们将修改 `git_object_storage.py` 中 `_generate_summary` 方法内的一行代码，以正确处理 `message` 为 `None` 的情况。
+### Acts 1: 暂存并提交所有变更
 
 ~~~~~act
-replace
+git_add .
 ~~~~~
-~~~~~path
-packages/quipu-engine/src/quipu/core/git_object_storage.py
+
+~~~~~act
+git_commit
 ~~~~~
-~~~~~python
-        elif node_type == "capture":
-            user_message = kwargs.get("message", "").strip()
-            
-            changes = self.git_db.get_diff_name_status(input_tree, output_tree)
-            if not changes:
-~~~~~
-~~~~~python
-        elif node_type == "capture":
-            user_message = (kwargs.get("message") or "").strip()
-            
-            changes = self.git_db.get_diff_name_status(input_tree, output_tree)
-            if not changes:
+~~~~~message
+fix(engine): Align engine tests with Git Object Storage backend
+
+This commit addresses the test failures that arose after integrating the new Git Object Storage strategy.
+
+Key changes include:
+- Refactored `tests/test_engine.py` to use the `GitObjectHistoryReader/Writer` by default, adapting assertions to the new backend's behavior (e.g., checking Git refs instead of `.md` files).
+- Fixed an `AttributeError` in `GitObjectHistoryWriter` where capturing a drift without a message would cause a crash.
+- Updated the CLI's `_setup_engine` factory to correctly detect and inject the appropriate storage backend based on project state.
+- Refactored `Engine` to fully delegate Git commit creation to the `HistoryWriter` interface, cleaning up duplicated logic.
 ~~~~~
