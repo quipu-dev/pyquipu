@@ -1,7 +1,9 @@
 import pytest
 from pathlib import Path
 from datetime import datetime
-from quipu.core.history import load_history_graph
+from typing import Dict
+from quipu.core.history import load_all_history_nodes
+from quipu.core.models import QuipuNode
 
 @pytest.fixture
 def graph_history_dir(tmp_path: Path) -> Path:
@@ -31,8 +33,15 @@ def graph_history_dir(tmp_path: Path) -> Path:
 class TestGraphLoader:
 
     def test_graph_loading_and_linking(self, graph_history_dir: Path):
-        graph = load_history_graph(graph_history_dir)
+        # `load_all_history_nodes` is now the main function for loading and linking
+        all_nodes = load_all_history_nodes(graph_history_dir)
         
+        # Rebuild the graph map for easy lookup, similar to how Engine does it.
+        graph: Dict[str, QuipuNode] = {}
+        for node in all_nodes:
+            if node.output_tree not in graph or node.timestamp > graph[node.output_tree].timestamp:
+                graph[node.output_tree] = node
+
         assert len(graph) == 3
         
         hash_a = "a" * 40

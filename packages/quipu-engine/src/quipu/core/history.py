@@ -55,38 +55,25 @@ def load_all_history_nodes(history_dir: Path) -> List[QuipuNode]:
         except Exception as e:
             logger.error(f"加载历史节点失败 {file_path.name}: {e}")
 
+    # 对每个 output_hash 对应的节点列表按时间戳排序
+    # 这是构建父子关系所必需的，确保子节点总能找到时间上在其之前的父节点
     for nodes in nodes_by_output.values():
         nodes.sort(key=lambda n: n.timestamp)
 
+    # 构建父子关系
     for node in all_nodes:
+        # 寻找潜在的父节点 (其 output_tree 是当前节点的 input_tree)
         potential_parents = nodes_by_output.get(node.input_tree, [])
+        # 过滤出时间戳在当前节点之前的父节点
         valid_parents = [p for p in potential_parents if p.timestamp < node.timestamp]
         if valid_parents:
+            # 选择时间戳最新的那个作为父节点
             parent_node = max(valid_parents, key=lambda p: p.timestamp)
             node.parent = parent_node
             parent_node.children.append(node)
 
+    # 对每个节点的子节点列表按时间戳排序
     for node in all_nodes:
         node.children.sort(key=lambda n: n.timestamp)
         
     return all_nodes
-
-def load_history_graph(history_dir: Path) -> Dict[str, QuipuNode]:
-    """
-    (For Engine Alignment)
-    加载历史图谱，并返回一个从 Tree Hash 到最新 QuipuNode 的映射。
-    这个字典用于快速确定当前工作区状态对应于哪个历史节点。
-    """
-    all_nodes = load_all_history_nodes(history_dir)
-    final_graph: Dict[str, QuipuNode] = {}
-    
-    for node in all_nodes:
-        if node.output_tree not in final_graph or node.timestamp > final_graph[node.output_tree].timestamp:
-            final_graph[node.output_tree] = node
-
-    count_events = len(all_nodes)
-    count_states = len(final_graph)
-    if count_events > 0:
-        logger.info(f"从 '{history_dir}' 加载了 {count_events} 个历史事件，形成 {count_states} 个唯一状态节点。")
-    
-    return final_graph

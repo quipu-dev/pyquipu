@@ -9,6 +9,14 @@ dependencies = []
 # 将 packages 下的所有包纳入工作区管理
 workspace.members = ["packages/*"]
 
+[tool.pytest.ini_options]
+pythonpath = [
+  "packages/quipu-interfaces/src",
+  "packages/quipu-engine/src",
+  "packages/quipu-runtime/src",
+  "packages/quipu-cli/src",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from quipu.core.state_machine import Engine
 from quipu.cli.controller import run_quipu
+from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 
 class TestIdempotentNode:
     
@@ -17,8 +18,14 @@ class TestIdempotentNode:
         plan_1 = "~~~act\nwrite_file a.txt\n~~~\n~~~content\nA\n~~~"
         run_quipu(plan_1, workspace, yolo=True)
         
-        engine = Engine(workspace)
-        nodes_1 = list((workspace / ".quipu" / "history").glob("*.md"))
+        history_dir = workspace / ".quipu" / "history"
+        
+        # 此处 Engine 的实例化仅用于验证，非测试核心
+        reader = FileSystemHistoryReader(history_dir)
+        writer = FileSystemHistoryWriter(history_dir)
+        engine = Engine(workspace, reader=reader, writer=writer)
+
+        nodes_1 = list(history_dir.glob("*.md"))
         assert len(nodes_1) == 1
         
         # 3. 执行一个无变更的操作 (State A -> State A)
@@ -29,7 +36,7 @@ class TestIdempotentNode:
         assert result.success is True
         
         # 4. 验证是否生成了新节点
-        nodes_2 = list((workspace / ".quipu" / "history").glob("*.md"))
+        nodes_2 = list(history_dir.glob("*.md"))
         assert len(nodes_2) == 2
         
         # 验证新节点的 input == output

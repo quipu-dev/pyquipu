@@ -11,8 +11,9 @@ from .config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
 from quipu.core.plugin_loader import load_plugins
 from quipu.core.executor import Executor
 from quipu.core.state_machine import Engine
-from quipu.core.history import load_history_graph
+from quipu.core.history import load_all_history_nodes
 from quipu.core.models import QuipuNode
+from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 import inspect
 import subprocess
 from quipu.core.config import ConfigManager
@@ -51,6 +52,17 @@ def _resolve_root(work_dir: Path) -> Path:
     """辅助函数：解析项目根目录，如果未找到则回退到 work_dir"""
     root = find_project_root(work_dir)
     return root if root else work_dir
+
+def _setup_engine(work_dir: Path) -> Engine:
+    """辅助函数：实例化完整的 Engine 堆栈"""
+    real_root = _resolve_root(work_dir)
+    # 注意: 当前硬编码为文件系统存储。未来这里可以加入逻辑来检测项目类型。
+    history_dir = real_root / ".quipu" / "history"
+    reader = FileSystemHistoryReader(history_dir)
+    writer = FileSystemHistoryWriter(history_dir)
+    engine = Engine(real_root, reader=reader, writer=writer)
+    engine.align()  # 对齐以加载历史图谱
+    return engine
 
 # --- 导航命令辅助函数 ---
 def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
@@ -100,17 +112,14 @@ def ui(
         
     setup_logging()
     
-    from quipu.core.history import load_all_history_nodes, load_history_graph
-    
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    all_nodes = load_all_history_nodes(engine.history_dir)
+    engine = _setup_engine(work_dir)
+    all_nodes = engine.reader.load_all_nodes()
     
     if not all_nodes:
         typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
         ctx.exit(0)
         
-    graph = load_history_graph(engine.history_dir)
+    graph = engine.history_graph
     current_hash = engine.git_db.get_tree_hash()
     
     app_instance = QuipuUiApp(all_nodes, current_hash=current_hash)
@@ -119,7 +128,6 @@ def ui(
     if selected_hash:
         if selected_hash in graph:
             typer.secho(f"\n> TUI 请求检出到: {selected_hash[:7]}", err=True)
-            # 使用 visit 替代子进程调用，更高效且能复用 Engine
             _execute_visit(ctx, engine, selected_hash, f"正在导航到 TUI 选定节点: {selected_hash[:7]}")
         else:
             typer.secho(f"❌ 错误: 无法在历史图谱中找到目标哈希 {selected_hash[:7]}", fg=typer.colors.RED, err=True)
@@ -145,12 +153,18 @@ def save(
     捕获当前工作区的状态，创建一个“微提交”快照。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    status = engine.align()
+    engine = _setup_engine(work_dir)
+    # align 已经在 _setup_engine 中调用过了
+    status = "DIRTY" if engine.current_node is None else "CLEAN" # 简化状态判断
+    if engine.current_node:
+        current_tree_hash = engine.git_db.get_tree_hash()
+        if engine.current_node.output_tree == current_tree_hash:
+            status = "CLEAN"
+            
     if status == "CLEAN":
         typer.secho("✅ 工作区状态未发生变化，无需创建快照。", fg=typer.colors.GREEN, err=True)
         ctx.exit(0)
+        
     current_hash = engine.git_db.get_tree_hash()
     try:
         node = engine.capture_drift(current_hash, message=message)
@@ -228,20 +242,14 @@ def discard(
     丢弃工作区所有未记录的变更，恢复到上一个干净状态。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    history_dir = engine.history_dir
-    graph = load_history_graph(history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     if not graph:
         typer.secho("❌ 错误: 找不到任何历史记录，无法确定要恢复到哪个状态。", fg=typer.colors.RED, err=True)
         ctx.exit(1)
     
-    # 逻辑上，discard 应该是恢复到 HEAD 指向的 clean state，而不是时间上最新的。
-    # 但如果 HEAD 丢失，回退到 max timestamp 也是一种策略。
-    # 为了保持行为一致性，我们尝试读 HEAD
     target_tree_hash = engine._read_head()
     if not target_tree_hash or target_tree_hash not in graph:
-        # Fallback
         latest_node = max(graph.values(), key=lambda n: n.timestamp)
         target_tree_hash = latest_node.output_tree
         typer.secho(f"⚠️  HEAD 指针丢失或无效，将恢复到最新历史节点: {latest_node.short_hash}", fg=typer.colors.YELLOW, err=True)
@@ -253,7 +261,6 @@ def discard(
         typer.secho(f"✅ 工作区已经是干净状态 ({latest_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
         ctx.exit(0)
 
-    # 显示将要被丢弃的变更
     diff_stat = engine.git_db.get_diff_stat(target_tree_hash, current_hash)
     typer.secho("\n以下是即将被丢弃的变更:", fg=typer.colors.YELLOW, err=True)
     typer.secho("-" * 20, err=True)
@@ -267,8 +274,6 @@ def discard(
             raise typer.Abort()
 
     try:
-        # 这里使用 visit 还是 checkout? 
-        # Discard 也是一种状态重置，为了让 back 能撤销 discard，应该用 visit。
         engine.visit(target_tree_hash)
         typer.secho(f"✅ 工作区已成功恢复到节点 {latest_node.short_hash}。", fg=typer.colors.GREEN, err=True)
     except Exception as e:
@@ -298,11 +303,9 @@ def checkout(
     将工作区恢复到指定的历史节点状态。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    history_dir = engine.history_dir
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     
-    graph = load_history_graph(history_dir)
     matches = [node for sha, node in graph.items() if sha.startswith(hash_prefix)]
     if not matches:
         typer.secho(f"❌ 错误: 未找到哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True)
@@ -313,19 +316,18 @@ def checkout(
     target_node = matches[0]
     target_tree_hash = target_node.output_tree
     
-    status = engine.align()
     current_hash = engine.git_db.get_tree_hash()
     if current_hash == target_tree_hash:
         typer.secho(f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
         ctx.exit(0)
-    if status in ["DIRTY", "ORPHAN"]:
+
+    is_dirty = engine.current_node is None or engine.current_node.output_tree != current_hash
+    if is_dirty:
         typer.secho("⚠️  检测到当前工作区存在未记录的变更，将自动创建捕获节点...", fg=typer.colors.YELLOW, err=True)
         engine.capture_drift(current_hash)
         typer.secho("✅ 变更已捕获。", fg=typer.colors.GREEN, err=True)
-        # 捕获后，当前 hash 已更新，重新获取以确保 diff 准确
         current_hash = engine.git_db.get_tree_hash()
 
-    # 显示将要发生的变更
     diff_stat = engine.git_db.get_diff_stat(current_hash, target_tree_hash)
     if diff_stat:
         typer.secho("\n以下是将要发生的变更:", fg=typer.colors.YELLOW, err=True)
@@ -339,7 +341,6 @@ def checkout(
             typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
             raise typer.Abort()
 
-    # 使用 visit 代替 checkout，记录访问历史
     _execute_visit(ctx, engine, target_tree_hash, f"正在导航到节点: {target_node.short_hash}")
 
 # --- 结构化导航命令 ---
@@ -356,9 +357,8 @@ def undo(
     [结构化导航] 向上移动到当前状态的父节点。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    graph = load_history_graph(engine.history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
     target_node = current_node
@@ -385,9 +385,8 @@ def redo(
     [结构化导航] 向下移动到子节点 (默认最新)。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    graph = load_history_graph(engine.history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
     target_node = current_node
@@ -415,9 +414,8 @@ def prev(
     [结构化导航] 切换到上一个兄弟分支。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    graph = load_history_graph(engine.history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
     siblings = current_node.siblings
@@ -445,9 +443,8 @@ def next(
     [结构化导航] 切换到下一个兄弟分支。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
-    graph = load_history_graph(engine.history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
     siblings = current_node.siblings
@@ -477,8 +474,7 @@ def back(
     [时序性导航] 后退：回到上一次访问的历史状态。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
+    engine = _setup_engine(work_dir)
     
     try:
         result_hash = engine.back()
@@ -502,8 +498,7 @@ def forward(
     [时序性导航] 前进：撤销后退操作。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    engine = Engine(real_root)
+    engine = _setup_engine(work_dir)
     
     try:
         result_hash = engine.forward()
@@ -533,12 +528,9 @@ def log(
     显示 Axon 历史图谱日志。
     """
     setup_logging()
-    real_root = _resolve_root(work_dir)
-    history_dir = real_root / ".quipu" / "history"
-    if not history_dir.exists():
-        typer.secho(f"❌ 在 '{work_dir}' 中未找到 Axon 历史记录 (.quipu/history)。", fg=typer.colors.RED, err=True)
-        raise typer.Exit(1)
-    graph = load_history_graph(history_dir)
+    engine = _setup_engine(work_dir)
+    graph = engine.history_graph
+
     if not graph:
         typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
         raise typer.Exit(0)

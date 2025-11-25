@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from quipu.core.state_machine import Engine
 from quipu.core.git_db import GitDB
-from quipu.core.history import load_history_graph
+from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 
 @pytest.fixture
 def engine_setup(tmp_path):
@@ -15,8 +15,12 @@ def engine_setup(tmp_path):
     repo_path.mkdir()
     subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
     
-    engine = Engine(repo_path)
-    engine.history_dir.mkdir(parents=True, exist_ok=True)
+    history_dir = repo_path / ".quipu" / "history"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    
+    reader = FileSystemHistoryReader(history_dir)
+    writer = FileSystemHistoryWriter(history_dir)
+    engine = Engine(repo_path, reader=reader, writer=writer)
     
     return engine, repo_path
 
@@ -27,15 +31,11 @@ def test_align_clean_state(engine_setup):
     """
     engine, repo_path = engine_setup
     
-    # 1. 在工作区创建一个文件并获取其状态哈希
     (repo_path / "main.py").write_text("print('hello')", "utf-8")
     clean_hash = engine.git_db.get_tree_hash()
     
-    # 2. 手动伪造一个历史文件，其 output_tree 与当前状态匹配
     ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    # 创世节点的 input_hash 可以是全零或下划线
     genesis_input = "_" * 40
-    
     history_filename = f"{genesis_input}_{clean_hash}_{ts}.md"
     history_file = engine.history_dir / history_filename
     history_file.write_text(f"""---
@@ -44,10 +44,8 @@ type: "plan"
 # A plan
 """, "utf-8")
 
-    # 3. 运行对齐方法
     status = engine.align()
     
-    # 4. 断言结果
     assert status == "CLEAN"
     assert engine.current_node is not None
     assert engine.current_node.output_tree == clean_hash
@@ -60,60 +58,17 @@ def test_align_dirty_state(engine_setup):
     """
     engine, repo_path = engine_setup
     
-    # 1. 伪造一个过去的历史节点
     ts = datetime.now().strftime("%Y%m%d%H%M%S")
     past_hash = "a" * 40
     history_filename = f'{"_"*40}_{past_hash}_{ts}.md'
     (engine.history_dir / history_filename).write_text("---\ntype: plan\n---", "utf-8")
     
-    # 2. 在工作区创建一个新文件，确保当前 hash 与历史不匹配
     (repo_path / "main.py").write_text("print('dirty state')", "utf-8")
     
-    # 3. 运行对齐
     status = engine.align()
     
-    # 4. 断言
     assert status == "DIRTY"
-    assert engine.current_node is None # 在漂移状态下，引擎不应锁定到任何节点
-
-def test_align_orphan_state(engine_setup):
-    """
-    测试场景：在一个没有 .quipu/history 目录或目录为空的项目中运行时，
-    引擎应能正确识别为 "ORPHAN" 状态。
-    """
-    engine, repo_path = engine_setup
-    
-    # 1. 确保 history 目录是空的 (fixture 已经保证了这一点)
-    # 2. 在工作区创建文件
-    (repo_path / "main.py").write_text("print('new project')", "utf-8")
-    
-    # 3. 运行对齐
-    status = engine.align()
-    
-    # 4. 断言
-    assert status == "ORPHAN"
     assert engine.current_node is None
-    """
-    测试场景：当工作区被修改，与任何历史节点都不匹配时，
-    引擎应能正确识别为 "DIRTY" 状态。
-    """
-    engine, repo_path = engine_setup
-    
-    # 1. 伪造一个过去的历史节点
-    ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    past_hash = "a" * 40
-    history_filename = f'{"_"*40}_{past_hash}_{ts}.md'
-    (engine.history_dir / history_filename).write_text("---\ntype: plan\n---", "utf-8")
-    
-    # 2. 在工作区创建一个新文件，确保当前 hash 与历史不匹配
-    (repo_path / "main.py").write_text("print('dirty state')", "utf-8")
-    
-    # 3. 运行对齐
-    status = engine.align()
-    
-    # 4. 断言
-    assert status == "DIRTY"
-    assert engine.current_node is None # 在漂移状态下，引擎不应锁定到任何节点
 
 def test_align_orphan_state(engine_setup):
     """
@@ -122,14 +77,10 @@ def test_align_orphan_state(engine_setup):
     """
     engine, repo_path = engine_setup
     
-    # 1. 确保 history 目录是空的 (fixture 已经保证了这一点)
-    # 2. 在工作区创建文件
     (repo_path / "main.py").write_text("print('new project')", "utf-8")
     
-    # 3. 运行对齐
     status = engine.align()
     
-    # 4. 断言
     assert status == "ORPHAN"
     assert engine.current_node is None
 
@@ -140,73 +91,60 @@ def test_capture_drift(engine_setup):
     """
     engine, repo_path = engine_setup
     
-    # 1. 设置初始状态：一个干净的历史节点
     (repo_path / "main.py").write_text("version = 1", "utf-8")
     initial_hash = engine.git_db.get_tree_hash()
     
-    ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    history_filename = f'{"_"*40}_{initial_hash}_{ts}.md'
-    (engine.history_dir / history_filename).write_text("---\ntype: plan\n---", "utf-8")
+    engine.writer.create_node("plan", "_" * 40, initial_hash, "Initial content")
     
-    # 手动锚定初始 commit
     initial_commit = engine.git_db.create_anchor_commit(initial_hash, "Initial")
     engine.git_db.update_ref("refs/quipu/history", initial_commit)
     
-    # 加载历史，确保 engine 知道初始状态
-    engine.history_graph = load_history_graph(engine.history_dir)
+    # 重新对齐以加载我们刚刚手动创建的节点
+    engine.align()
     
-    # 2. 制造漂移 (DIRTY state)
     (repo_path / "main.py").write_text("version = 2", "utf-8")
     dirty_hash = engine.git_db.get_tree_hash()
     assert initial_hash != dirty_hash
     
-    # 3. 执行捕获
     capture_node = engine.capture_drift(dirty_hash)
     
-    # 4. 断言
-    # 4.1 内存状态
     assert len(engine.history_graph) == 2, "历史图谱中应有两个节点"
     assert engine.current_node is not None
     assert engine.current_node.output_tree == dirty_hash
     assert capture_node.node_type == "capture"
     assert capture_node.input_tree == initial_hash
     
-    # 4.2 文件系统
     assert capture_node.filename.exists(), "捕获节点的 Markdown 文件应已创建"
     content = capture_node.filename.read_text("utf-8")
     assert "type: capture" in content
     assert "main.py" in content and "+-" in content, "捕获内容应包含 diff 摘要"
 
-    # 4.3 Git 状态 (最关键的)
     latest_ref_commit = subprocess.check_output(
         ["git", "rev-parse", "refs/quipu/history"], cwd=repo_path
     ).decode().strip()
     assert latest_ref_commit != initial_commit, "Git 引用必须更新到新的锚点"
     
-    # 验证新 commit 的 parent 是旧 commit
     parent_of_latest = subprocess.check_output(
         ["git", "rev-parse", f"{latest_ref_commit}^"], cwd=repo_path
     ).decode().strip()
     assert parent_of_latest == initial_commit
+
 class TestPersistentIgnores:
     def test_sync_creates_file_if_not_exists(self, engine_setup):
         """测试：如果 exclude 文件不存在，应能根据默认配置创建它。"""
         engine, repo_path = engine_setup
         
-        # 重新初始化 Engine 以触发 _sync... 逻辑
-        # fixture 里的 engine 是在没有任何 quipu 配置的情况下初始化的
-        # 这里我们确保 .quipu 目录存在，并再次初始化
         (repo_path / ".quipu").mkdir(exist_ok=True)
         
-        # 触发器
-        engine = Engine(repo_path)
+        # 重新初始化 Engine 以触发同步逻辑
+        engine = Engine(repo_path, reader=engine.reader, writer=engine.writer)
         
         exclude_file = repo_path / ".git" / "info" / "exclude"
         assert exclude_file.exists()
         content = exclude_file.read_text("utf-8")
         
         assert "# --- Managed by Quipu ---" in content
-        assert ".envs" in content  # 检查默认规则之一
+        assert ".envs" in content
 
     def test_sync_appends_to_existing_file(self, engine_setup):
         """测试：如果 exclude 文件已存在，应追加 Quipu 块而不是覆盖。"""
@@ -217,8 +155,8 @@ class TestPersistentIgnores:
         user_content = "# My personal ignores\n*.log\n"
         exclude_file.write_text(user_content)
         
-        # 触发器
-        engine = Engine(repo_path)
+        # 重新初始化 Engine 以触发同步逻辑
+        engine = Engine(repo_path, reader=engine.reader, writer=engine.writer)
         
         content = exclude_file.read_text("utf-8")
         assert user_content in content
@@ -240,12 +178,12 @@ class TestPersistentIgnores:
         user_content = f"# My ignores\n{old_block}\n# More ignores"
         exclude_file.write_text(user_content)
         
-        # 触发器
-        engine = Engine(repo_path)
+        # 重新初始化 Engine 以触发同步逻辑
+        engine = Engine(repo_path, reader=engine.reader, writer=engine.writer)
         
         content = exclude_file.read_text("utf-8")
         assert "old_rule/" not in content
-        assert ".vscode" in content  # 检查默认规则之一
+        assert ".vscode" in content
         assert "# My ignores" in content
         assert "# More ignores" in content
 
@@ -254,7 +192,6 @@ class TestPersistentIgnores:
         import yaml
         engine, repo_path = engine_setup
         
-        # 创建用户配置文件
         config_dir = repo_path / ".quipu"
         config_dir.mkdir(exist_ok=True)
         config_file = config_dir / "config.yml"
@@ -266,12 +203,12 @@ class TestPersistentIgnores:
         }
         config_file.write_text(yaml.dump(user_ignores), "utf-8")
         
-        # 触发器
-        engine = Engine(repo_path)
+        # 重新初始化 Engine 以触发同步逻辑
+        engine = Engine(repo_path, reader=engine.reader, writer=engine.writer)
         
         exclude_file = repo_path / ".git" / "info" / "exclude"
         content = exclude_file.read_text("utf-8")
         
         assert "custom_dir/" in content
         assert "*.tmp" in content
-        assert ".envs" not in content # 默认值应被覆盖
+        assert ".envs" not in content

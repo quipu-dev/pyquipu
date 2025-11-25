@@ -10,6 +10,7 @@ from quipu.core.executor import Executor, ExecutionError
 from quipu.core.exceptions import ExecutionError as CoreExecutionError
 from quipu.core.parser import get_parser, detect_best_parser
 from quipu.core.plugin_loader import load_plugins
+from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 
 # 从配置导入，注意为了解耦，未来可能需要将 config 注入而不是直接导入
 from .config import PROJECT_ROOT
@@ -89,7 +90,11 @@ def run_quipu(
 
         # --- Phase 1: Engine Initialization & Perception ---
         # 注意：所有核心组件都必须使用规范化后的 project_root 初始化！
-        engine = Engine(project_root)
+        history_dir = project_root / ".quipu" / "history"
+        reader = FileSystemHistoryReader(history_dir)
+        writer = FileSystemHistoryWriter(history_dir)
+        engine = Engine(project_root, reader=reader, writer=writer)
+
         status = engine.align() # "CLEAN", "DIRTY", "ORPHAN"
         
         current_hash = engine.git_db.get_tree_hash()
@@ -146,14 +151,11 @@ def run_quipu(
         # 如果状态发生了变化，或者我们想记录即使无变化的 Plan（通常记录一下比较好）
         # 这里我们调用 Engine 的 create_plan_node 方法
         # 注意：该方法需要在 Engine 类中实现
-        if hasattr(engine, "create_plan_node"):
-            engine.create_plan_node(
-                input_tree=input_tree_hash,
-                output_tree=output_tree_hash,
-                plan_content=content
-            )
-        else:
-            logger.warning("⚠️  Engine 尚未实现 'create_plan_node'，跳过历史记录。")
+        engine.create_plan_node(
+            input_tree=input_tree_hash,
+            output_tree=output_tree_hash,
+            plan_content=content
+        )
 
         return QuipuResult(success=True, exit_code=0, message="✨ 执行成功")
 

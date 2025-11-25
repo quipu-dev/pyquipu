@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from quipu.core.state_machine import Engine
 from quipu.cli.controller import find_project_root
+from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 
 class TestHeadTracking:
     @pytest.fixture
@@ -14,7 +15,11 @@ class TestHeadTracking:
         # Config git user
         subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=repo, check=True)
         subprocess.run(["git", "config", "user.name", "Axon Test"], cwd=repo, check=True)
-        return Engine(repo)
+        
+        history_dir = repo / ".quipu" / "history"
+        reader = FileSystemHistoryReader(history_dir)
+        writer = FileSystemHistoryWriter(history_dir)
+        return Engine(repo, reader=reader, writer=writer)
 
     def test_head_persistence(self, engine_with_repo):
         """测试 HEAD 指针的创建和更新"""
