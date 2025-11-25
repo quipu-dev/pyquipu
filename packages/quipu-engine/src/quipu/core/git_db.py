@@ -3,7 +3,7 @@ import subprocess
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Tuple
 from contextlib import contextmanager
 from quipu.core.exceptions import ExecutionError
 
@@ -170,6 +170,21 @@ class GitDB:
         """
         result = self._run(["diff-tree", "--stat", old_tree, new_tree])
         return result.stdout.strip()
+
+    def get_diff_name_status(self, old_tree: str, new_tree: str) -> List[Tuple[str, str]]:
+        """
+        获取两个 Tree 之间的文件变更状态列表 (M, A, D, etc.)。
+        """
+        result = self._run(["diff-tree", "--name-status", "--no-commit-id", "-r", old_tree, new_tree])
+        changes = []
+        for line in result.stdout.strip().splitlines():
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                status, path = parts
+                changes.append((status, path))
+        return changes
 
     def checkout_tree(self, tree_hash: str):
         """

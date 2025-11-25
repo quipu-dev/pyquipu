@@ -193,3 +193,26 @@ class TestGitDBPlumbing:
             assert (git_repo / "common.txt").exists()
             assert not (git_repo / "file2.txt").exists(), "file2.txt should have been cleaned"
             assert (quipu_dir / "preserve.me").exists(), ".quipu directory should be preserved"
+
+    def test_get_diff_name_status(self, git_repo: Path, db: GitDB):
+        """Test the file status diffing functionality."""
+        # State A
+        (git_repo / "modified.txt").write_text("v1", "utf-8")
+        (git_repo / "deleted.txt").write_text("delete me", "utf-8")
+        hash_a = db.get_tree_hash()
+
+        # State B
+        (git_repo / "modified.txt").write_text("v2", "utf-8")
+        (git_repo / "deleted.txt").unlink()
+        (git_repo / "added.txt").write_text("new file", "utf-8")
+        hash_b = db.get_tree_hash()
+
+        changes = db.get_diff_name_status(hash_a, hash_b)
+        
+        # Convert to a dictionary for easier assertion
+        changes_dict = {path: status for status, path in changes}
+
+        assert "M" == changes_dict.get("modified.txt")
+        assert "A" == changes_dict.get("added.txt")
+        assert "D" == changes_dict.get("deleted.txt")
+        assert len(changes) == 3
