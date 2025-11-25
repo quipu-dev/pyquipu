@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: A tui.tcss", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764081053.5083547, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix-test: 修复 TUI 重构后丢失的方法导致的测试失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764081054.1377687, "duration_ms": 0}}
