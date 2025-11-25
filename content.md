@@ -1,83 +1,256 @@
-# chore: 提交 GitDB 底层操作的实现与修复
+# refactor: 实现 Git 对象历史写入器
 
 ## 用户需求
-将近期为实现 `GitDB` 底层对象操作所做的功能增强、问题修复及测试代码更新，作为一个完整的原子提交，合并到版本历史中。
+根据 [Quipu 储存架构最终规范](Quipu%20储存架构最终规范.md) 和 [实施计划](Quipu%20储存架构改造实施计划%20(TODO).md) ，实现 `QDPS v1.0` 规范中定义的、基于 Git 底层命令的全新历史记录存储机制。具体任务是实现 `GitObjectHistoryWriter`。
 
 ## 评论
-本次提交标志着 `Quipu 存储层改造实施计划` 第一阶段 (2.1) 的完成。`GitDB` 模块现在具备了符合 `QDPS v1.0` 规范所需的所有底层操作能力，并通过了单元测试的验证。
+这是存储层改造的核心步骤。通过将历史记录的写入逻辑封装到一个遵循 `QDPS v1.0` 规范的新类中，我们为彻底替换旧的文件系统存储方式奠定了基础。这使得系统的历史记录功能将具备版本控制、高效存储和协作同步的能力。
 
 ## 目标
-1.  将所有相关的代码变更（`git_db.py`, `state_machine.py`, `test_engine.py`, `test_git_db.py`）添加到 Git 暂存区。
-2.  创建一个语义化的 Git Commit，清晰地记录本次变更的核心内容。
+1.  在 `quipu.core.git_db` 模块中增加一个辅助方法，用于获取两个 Git Tree 之间的文件状态变更列表。
+2.  创建一个新的模块 `quipu.core.git_object_storage`。
+3.  在该新模块中，实现 `GitObjectHistoryWriter` 类，该类遵循 `HistoryWriter` 接口，并能将历史节点作为 Git 对象（Blobs, Tree, Commit）写入仓库。
 
 ## 基本原理
-通过 `git_add` 和 `git_commit` 指令，将当前工作区的代码变更固化为版本历史中的一个节点。提交信息遵循 `feat(engine)` 的格式，因为它标志着一个完整功能的实现。
+我们遵循“策略模式”和“依赖注入”的设计原则。`GitObjectHistoryWriter` 将作为一个具体的“写入策略”实现，它封装了所有与 Git 底层对象交互的复杂逻辑。`Engine` 模块未来将通过依赖注入的方式使用这个写入器，而无需关心其内部实现细节。这种解耦使得 `Engine` 的核心业务逻辑（状态协调）与数据持久化方式完全分离，提高了系统的可维护性和可扩展性。
 
 ## 标签
-#comp/engine #comp/tests #chore
+#comp/engine #concept/history #scope/core
 
 ---
 
 ## Script
 
-### Acts 1: 暂存变更并执行提交
+### Acts 1: 增强 GitDB 模块
 
-本阶段将暂存所有已修改的文件，并使用一个清晰的提交信息来创建 commit。
+为了支持 `capture` 类型节点摘要的自动生成，我们需要在 `GitDB` 中添加一个新方法 `get_diff_name_status`，用于获取两个 tree 之间的文件变更状态列表。
 
 ~~~~~act
-git_add
+replace
 ~~~~~
-~~~~~
+~~~~~path
 packages/quipu-engine/src/quipu/core/git_db.py
-packages/quipu-engine/src/quipu/core/state_machine.py
-tests/test_engine.py
-tests/test_git_db.py
+~~~~~
+~~~~~python
+import os
+import subprocess
+import logging
+import shutil
+from pathlib import Path
+from typing import Optional, Dict, List
+from contextlib import contextmanager
+from quipu.core.exceptions import ExecutionError
+~~~~~
+~~~~~python
+import os
+import subprocess
+import logging
+import shutil
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple
+from contextlib import contextmanager
+from quipu.core.exceptions import ExecutionError
 ~~~~~
 
 ~~~~~act
-git_commit
+replace
 ~~~~~
+~~~~~path
+packages/quipu-engine/src/quipu/core/git_db.py
 ~~~~~
-feat(engine): Implement GitDB low-level object operations
+~~~~~python
+    def get_diff_stat(self, old_tree: str, new_tree: str) -> str:
+        """
+        获取两个 Tree 之间的差异统计 (Human Readable)。
+        """
+        result = self._run(["diff-tree", "--stat", old_tree, new_tree])
+        return result.stdout.strip()
+~~~~~
+~~~~~python
+    def get_diff_stat(self, old_tree: str, new_tree: str) -> str:
+        """
+        获取两个 Tree 之间的差异统计 (Human Readable)。
+        """
+        result = self._run(["diff-tree", "--stat", old_tree, new_tree])
+        return result.stdout.strip()
 
-Adds `hash_object`, `mktree`, and `commit_tree` methods to the GitDB
-module. This provides the necessary plumbing commands to programmatically
-create Git objects (blobs, trees, commits) from scratch.
-
-This is a foundational step for implementing the new storage architecture
-defined in the Quipu Data Persistence Specification (QDPS) v1.0.
-
-- `hash_object`: Creates blob objects from byte content.
-- `mktree`: Creates tree objects from a descriptor.
-- `commit_tree`: Replaces the old `create_anchor_commit` with a more
-  flexible method that can create commits with specified parents and a
-  full message body.
-
-Also includes corresponding unit tests and updates to existing code
-and tests to use the new methods.
+    def get_diff_name_status(self, old_tree: str, new_tree: str) -> List[Tuple[str, str]]:
+        """
+        获取两个 Tree 之间的文件变更状态列表 (M, A, D, etc.)。
+        """
+        result = self._run(["diff-tree", "--name-status", "--no-commit-id", "-r", old_tree, new_tree])
+        changes = []
+        for line in result.stdout.strip().splitlines():
+            if not line:
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                status, path = parts
+                changes.append((status, path))
+        return changes
 ~~~~~
 
-### 回归风险分析 (Regression Analysis)
+### Acts 2: 实现 GitObjectHistoryWriter
 
-在修复过程中，我们遇到了三种类型的测试失败：
+现在，我们创建新的 `git_object_storage.py` 文件，并实现 `GitObjectHistoryWriter` 类。这个类将严格遵循 `QDPS v1.0` 规范，完成从构建元数据到创建 Git Commit 的完整流程。
 
-1.  **`AttributeError`**: 这是由于方法重命名 (`create_anchor_commit` -> `commit_tree`) 后，未同步更新测试代码中的调用点导致的。
-2.  **`subprocess.CalledProcessError`**: 这是由于向 `git hash-object` 命令传递了不正确的参数格式 (`-t=blob` 而非 `-t blob`) 导致的。
-3.  **`AssertionError`**: 这是由于测试用例中硬编码的期望哈希值与实际输入不匹配导致的。
+~~~~~act
+write_file
+~~~~~
+~~~~~path
+packages/quipu-engine/src/quipu/core/git_object_storage.py
+~~~~~
+~~~~~python
+import json
+import logging
+import os
+import platform
+import re
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+import importlib.metadata
 
-**结论先行：**
-我认为，我们**不需要添加新的测试用例**来防止这类问题。现有的测试套件已经出色地完成了它的核心任务：**检测变更所引入的缺陷**。下面是具体分析：
+from quipu.core.git_db import GitDB
+from quipu.core.models import QuipuNode
+from quipu.core.storage import HistoryWriter
 
-*   **对于 `AttributeError` (重构错误)**:
-    *   **现有保障**: 我们的单元测试套件是捕获此类错误的最佳防线。测试失败立刻就暴露了重构不彻底的问题。
-    *   **分析**: 这不是测试覆盖率的问题，而是开发流程中的必然环节。正确的流程就是“重构 -> 运行测试 -> 发现并修复调用点”，我们恰好完成了这个流程。增加更多测试并不能防止在重构时忘记修改某个调用点，但现有的测试可以确保我们能发现这个遗漏。
+logger = logging.getLogger(__name__)
 
-*   **对于 `subprocess` (实现错误)**:
-    *   **现有保障**: `test_hash_object` 作为一个与真实 `git` 命令交互的集成测试，成功地捕获了这个问题。如果命令因参数错误而失败，测试就失败。
-    *   **分析**: 我们可以选择用 `mock` 来模拟 `subprocess.run`，然后断言它被调用的参数是否完全正确。但这会使测试变得更脆弱（依赖具体实现），并且无法保证我们的代码能与真实的 `git` 环境协同工作。当前采用的集成测试风格在这里更为稳健。因此，现有测试策略是有效的。
 
-*   **对于 `AssertionError` (测试数据错误)**:
-    *   **现有保障**: 测试的失败恰恰证明了测试在正常工作。它发现了一个不一致性：代码的输出与预期的“真值”不符。
-    *   **分析**: 经过排查，我们确认是“真值”（`expected_hash`）本身是错误的。测试的失败迫使我们去验证和修正这个“真值”，这正是测试的核心价值之一。
+class GitObjectHistoryWriter(HistoryWriter):
+    """
+    一个将历史节点作为 Git 底层对象写入存储的实现。
+    遵循 Quipu 数据持久化协议规范 (QDPS) v1.0。
+    """
 
-综上所述，当前的测试策略和覆盖范围是充分的。我们应该继续保持这种“修改代码后立即运行完整测试套件”的开发纪律，它已经被证明是有效的。
+    def __init__(self, git_db: GitDB):
+        self.git_db = git_db
+
+    def _get_generator_info(self) -> Dict[str, str]:
+        """根据 QDPS v1.0 规范，通过环境变量获取生成源信息。"""
+        return {
+            "id": os.getenv("QUIPU_GENERATOR_ID", "manual"),
+            "tool": os.getenv("QUIPU_TOOL", "quipu-cli"),
+        }
+
+    def _get_env_info(self) -> Dict[str, str]:
+        """获取运行时环境指纹。"""
+        try:
+            quipu_version = importlib.metadata.version("quipu-engine")
+        except importlib.metadata.PackageNotFoundError:
+            quipu_version = "unknown"
+
+        return {
+            "quipu": quipu_version,
+            "python": platform.python_version(),
+            "os": platform.system().lower(),
+        }
+
+    def _generate_summary(
+        self,
+        node_type: str,
+        content: str,
+        input_tree: str,
+        output_tree: str,
+        **kwargs: Any,
+    ) -> str:
+        """根据节点类型生成单行摘要。"""
+        if node_type == "plan":
+            # 尝试从 Markdown 的第一个标题中提取
+            match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
+            if match:
+                return match.group(1).strip()
+            # 如果找不到标题，则从第一个非空行提取
+            for line in content.strip().splitlines():
+                clean_line = line.strip()
+                if clean_line:
+                    return (clean_line[:75] + '...') if len(clean_line) > 75 else clean_line
+            return "Plan executed"
+
+        elif node_type == "capture":
+            user_message = kwargs.get("message", "").strip()
+            
+            changes = self.git_db.get_diff_name_status(input_tree, output_tree)
+            if not changes:
+                auto_summary = "Capture: No changes detected"
+            else:
+                formatted_changes = [f"{status} {Path(path).name}" for status, path in changes[:3]]
+                summary_part = ", ".join(formatted_changes)
+                if len(changes) > 3:
+                    summary_part += f" ... and {len(changes) - 3} more files"
+                auto_summary = f"Capture: {summary_part}"
+
+            return f"{user_message} {auto_summary}".strip() if user_message else auto_summary
+        
+        return "Unknown node type"
+
+    def create_node(
+        self,
+        node_type: str,
+        input_tree: str,
+        output_tree: str,
+        content: str,
+        **kwargs: Any,
+    ) -> QuipuNode:
+        """
+        在 Git 对象数据库中创建并持久化一个新的历史节点。
+        """
+        start_time = kwargs.get("start_time", time.time())
+        end_time = time.time()
+        duration_ms = int((end_time - start_time) * 1000)
+
+        summary = self._generate_summary(
+            node_type, content, input_tree, output_tree, **kwargs
+        )
+
+        metadata = {
+            "meta_version": "1.0",
+            "summary": summary,
+            "type": node_type,
+            "generator": self._get_generator_info(),
+            "env": self._get_env_info(),
+            "exec": {"start": start_time, "duration_ms": duration_ms},
+        }
+
+        meta_json_bytes = json.dumps(
+            metadata, sort_keys=False, ensure_ascii=False
+        ).encode("utf-8")
+        content_md_bytes = content.encode("utf-8")
+
+        meta_blob_hash = self.git_db.hash_object(meta_json_bytes)
+        content_blob_hash = self.git_db.hash_object(content_md_bytes)
+
+        # 使用 100444 权限 (只读文件)
+        tree_descriptor = (
+            f"100444 blob {meta_blob_hash}\tmetadata.json\n"
+            f"100444 blob {content_blob_hash}\tcontent.md"
+        )
+        tree_hash = self.git_db.mktree(tree_descriptor)
+
+        last_commit_hash: Optional[str] = None
+        res = self.git_db._run(["rev-parse", "refs/quipu/history"], check=False, log_error=False)
+        if res.returncode == 0:
+            last_commit_hash = res.stdout.strip()
+
+        parents = [last_commit_hash] if last_commit_hash else None
+        commit_message = f"{summary}\n\nX-Quipu-Output-Tree: {output_tree}"
+        new_commit_hash = self.git_db.commit_tree(
+            tree_hash=tree_hash, parent_hashes=parents, message=commit_message
+        )
+
+        self.git_db.update_ref("refs/quipu/history", new_commit_hash)
+        logger.info(f"✅ History node created as commit {new_commit_hash[:7]}")
+
+        # 返回一个 QuipuNode 实例以兼容现有接口
+        return QuipuNode(
+            input_tree=input_tree,
+            output_tree=output_tree,
+            timestamp=datetime.fromtimestamp(start_time),
+            # 使用 Commit Hash 作为唯一标识符，因为它不再对应单个文件
+            filename=Path(f".quipu/git_objects/{new_commit_hash}"),
+            node_type=node_type,
+            content=content,
+        )
+~~~~~
