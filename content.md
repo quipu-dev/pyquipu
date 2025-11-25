@@ -1,18 +1,10 @@
-这是一个非常关键的反馈。它揭示了 `main.py` 在尝试加载 `ui.tui` 模块时，遇到了 `ImportError`，但随后被 `try...except` 块捕获，并错误地诊断为“TUI 依赖 'textual' 未安装”。
+我为 `main.py` 添加的 `sys.path` 修复旨在解决这个问题，但您的输出显示它仍然没有生效，这意味着在 `ui` 命令执行环境中，Python 仍然无法找到 `ui.tui` 模块。
 
-然而，`pip install textual` 的输出显示 `textual` 确实已安装 (`6.6.0`)。
+为了确诊问题，我将修改 `main.py` 中的 `try/except` 块，使其打印出真实的 `ImportError` 信息，而不是误导性的“textual 未安装”提示。
 
-**真正的原因是：Python 无法在运行时找到 `ui/tui.py` 模块。**
+## 1. 临时调试：暴露真实的 `ImportError`
 
-这是因为 `main.py` 位于项目根目录，但它没有将项目根目录添加到 `sys.path` 中，因此无法识别 `ui` 或 `core` 这样的顶级包。
-
-我已经在 `ui/tui.py` 中留下了注释提示，但根源在于 `main.py`。为了让 `main.py` 能够找到 `ui.tui`，我们需要在启动时确保项目根目录在 `sys.path` 中。
-
----
-
-## 1. 修复 `main.py` 中的模块路径问题
-
-在 `main.py` 启动之前，将项目根目录显式添加到 `sys.path`。
+请应用此修改，这将帮助我们确定是找不到 `ui` 包（`ModuleNotFoundError: 'ui'`）还是 `ui/tui.py` 内部的依赖问题。
 
 ~~~act
 replace
@@ -21,24 +13,27 @@ replace
 main.py
 ~~~
 ~~~old_string
-import typer
-import logging
-import sys
-from pathlib import Path
-from typing import Annotated, Optional, Dict
+    try:
+        from ui.tui import AxonUiApp
+    except ImportError:
+        typer.secho("❌ TUI 依赖 'textual' 未安装。", fg=typer.colors.RED, err=True)
+        typer.secho("💡 请运行: pip install 'textual>=0.58.0'", err=True)
+        ctx.exit(1)
 ~~~
 ~~~new_string
-import typer
-import logging
-import sys
-from pathlib import Path
-from typing import Annotated, Optional, Dict
+    try:
+        from ui.tui import AxonUiApp
+    except ImportError as e:
+        # 临时调试：打印实际的错误信息
+        typer.secho(f"❌ 导入 TUI 模块失败: {e}", fg=typer.colors.RED, err=True)
+        
+        # 保持用户友好提示
+        if "textual" in str(e).lower() or "no module named 'textual'" in str(e).lower():
+             typer.secho("💡 提示: 似乎是 textual 依赖问题。请运行: pip install 'textual>=0.58.0'", err=True)
+        else:
+             typer.secho("💡 提示: 检查 'ui/tui.py' 或其依赖是否存在。", err=True)
 
-# 在导入任何本地模块之前，确保项目根目录在 sys.path 中
-# 否则无法导入 ui.tui 或 core.xxx
-sys.path.insert(0, str(Path(__file__).parent.resolve()))
+        ctx.exit(1)
 ~~~
 
----
-
-**请应用此修改，并再次运行 `axon-dev ui`。** 如果问题仍然存在，可能是 `ui/tui.py` 内部有循环导入或命名冲突，但在应用此修复后，大部分导入错误应该解决。
+请重新运行 `axon ui` 并提供输出。
