@@ -1,63 +1,41 @@
-# fix-test: Correct summary display in `log` command
+# fix-test: Correct summary generation for plan nodes
 
 ## 用户需求
-`test_full_workflow_with_git_object_storage` 测试用例失败。失败的原因是 `quipu log` 命令未能正确显示 `quipu save "..."` 命令提供的用户自定义消息，而是显示了一个通用的 "Workspace changes captured" 摘要。我需要修复这个问题。
+`test_full_workflow_with_git_object_storage` 测试用例在 `quipu log` 命令的输出验证环节失败。失败日志显示，`plan` 节点的摘要被错误地提取为 `~~~act`，而不是实际的指令内容 `write_file a.txt`。同时，测试用例本身也在断言一个错误的摘要内容。我需要修复摘要生成的逻辑和测试用例本身。
 
 ## 评论
-问题根源在于 `log` 命令试图通过重新解析节点内容来“猜测”摘要，而不是使用由存储后端生成的、权威的摘要信息。这违反了单一事实来源原则，导致了显示不一致。
+经过分析，本次测试失败暴露了两个层面的问题：
 
-正确的解决方案是进行一次小型的架构重构：
-1.  将 `summary` 字段正式添加到核心数据模型 `QuipuNode` 中。
-2.  确保两种存储读取器 (`GitObjectHistoryReader` 和 `FileSystemHistoryReader`) 在加载节点时都负责填充这个 `summary` 字段。
-3.  最后，简化 `log` 命令，使其不再进行任何解析，而是直接显示 `node.summary` 字段的内容。
+1.  **逻辑缺陷**: 新的 `GitObjectHistoryWriter` 和旧的 `history.py` 在为 `plan` 节点生成摘要时，都存在逻辑缺陷。它们无法正确处理空的 `act` 指令块，或错误地将代码块的围栏符 (`~~~`) 识别为摘要内容。
+2.  **测试用例不准确**: 测试用例中的断言是错误的，它期望在日志中找到文件的 *内容* (`File A content`)，而不是计划的 *摘要* (`write_file a.txt`)。
 
-这个修复不仅能解决当前的测试失败，还能使 `log` 命令的实现更简洁、更健壮，并确保了摘要信息在整个系统中的一致性。
+本次修复将通过统一并强化 `plan` 节点的摘要提取逻辑来解决第一个问题，确保它能准确地找到 `act` 块内的第一条有效指令。同时，我们也将修正测试用例，使其验证正确的、符合预期的摘要内容。
 
 ## 目标
-1.  在 `quipu-interfaces` 中，为 `QuipuNode` 数据类添加 `summary: str` 字段。
-2.  在 `quipu-engine` 中，更新 `GitObjectHistoryReader` 以从 `metadata.json` 中读取 `summary` 并填充到 `QuipuNode` 实例中。
-3.  同样在 `quipu-engine` 中，更新 `history.py`（服务于 `FileSystemHistoryReader`），为其增加一个回退逻辑，用于从旧格式 `.md` 文件的内容中解析出摘要，并填充到 `QuipuNode` 实例中。
-4.  在 `quipu-cli` 中，重构 `log` 命令，移除所有本地的摘要生成逻辑，改为直接使用 `node.summary`。
-5.  确保所有测试（包括之前失败的测试）都能通过。
+1.  重构 `quipu.core.git_object_storage.GitObjectHistoryWriter` 中的 `_generate_summary` 方法，使其能够正确地从 `plan` 节点的 `content` 中提取 `act` 指令块内的第一行非空内容作为摘要。
+2.  以同样的方式重构 `quipu.core.history.load_all_history_nodes` 中的摘要生成逻辑，以确保新旧两种存储后端在处理 `plan` 摘要时行为一致。
+3.  修正 `tests/test_storage_integration.py` 中 `test_full_workflow_with_git_object_storage` 测试用例的断言，使其检查正确的摘要字符串。
+4.  确保所有测试通过。
+
+## 基本原理
+`plan` 节点的摘要应反映其核心意图，这通常是 `act` 指令块中的第一条指令。我们将实现一个健壮的解析逻辑，该逻辑会：
+1.  遍历计划内容（`content.md`）的每一行。
+2.  当进入一个 `act` 块时，开始寻找第一个非空、非围栏符的行。
+3.  一旦找到，就将其作为摘要并停止搜索。
+4.  如果 `act` 块为空或未找到，则回退到一个默认值，如 "Plan executed"。
+
+通过在 `GitObjectHistoryWriter` (用于新节点创建) 和 `history.py` (用于旧节点加载) 中应用相同的逻辑，我们保证了摘要生成的一致性。最后，校准测试用例以匹配这个正确的行为，将完成整个修复闭环。
 
 ## 标签
-#comp/cli #comp/engine #comp/interfaces #concept/history #scope/core
+#comp/engine #comp/cli #concept/history #scope/tests
 
 ---
 
 ## Script
 
-### Acts 1: 升级核心数据模型
+### Acts 1: 统一并修复 `plan` 节点摘要的生成逻辑
 
-我们在 `QuipuNode` 中添加 `summary` 字段，使其成为节点的核心属性之一。
-
-~~~~~act
-replace
-~~~~~
-~~~~~path
-packages/quipu-interfaces/src/quipu/core/models.py
-~~~~~
-~~~~~python
-    # 文件主体内容
-    content: str = ""
-    
-    # --- 图遍历字段 (由加载器填充) ---
-~~~~~
-~~~~~python
-    # 文件主体内容
-    content: str = ""
-
-    # 从元数据或内容生成的单行摘要
-    summary: str = ""
-    
-    # --- 图遍历字段 (由加载器填充) ---
-~~~~~
-
-### Acts 2: 更新数据读取器以填充摘要
-
-我们确保两个 `Reader` 实现都能正确填充新的 `summary` 字段。
-
-首先，更新 `GitObjectHistoryReader` 以从 `metadata.json` 读取权威摘要。
+我们首先修复 `GitObjectHistoryWriter` 中的摘要生成逻辑。
 
 ~~~~~act
 replace
@@ -66,30 +44,48 @@ replace
 packages/quipu-engine/src/quipu/core/git_object_storage.py
 ~~~~~
 ~~~~~python
-                node = QuipuNode(
-                    # Placeholder, will be filled in the linking phase
-                    input_tree="", 
-                    output_tree=output_tree,
-                    timestamp=datetime.fromtimestamp(float(meta_data.get("exec", {}).get("start") or entry["timestamp"])),
-                    filename=Path(f".quipu/git_objects/{commit_hash}"),
-                    node_type=meta_data.get("type", "unknown"),
-                    content=content,
-                )
+        if node_type == "plan":
+            # 尝试从 Markdown 的第一个标题中提取
+            match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
+            if match:
+                return match.group(1).strip()
+            # 如果找不到标题，则从第一个非空行提取
+            for line in content.strip().splitlines():
+                clean_line = line.strip()
+                if clean_line:
+                    return (clean_line[:75] + '...') if len(clean_line) > 75 else clean_line
+            return "Plan executed"
 ~~~~~
 ~~~~~python
-                node = QuipuNode(
-                    # Placeholder, will be filled in the linking phase
-                    input_tree="", 
-                    output_tree=output_tree,
-                    timestamp=datetime.fromtimestamp(float(meta_data.get("exec", {}).get("start") or entry["timestamp"])),
-                    filename=Path(f".quipu/git_objects/{commit_hash}"),
-                    node_type=meta_data.get("type", "unknown"),
-                    content=content,
-                    summary=meta_data.get("summary", "No summary available"),
-                )
+        if node_type == "plan":
+            # 优先从 act 块中提取摘要
+            summary = ""
+            in_act_block = False
+            for line in content.strip().splitlines():
+                clean_line = line.strip()
+                if clean_line.startswith(('~~~act', '```act')):
+                    in_act_block = True
+                    continue
+                
+                if in_act_block:
+                    if clean_line.startswith(('~~~', '```')):
+                        break  # 块结束
+                    if clean_line:
+                        summary = clean_line
+                        break  # 找到摘要
+            
+            if summary:
+                return (summary[:75] + '...') if len(summary) > 75 else summary
+
+            # 回退：尝试从 Markdown 的第一个标题中提取
+            match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
+            if match:
+                return match.group(1).strip()
+            
+            return "Plan executed"
 ~~~~~
 
-其次，更新 `history.py` (供 `FileSystemHistoryReader` 使用) 以便为旧节点生成摘要。
+然后，在旧节点的加载逻辑 (`history.py`) 中应用相同的健壮逻辑。
 
 ~~~~~act
 replace
@@ -98,16 +94,6 @@ replace
 packages/quipu-engine/src/quipu/core/history.py
 ~~~~~
 ~~~~~python
-            node = QuipuNode(
-                input_tree=input_hash, output_tree=output_hash,
-                timestamp=datetime.strptime(ts_str, "%Y%m%d%H%M%S"),
-                filename=file_path, node_type=meta.get("type", "unknown"),
-                content=body_content
-            )
-            all_nodes.append(node)
-~~~~~
-~~~~~python
-            node_type = meta.get("type", "unknown")
             # For legacy nodes, we generate a summary on the fly.
             summary = "No description"
             if node_type == 'plan':
@@ -118,62 +104,48 @@ packages/quipu-engine/src/quipu/core/history.py
                     if in_act_block and line.strip(): summary = line.strip(); break
                 if not summary or summary in ('~~~', '```'): summary = "Plan executed"
             elif node_type == 'capture':
-                # Prioritize user message from the body
-                match = re.search(r"### 💬 备注:\n(.*?)\n\n", body_content, re.DOTALL)
-                if match:
-                    summary = match.group(1).strip()
-                else:
-                    summary = "Workspace changes captured"
-
-            node = QuipuNode(
-                input_tree=input_hash, output_tree=output_hash,
-                timestamp=datetime.strptime(ts_str, "%Y%m%d%H%M%S"),
-                filename=file_path, node_type=node_type,
-                content=body_content,
-                summary=(summary[:75] + '...') if len(summary) > 75 else summary
-            )
-            all_nodes.append(node)
+~~~~~
+~~~~~python
+            # For legacy nodes, we generate a summary on the fly.
+            summary = "No description"
+            if node_type == 'plan':
+                # Robust heuristic: find the first non-empty, non-fence line inside `act` block
+                in_act_block = False
+                temp_summary = ""
+                for line in body_content.strip().split('\n'):
+                    clean_line = line.strip()
+                    if clean_line.startswith(('~~~act', '```act')):
+                        in_act_block = True
+                        continue
+                    if in_act_block:
+                        if clean_line.startswith(('~~~', '```')):
+                            break
+                        if clean_line:
+                            temp_summary = clean_line
+                            break
+                summary = temp_summary or "Plan executed"
+            elif node_type == 'capture':
 ~~~~~
 
-### Acts 3: 简化 `log` 命令以使用权威摘要
+### Acts 2: 修正测试用例中的错误断言
 
-最后，我们移除 `log` 命令中所有脆弱的摘要解析逻辑，使其直接使用 `node.summary`。
+最后，我们校准 `test_storage_integration.py` 中的测试用例，使其验证正确的摘要。
 
 ~~~~~act
 replace
 ~~~~~
 ~~~~~path
-packages/quipu-cli/src/quipu/cli/main.py
+tests/test_storage_integration.py
 ~~~~~
 ~~~~~python
-        color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-        tag = f"[{node.node_type.upper()}]"
-        summary = ""
-        content_lines = node.content.strip().split('\n')
-        if node.node_type == 'plan':
-            in_act_block = False
-            for line in content_lines:
-                if line.strip().startswith(('~~~act', '```act')): in_act_block = True; continue
-                if in_act_block and line.strip(): summary = line.strip(); break
-            if not summary: summary = "Plan executed"
-        elif node.node_type == 'capture':
-            in_diff_block = False; diff_summary_lines = []
-            for line in content_lines:
-                if "变更文件摘要" in line: in_diff_block = True; continue
-                if in_diff_block and line.strip().startswith('```'): break
-                if in_diff_block and line.strip(): diff_summary_lines.append(line.strip())
-            if diff_summary_lines:
-                files_changed = [l.split('|')[0].strip() for l in diff_summary_lines]
-                summary = f"Changes captured in: {', '.join(files_changed)}"
-            else: summary = "Workspace changes captured"
-        summary = (summary[:75] + '...') if len(summary) > 75 else summary
-        typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False, err=True)
-        typer.echo(f" - {summary}", err=True)
+        assert "add b.txt" in res_log.stderr  # Summary of the save message
+        assert "File A content" in res_log.stderr # Summary of the plan
+        
+        # 4. Use `checkout` to go back to state A
 ~~~~~
 ~~~~~python
-        color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-        tag = f"[{node.node_type.upper()}]"
-        summary = node.summary # Use the authoritative summary from the node object
-        typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False, err=True)
-        typer.echo(f" - {summary}", err=True)
+        assert "add b.txt" in res_log.stderr  # Summary of the save message
+        assert "write_file a.txt" in res_log.stderr # Summary of the plan
+        
+        # 4. Use `checkout` to go back to state A
 ~~~~~
