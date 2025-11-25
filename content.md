@@ -1,83 +1,79 @@
-好的，提交和展望如下。
-
-# feat: 提交性能优化与 UI 修复的最终代码
+# chore: 创建一个清理 Git 历史的脚本
 
 ## 用户需求
-将近期完成的针对 Git 对象存储的懒加载性能优化，以及相关的 UI 摘要显示问题的修复，提交到版本控制中。
+`quipu history migrate` 命令当前不是幂等的，多次运行会在 Git 数据库中创建重复的历史记录。为了能在干净的状态下重新运行迁移，需要一个工具来彻底清除所有由 Quipu 在 Git 中生成的历史数据。
 
 ## 评论
-本次提交包含了从接口层、实现层、测试层到 UI 层的完整修改，标志着懒加载功能的成功集成。
+这是一个合理的临时解决方案。与其在一次性迁移脚本上投入过多精力去实现完美的幂等性，不如提供一个简单、可靠的“重置”工具，这更符合成本效益。
 
 ## 目标
-创建一个清晰、完整的 Git 提交，记录本次性能优化的全部工作。
+1.  创建一个名为 `clear_quipu_refs.sh` 的可执行 shell 脚本。
+2.  该脚本能够自动检测并删除当前 Git 仓库中所有 `refs/quipu/*` 命名空间下的引用。
+3.  脚本在执行前会向用户确认将要删除的内容。
+4.  脚本不会触及用户的代码提交历史 (`refs/heads/*`) 或旧的文件系统历史 (`.quipu/history/`)。
 
 ## 基本原理
-使用 `git_add` 和 `git_commit` 命令，将所有暂存的变更作为一个原子性提交进行归档。
+Quipu 的新存储机制 (QDPS v1.0) 将所有历史节点作为 Git Commit 对象进行存储，并通过特殊的 Git 引用 (Refs) 来追踪它们，以防止被垃圾回收。这些引用都存放在 `refs/quipu/` 命名空间下 (例如 `refs/quipu/history` 和 `refs/quipu/heads/*`)。
+
+因此，要彻底清除 Quipu 的 Git 历史，最安全和最有效的方法就是删除这个命名空间下的所有引用。这会让相关的 Commit 对象变成“悬空”状态，Git 的垃圾回收机制 (`git gc`) 会在未来某个时间点自动清理它们。这个操作不会影响项目的主分支或任何其他用户创建的分支。
 
 ## 标签
-#comp/engine #comp/cli #comp/tests #perf
+#comp/cli #comp/engine #concept/history #scope/dx
 
 ---
 
 ## Script
 
-### Acts 1: 提交代码
+### Acts 1: 创建清理脚本并赋予执行权限
+
+这个操作将在项目根目录下创建 `clear_quipu_refs.sh` 文件，并使其可执行。
 
 ~~~~~act
-git_add .
+write_file
+~~~~~
+
+~~~~~path
+clear_quipu_refs.sh
+~~~~~
+
+~~~~~bash
+#!/bin/sh
+set -e
+
+# 检查当前目录是否为 Git 仓库
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "错误: 当前目录不是一个 Git 仓库。"
+    exit 1
+fi
+
+echo "🔍 正在查找所有 Quipu Git 引用 (refs/quipu/*)..."
+
+# 查找所有在 refs/quipu/ 命名空间下的引用
+QUIPU_REFS=$(git for-each-ref --format='%(refname)' refs/quipu/)
+
+if [ -z "$QUIPU_REFS" ]; then
+    echo "✅ 未找到任何 Quipu 引用，无需清理。"
+    exit 0
+fi
+
+echo "🗑️  即将删除以下 Quipu 引用:"
+echo "$QUIPU_REFS"
+echo ""
+
+# 使用 xargs 安全地删除所有找到的引用
+# -r: 如果输入为空，则不执行命令
+# -n 1: 每次处理一个参数
+echo "$QUIPU_REFS" | xargs -r -n 1 git update-ref -d
+
+echo "\n✅ 所有 Quipu Git 引用已成功删除。"
+echo "💡 你现在可以重新运行 'quipu history migrate'。 Git 的垃圾回收 (gc) 将在未来自动清理无用的对象。"
+
 ~~~~~
 
 ~~~~~act
-git_commit
+run_command
 ~~~~~
 
-~~~~~text
-feat(engine): Implement lazy loading for history reader
-
-This commit introduces a lazy loading mechanism for the Git Object
-history storage to significantly improve read performance, especially for
-commands like `ui` and `log`.
-
-Problem:
-The previous implementation eagerly loaded the full `content.md` for every
-history node, resulting in N * 3 `git cat-file` subprocess calls for
-N nodes. This caused noticeable delays (~2.7s for ~150 nodes).
-
-Solution:
-1.  **Interface Change**: Added a `get_node_content(node)` method to the
-    `HistoryReader` abstract base class.
-2.  **Lazy Loading**: The `GitObjectHistoryReader` now only loads the
-    `metadata.json` blob in `load_all_nodes()`. The full `content.md` is
-    fetched on-demand via the new `get_node_content` method. This reduces
-    initial IO calls by at least 1/3.
-3.  **UI Fix**: The TUI was parsing `node.content` to generate summaries. It
-    has been updated to prioritize the `node.summary` field, which is
-    already available from the metadata, thus avoiding the need to trigger
-    a lazy load and fixing a bug where summaries appeared empty.
-4.  **Test Adaptation**: Unit and integration tests have been updated to
-    reflect the new lazy loading API usage.
+~~~~~shell
+chmod +x clear_quipu_refs.sh
 ~~~~~
-
----
-
-### 下一步展望
-
-本次性能优化非常成功，它解决了 `git cat-file` 进程开销的核心瓶颈，使得 Git 对象存储在中小规模仓库（几百个节点）下的体验变得流畅。
-
-现在，我们的物理存储层 (L1) 已经健壮且高效，是时候构建逻辑索引层 (L2) 了。
-
-**核心建议：实施 SQLite 缓存层**
-
-这是 `QDPS` 规范蓝图中规划的最终形态，也是解决大规模历史（数千乃至上万节点）性能问题的根本方案。
-
-**工作原理：**
-1.  **索引 (Indexing)**: 在 `quipu run`, `quipu save` 等写操作成功后，`Engine` 将新节点的元数据（从 `metadata.json` 解析）写入到一个本地的 `.quipu/cache.sqlite` 文件中。
-2.  **查询 (Querying)**: `quipu log`, `quipu ui` 等读操作将**首先**查询 SQLite 数据库。由于数据库索引的存在，获取上千条记录的摘要、类型、时间戳等信息几乎是瞬时的 (毫秒级)。
-3.  **补水 (Rehydration)**: 如果 `cache.sqlite` 文件不存在，或者文件中的最新记录与 `refs/quipu/history` 的 HEAD 不一致，系统会自动触发“补水”流程。此时，它会使用我们刚刚优化过的 `GitObjectHistoryReader` 从 Git 历史中读取所有元数据，一次性重建整个 SQLite 缓存。
-
-**带来的优势：**
-*   **极致性能**: `ui` 和 `log` 的启动将与历史记录数量无关，实现真正的秒开。
-*   **高级查询**: 我们可以轻松实现复杂的查询，例如 `quipu log --type capture --summary-contains "refactor"`，这是单纯 `git log` 难以高效实现的。
-*   **数据健壮性**: 缓存文件是可随时丢弃和重建的，Git 依然是唯一的“真理之源”，完全符合我们的核心设计哲学。
-
-我们可以开始设计具体的实现方案，包括数据库 Schema 的最终确定，以及 `Engine` 中“读缓存-写缓存-补水”的逻辑流程。
