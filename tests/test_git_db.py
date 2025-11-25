@@ -216,3 +216,52 @@ class TestGitDBPlumbing:
         assert "A" == changes_dict.get("added.txt")
         assert "D" == changes_dict.get("deleted.txt")
         assert len(changes) == 3
+    def test_log_ref_basic(self, git_repo, db):
+        """测试 log_ref 能正确解析 Git 日志格式"""
+        # Create 3 commits
+        for i in range(3):
+            (git_repo / f"f{i}").touch()
+            subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+            subprocess.run(["git", "commit", "-m", f"commit {i}\n\nBody {i}"], cwd=git_repo, check=True)
+        
+        logs = db.log_ref("HEAD")
+        assert len(logs) == 3
+        assert logs[0]["body"].strip() == "commit 2\n\nBody 2"
+        assert logs[2]["body"].strip() == "commit 0\n\nBody 0"
+        assert "hash" in logs[0]
+        assert "tree" in logs[0]
+        assert "timestamp" in logs[0]
+
+    def test_log_ref_non_existent(self, db):
+        """测试读取不存在的引用返回空列表而不是报错"""
+        logs = db.log_ref("refs/heads/non-existent")
+        assert logs == []
+
+    def test_cat_file_types(self, git_repo, db):
+        """测试 cat_file 处理不同类型对象的能力"""
+        # 1. Prepare data: create file, add, and commit
+        (git_repo / "test_file").write_text("file content", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
+        subprocess.run(["git", "commit", "-m", "test commit"], cwd=git_repo, check=True)
+        
+        # 2. Get hashes using git command for verification source
+        head_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=git_repo).decode().strip()
+        tree_hash = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=git_repo).decode().strip()
+        # Get blob hash via ls-tree
+        ls_out = subprocess.check_output(["git", "ls-tree", "HEAD", "test_file"], cwd=git_repo).decode()
+        blob_hash = ls_out.split()[2]
+
+        # 3. Verify Blob reading
+        read_blob = db.cat_file(blob_hash, "blob")
+        assert read_blob == b"file content"
+        
+        # 4. Verify Commit reading
+        read_commit = db.cat_file(head_hash, "commit")
+        assert b"tree " in read_commit
+        assert b"test commit" in read_commit
+        
+        # 5. Verify Tree reading
+        read_tree = db.cat_file(tree_hash, "tree")
+        # cat-file -p tree_hash output format: "100644 blob <hash>\ttest_file"
+        assert b"test_file" in read_tree
+        assert blob_hash.encode() in read_tree

@@ -11,9 +11,105 @@ import importlib.metadata
 
 from quipu.core.git_db import GitDB
 from quipu.core.models import QuipuNode
-from quipu.core.storage import HistoryWriter
+from quipu.core.storage import HistoryReader, HistoryWriter
 
 logger = logging.getLogger(__name__)
+
+
+class GitObjectHistoryReader(HistoryReader):
+    """
+    一个从 Git 底层对象读取历史的实现。
+    """
+    def __init__(self, git_db: GitDB):
+        self.git_db = git_db
+
+    def _parse_output_tree_from_body(self, body: str) -> Optional[str]:
+        match = re.search(r"X-Quipu-Output-Tree:\s*([0-9a-f]{40})", body)
+        return match.group(1) if match else None
+
+    def load_all_nodes(self) -> List[QuipuNode]:
+        all_heads = self.git_db.get_all_ref_heads("refs/quipu/")
+        if not all_heads:
+            return []
+
+        log_entries = self.git_db.log_ref(all_heads)
+        if not log_entries:
+            return []
+
+        temp_nodes: Dict[str, QuipuNode] = {}
+        parent_map: Dict[str, str] = {}
+
+        for entry in log_entries:
+            commit_hash = entry["hash"]
+            # Git log can return same commit multiple times if it's an ancestor of multiple heads.
+            # We only need to process each commit once.
+            if commit_hash in temp_nodes:
+                continue
+
+            tree_hash = entry["tree"]
+            
+            try:
+                # 1. Read tree content to find metadata and content blobs
+                tree_content = self.git_db.cat_file(tree_hash, "tree").decode('utf-8')
+                blob_hashes = {}
+                for line in tree_content.splitlines():
+                    parts = line.split()
+                    if len(parts) == 4:
+                        # format: <mode> <type> <hash>\t<filename>
+                        blob_hashes[parts[3]] = parts[2]
+                
+                if "metadata.json" not in blob_hashes:
+                    logger.warning(f"Skipping commit {commit_hash[:7]}: metadata.json not found.")
+                    continue
+                
+                # 2. Read metadata and content
+                meta_bytes = self.git_db.cat_file(blob_hashes["metadata.json"])
+                meta_data = json.loads(meta_bytes)
+                
+                content_bytes = self.git_db.cat_file(blob_hashes.get("content.md", "")) if "content.md" in blob_hashes else b""
+                content = content_bytes.decode('utf-8', errors='ignore')
+
+                output_tree = self._parse_output_tree_from_body(entry["body"])
+                if not output_tree:
+                    logger.warning(f"Skipping commit {commit_hash[:7]}: X-Quipu-Output-Tree trailer not found.")
+                    continue
+
+                node = QuipuNode(
+                    # Placeholder, will be filled in the linking phase
+                    input_tree="", 
+                    output_tree=output_tree,
+                    timestamp=datetime.fromtimestamp(float(meta_data.get("exec", {}).get("start") or entry["timestamp"])),
+                    filename=Path(f".quipu/git_objects/{commit_hash}"),
+                    node_type=meta_data.get("type", "unknown"),
+                    content=content,
+                )
+                
+                temp_nodes[commit_hash] = node
+                # A commit can have multiple parents, we take the first one for our linear history model
+                parent_hash = entry["parent"].split(" ")[0] if entry["parent"] else None
+                if parent_hash:
+                    parent_map[commit_hash] = parent_hash
+
+            except Exception as e:
+                logger.error(f"Failed to load history node from commit {commit_hash[:7]}: {e}")
+
+        # Phase 2: Link nodes
+        for commit_hash, node in temp_nodes.items():
+            parent_commit_hash = parent_map.get(commit_hash)
+            if parent_commit_hash and parent_commit_hash in temp_nodes:
+                parent_node = temp_nodes[parent_commit_hash]
+                node.parent = parent_node
+                parent_node.children.append(node)
+                node.input_tree = parent_node.output_tree
+            else:
+                # Node is a root or parent is not a valid Quipu node
+                node.input_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904" # Assume genesis from empty tree
+
+        # Sort children by timestamp
+        for node in temp_nodes.values():
+            node.children.sort(key=lambda n: n.timestamp)
+            
+        return list(temp_nodes.values())
 
 
 class GitObjectHistoryWriter(HistoryWriter):

@@ -3,7 +3,7 @@ import subprocess
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Union
 from contextlib import contextmanager
 from quipu.core.exceptions import ExecutionError
 
@@ -206,3 +206,62 @@ class GitDB:
         self._run(["clean", "-df", "-e", ".quipu"])
         
         logger.info("✅ Workspace reset to target state.")
+
+    def cat_file(self, object_hash: str, object_type: str = "blob") -> bytes:
+        """读取 Git 对象的内容，返回字节流。"""
+        # 使用 -p (pretty print) for commits/trees, and no flag for blobs
+        cmd = ["cat-file"]
+        if object_type in ["commit", "tree"]:
+            cmd.append("-p")
+        else:
+            cmd.append(object_type)
+        cmd.append(object_hash)
+
+        result = self._run(cmd)
+        return result.stdout.encode('utf-8')
+
+    def get_all_ref_heads(self, prefix: str) -> List[str]:
+        """查找指定前缀下的所有 ref heads 并返回其 commit 哈希。"""
+        res = self._run(["for-each-ref", f"--format=%(objectname)", prefix], check=False)
+        if res.returncode != 0 or not res.stdout.strip():
+            return []
+        return res.stdout.strip().splitlines()
+
+    def log_ref(self, ref_names: Union[str, List[str]]) -> List[Dict[str, str]]:
+        """获取指定引用的日志，并解析为结构化数据列表。"""
+        # A unique delimiter that's unlikely to appear in commit messages
+        DELIMITER = "---QUIPU-LOG-ENTRY---"
+        # Format: H=hash, P=parent, T=tree, ct=commit_timestamp, B=body
+        log_format = f"%H%n%P%n%T%n%ct%n%B{DELIMITER}"
+        
+        if isinstance(ref_names, str):
+            refs_to_log = [ref_names]
+        else:
+            refs_to_log = ref_names
+
+        if not refs_to_log:
+            return []
+        
+        # Git log on multiple refs will automatically show the union of their histories without duplicates.
+        cmd = ["log", f"--format={log_format}"] + refs_to_log
+        res = self._run(cmd, check=False, log_error=False)
+
+        if res.returncode != 0:
+            return []
+
+        entries = res.stdout.strip().split(DELIMITER)
+        parsed_logs = []
+        for entry in entries:
+            if not entry.strip():
+                continue
+            
+            parts = entry.strip().split('\n', 4)
+            if len(parts) >= 4:
+                parsed_logs.append({
+                    "hash": parts[0],
+                    "parent": parts[1],
+                    "tree": parts[2],
+                    "timestamp": parts[3],
+                    "body": parts[4] if len(parts) > 4 else ""
+                })
+        return parsed_logs
