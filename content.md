@@ -4,6 +4,6 @@
 
 ### 📝 变更文件摘要:
 ```
-dev_setup.fish | 32 ++++++++++++++++++++++++++++++++
- 1 file changed, 32 insertions(+)
+packages/quipu-runtime/src/quipu/core/parser.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
