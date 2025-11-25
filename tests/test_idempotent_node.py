@@ -20,34 +20,24 @@ class TestIdempotentNode:
         
         history_dir = workspace / ".quipu" / "history"
         
-        # 此处 Engine 的实例化仅用于验证，非测试核心
-        reader = FileSystemHistoryReader(history_dir)
-        writer = FileSystemHistoryWriter(history_dir)
-        engine = Engine(workspace, reader=reader, writer=writer)
-
-        nodes_1 = list(history_dir.glob("*.md"))
-        assert len(nodes_1) == 1
+        # 使用正确的 Engine 设置来验证
+        from quipu.cli.factory import create_engine
+        engine1 = create_engine(workspace)
+        nodes1 = engine1.reader.load_all_nodes()
+        assert len(nodes1) >= 1
         
         # 3. 执行一个无变更的操作 (State A -> State A)
-        # 例如读取文件或运行 ls
         plan_2 = "~~~act\nread_file a.txt\n~~~"
         result = run_quipu(plan_2, workspace, yolo=True)
         
         assert result.success is True
         
         # 4. 验证是否生成了新节点
-        nodes_2 = list(history_dir.glob("*.md"))
-        assert len(nodes_2) == 2
+        engine2 = create_engine(workspace)
+        nodes2 = sorted(engine2.reader.load_all_nodes(), key=lambda n: n.timestamp)
+        assert len(nodes2) == len(nodes1) + 1
         
         # 验证新节点的 input == output
-        # 加载最新的节点
-        latest_file = max(nodes_2, key=lambda p: p.stat().st_mtime)
-        content = latest_file.read_text("utf-8")
-        
-        # 简单的字符串检查
-        import yaml
-        parts = content.split("---")
-        meta = yaml.safe_load(parts[1])
-        
-        assert meta["input_tree"] == meta["output_tree"]
-        assert meta["type"] == "plan"
+        latest_node = nodes2[-1]
+        assert latest_node.input_tree == latest_node.output_tree
+        assert latest_node.node_type == "plan"

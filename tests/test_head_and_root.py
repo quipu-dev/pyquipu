@@ -2,7 +2,7 @@ import pytest
 import os
 from pathlib import Path
 from quipu.core.state_machine import Engine
-from quipu.cli.controller import find_project_root
+from quipu.cli.factory import find_project_root
 from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
 
 class TestHeadTracking:

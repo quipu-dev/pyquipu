@@ -5,31 +5,17 @@ from pathlib import Path
 from typing import Optional
 
 from quipu.core.result import QuipuResult
-from quipu.core.state_machine import Engine
 from quipu.core.executor import Executor, ExecutionError
 from quipu.core.exceptions import ExecutionError as CoreExecutionError
 from quipu.core.parser import get_parser, detect_best_parser
 from quipu.core.plugin_loader import load_plugins
-from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
-from quipu.core.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
-from quipu.core.git_db import GitDB
 
-# 从配置导入，注意为了解耦，未来可能需要将 config 注入而不是直接导入
+# 从配置导入
 from .config import PROJECT_ROOT
+from .factory import find_project_root, create_engine
 from quipu.acts import register_core_acts
 
 logger = logging.getLogger(__name__)
-
-def find_project_root(start_path: Path) -> Optional[Path]:
-    """向上递归查找包含 .git 的目录作为项目根目录"""
-    try:
-        current = start_path.resolve()
-        for parent in [current] + list(current.parents):
-            if (parent / ".git").exists():
-                return parent
-    except Exception:
-        pass
-    return None
 
 def _load_extra_plugins(executor: Executor, work_dir: Path):
     """
@@ -80,51 +66,41 @@ def run_quipu(
     """
     try:
         # --- Phase 0: Root Canonicalization (根目录规范化) ---
-        # 无论用户从哪个子目录启动，都必须找到并使用唯一的项目根。
-        # 这是确保 Engine 和 Executor 上下文一致性的关键。
         project_root = find_project_root(work_dir)
         if not project_root:
-            # 如果不在 Git 仓库内，则使用原始 work_dir，但 Engine 初始化会失败。
-            # 这是预期的行为，因为 Axon 强依赖 Git。
+            # 如果不在 Git 仓库内，则使用原始 work_dir，但 Engine 初始化可能会失败。
             project_root = work_dir
         
         logger.info(f"Project Root resolved to: {project_root}")
 
         # --- Phase 1: Engine Initialization & Perception ---
-        # 注意：所有核心组件都必须使用规范化后的 project_root 初始化！
-        git_db = GitDB(project_root)
-        if git_db.has_quipu_ref():
-            logger.debug("Detected Git Object storage format.")
-            reader = GitObjectHistoryReader(git_db)
-            writer = GitObjectHistoryWriter(git_db)
-        elif (project_root / ".quipu" / "history").exists():
-            logger.debug("Detected File System storage format (legacy).")
-            history_dir = project_root / ".quipu" / "history"
-            reader = FileSystemHistoryReader(history_dir)
-            writer = FileSystemHistoryWriter(history_dir)
-        else:
-            logger.debug("No existing history found. Defaulting to Git Object storage format.")
-            reader = GitObjectHistoryReader(git_db)
-            writer = GitObjectHistoryWriter(git_db)
-
-        engine = Engine(project_root, reader=reader, writer=writer)
-        status = engine.align() # "CLEAN", "DIRTY", "ORPHAN"
-        
-        current_hash = engine.git_db.get_tree_hash()
+        # 使用工厂创建 Engine，这会自动处理存储后端检测和 align
+        engine = create_engine(work_dir)
         
         # --- Phase 2: Decision (Lazy Capture) ---
-        if status in ["DIRTY", "ORPHAN"]:
-            # 如果环境有漂移（或全新项目），先生成一个 Capture 节点
+        current_hash = engine.git_db.get_tree_hash()
+        
+        # 判断是否 Dirty/Orphan
+        # 1. 正常 Clean: current_node 存在且与当前 hash 一致
+        is_node_clean = (engine.current_node is not None) and (engine.current_node.output_tree == current_hash)
+        
+        # 2. 创世 Clean: 历史为空 且 当前是空树 (即没有任何文件被追踪)
+        EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        is_genesis_clean = (not engine.history_graph) and (current_hash == EMPTY_TREE_HASH)
+        
+        is_clean = is_node_clean or is_genesis_clean
+        
+        if not is_clean:
+            # 如果环境有漂移（或全新项目且非空），先生成一个 Capture 节点
             # 这确保了后续的 Plan 是基于一个已知的、干净的状态执行的
             engine.capture_drift(current_hash)
-            # 捕获后，status 逻辑上变为 CLEAN，current_node 更新为 CaptureNode
+            # 捕获后，is_clean 逻辑上变为 True
         
         # 记录执行前的状态，作为 Plan 的 input_tree
         if engine.current_node:
             input_tree_hash = engine.current_node.output_tree
         else:
-            # 此处处理创世状态：当 align() 返回 CLEAN 但 current_node 为 None 时。
-            # 输入哈希就是当前的（空的）哈希。
+            # 此处处理极端的创世状态（理论上 capture_drift 应该已经处理了所有情况，除非 capture 失败）
             input_tree_hash = current_hash
 
         # --- Phase 3: Action (Execution) ---
@@ -163,7 +139,6 @@ def run_quipu(
         
         # 如果状态发生了变化，或者我们想记录即使无变化的 Plan（通常记录一下比较好）
         # 这里我们调用 Engine 的 create_plan_node 方法
-        # 注意：该方法需要在 Engine 类中实现
         engine.create_plan_node(
             input_tree=input_tree_hash,
             output_tree=output_tree_hash,

@@ -44,6 +44,7 @@ class TestController:
 
     def test_run_quipu_success(self, workspace):
         """测试正常执行流程"""
+        from quipu.cli.factory import create_engine
         plan = """
 ~~~act
 write_file
@@ -61,10 +62,10 @@ Hello Quipu
         assert result.exit_code == 0
         assert (workspace / "hello.txt").exists()
         
-        # 验证 Engine 是否生成了 Plan 节点
-        history_dir = workspace / ".quipu" / "history"
-        assert history_dir.exists()
-        assert len(list(history_dir.glob("*.md"))) >= 1
+        # 验证 Engine 是否生成了 Plan 节点 (后端无关)
+        engine = create_engine(workspace)
+        nodes = engine.reader.load_all_nodes()
+        assert len(nodes) >= 1
 
     def test_run_quipu_execution_error(self, workspace):
         """测试执行期间的预期错误 (如文件不存在)"""
@@ -162,26 +163,29 @@ class TestCheckoutCLI:
         Create a workspace with two distinct, non-overlapping history nodes.
         State A contains only a.txt.
         State B contains only b.txt.
+        This fixture is backend-agnostic.
         """
+        from quipu.cli.factory import create_engine
+
         # State A: Create a.txt
         plan_a = "~~~act\nwrite_file a.txt\n~~~\n~~~content\nState A\n~~~"
         run_quipu(content=plan_a, work_dir=workspace, yolo=True)
         
-        # Find the hash for State A. It's the latest one at this point.
-        history_nodes_a = list(sorted((workspace / ".quipu" / "history").glob("*.md"), key=lambda p: p.stat().st_mtime))
-        hash_a = history_nodes_a[-1].name.split("_")[1]
+        engine_after_a = create_engine(workspace)
+        nodes_after_a = sorted(engine_after_a.reader.load_all_nodes(), key=lambda n: n.timestamp)
+        node_a = nodes_after_a[-1]
+        hash_a = node_a.output_tree
 
         # Manually create State B by removing a.txt and adding b.txt
-        # This ensures State B is distinct from State A, not an addition.
         (workspace / "a.txt").unlink()
         plan_b = "~~~act\nwrite_file b.txt\n~~~\n~~~content\nState B\n~~~"
         run_quipu(content=plan_b, work_dir=workspace, yolo=True)
 
-        # Find the hash for State B. It's the newest node now.
-        history_nodes_b = list(sorted((workspace / ".quipu" / "history").glob("*.md"), key=lambda p: p.stat().st_mtime))
-        hash_b = history_nodes_b[-1].name.split("_")[1]
+        engine_after_b = create_engine(workspace)
+        nodes_after_b = sorted(engine_after_b.reader.load_all_nodes(), key=lambda n: n.timestamp)
+        node_b = nodes_after_b[-1]
+        hash_b = node_b.output_tree
         
-        # The workspace is now physically in State B before the test starts.
         return workspace, hash_a, hash_b
 
     def test_cli_checkout_success(self, populated_workspace):
@@ -204,20 +208,24 @@ class TestCheckoutCLI:
 
     def test_cli_checkout_with_safety_capture(self, populated_workspace):
         """Test that a dirty state is captured before checkout."""
+        from quipu.cli.factory import create_engine
         workspace, hash_a, hash_b = populated_workspace
         
         # Make the workspace dirty
         (workspace / "c_dirty.txt").write_text("uncommitted change")
         
-        history_dir = workspace / ".quipu" / "history"
-        num_nodes_before = len(list(history_dir.glob("*.md")))
+        # Get node count via the storage-agnostic reader interface
+        engine_before = create_engine(workspace)
+        num_nodes_before = len(engine_before.reader.load_all_nodes())
 
         result = runner.invoke(app, ["checkout", hash_a[:8], "--work-dir", str(workspace), "--force"])
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.stderr
         assert "⚠️  检测到当前工作区存在未记录的变更" in result.stderr
         
-        num_nodes_after = len(list(history_dir.glob("*.md")))
+        # Get node count again after the operation
+        engine_after = create_engine(workspace)
+        num_nodes_after = len(engine_after.reader.load_all_nodes())
         assert num_nodes_after == num_nodes_before + 1, "A new capture node should have been created"
 
         # Check final state is correct

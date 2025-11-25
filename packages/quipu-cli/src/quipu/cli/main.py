@@ -6,19 +6,18 @@ from pathlib import Path
 from typing import Annotated, Optional, Dict
 
 from .logger_config import setup_logging
-from .controller import run_quipu, find_project_root
+from .controller import run_quipu
 from .config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
+from .factory import create_engine, resolve_root, find_project_root # 导入工厂方法
 from quipu.core.plugin_loader import load_plugins
 from quipu.core.executor import Executor
 from quipu.core.state_machine import Engine
-from quipu.core.history import load_all_history_nodes
 from quipu.core.models import QuipuNode
-from quipu.core.file_system_storage import FileSystemHistoryReader, FileSystemHistoryWriter
-from quipu.core.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
 from quipu.core.git_db import GitDB
 import inspect
 import subprocess
 from quipu.core.config import ConfigManager
+from quipu.core.migration import HistoryMigrator
 
 # 注意：不要在模块级别直接调用 setup_logging()，
 # 否则会导致 CliRunner 测试中的 I/O 流过早绑定/关闭问题。
@@ -49,44 +48,6 @@ def _prompt_for_confirmation(message: str, default: bool = False) -> bool:
     
     # 对于回车或其他键，返回默认值
     return default
-
-def _resolve_root(work_dir: Path) -> Path:
-    """辅助函数：解析项目根目录，如果未找到则回退到 work_dir"""
-    root = find_project_root(work_dir)
-    return root if root else work_dir
-
-def _setup_engine(work_dir: Path) -> Engine:
-    """
-    辅助函数：实例化完整的 Engine 堆栈。
-    自动检测存储格式 (Git Object vs. File System) 并加载相应后端。
-    """
-    real_root = _resolve_root(work_dir)
-    
-    # 1. 创建 GitDB 实例用于检测和注入
-    git_db = GitDB(real_root)
-    
-    # 2. 检测存储格式并选择策略
-    # 优先检测新格式 (Git refs)
-    if git_db.has_quipu_ref():
-        logger.debug("Detected Git Object storage format.")
-        reader = GitObjectHistoryReader(git_db)
-        writer = GitObjectHistoryWriter(git_db)
-    # 回退检测旧格式 (FS directory)
-    elif (real_root / ".quipu" / "history").exists():
-        logger.debug("Detected File System storage format (legacy).")
-        history_dir = real_root / ".quipu" / "history"
-        reader = FileSystemHistoryReader(history_dir)
-        writer = FileSystemHistoryWriter(history_dir)
-    # 默认在新项目中使用新格式
-    else:
-        logger.debug("No existing history found. Defaulting to Git Object storage format.")
-        reader = GitObjectHistoryReader(git_db)
-        writer = GitObjectHistoryWriter(git_db)
-
-    # 3. 注入依赖并实例化 Engine
-    engine = Engine(real_root, reader=reader, writer=writer)
-    engine.align()  # 对齐以加载历史图谱
-    return engine
 
 # --- 导航命令辅助函数 ---
 def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
@@ -136,7 +97,7 @@ def ui(
         
     setup_logging()
     
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     all_nodes = engine.reader.load_all_nodes()
     
     if not all_nodes:
@@ -177,9 +138,11 @@ def save(
     捕获当前工作区的状态，创建一个“微提交”快照。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
-    # align 已经在 _setup_engine 中调用过了
-    status = "DIRTY" if engine.current_node is None else "CLEAN" # 简化状态判断
+    engine = create_engine(work_dir)
+    # create_engine 内部已经调用了 align
+    
+    # 判断是否 clean
+    status = "DIRTY"
     if engine.current_node:
         current_tree_hash = engine.git_db.get_tree_hash()
         if engine.current_node.output_tree == current_tree_hash:
@@ -217,7 +180,7 @@ def sync(
     与远程仓库同步 Axon 历史图谱。
     """
     setup_logging()
-    work_dir = _resolve_root(work_dir) # Sync needs root
+    work_dir = resolve_root(work_dir) # Sync needs root
     config = ConfigManager(work_dir)
     if remote is None:
         remote = config.get("sync.remote_name", "origin")
@@ -266,7 +229,7 @@ def discard(
     丢弃工作区所有未记录的变更，恢复到上一个干净状态。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     if not graph:
         typer.secho("❌ 错误: 找不到任何历史记录，无法确定要恢复到哪个状态。", fg=typer.colors.RED, err=True)
@@ -327,7 +290,7 @@ def checkout(
     将工作区恢复到指定的历史节点状态。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     
     matches = [node for sha, node in graph.items() if sha.startswith(hash_prefix)]
@@ -381,7 +344,7 @@ def undo(
     [结构化导航] 向上移动到当前状态的父节点。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
@@ -409,7 +372,7 @@ def redo(
     [结构化导航] 向下移动到子节点 (默认最新)。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
@@ -438,7 +401,7 @@ def prev(
     [结构化导航] 切换到上一个兄弟分支。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
@@ -467,7 +430,7 @@ def next(
     [结构化导航] 切换到下一个兄弟分支。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
     current_node = _find_current_node(engine, graph)
     if not current_node: ctx.exit(1)
@@ -498,7 +461,7 @@ def back(
     [时序性导航] 后退：回到上一次访问的历史状态。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     
     try:
         result_hash = engine.back()
@@ -522,7 +485,7 @@ def forward(
     [时序性导航] 前进：撤销后退操作。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     
     try:
         result_hash = engine.forward()
@@ -552,7 +515,7 @@ def log(
     显示 Axon 历史图谱日志。
     """
     setup_logging()
-    engine = _setup_engine(work_dir)
+    engine = create_engine(work_dir)
     graph = engine.history_graph
 
     if not graph:
@@ -629,6 +592,55 @@ def run_command(
         typer.secho(f"\n{result.message}", fg=color, err=True)
     if result.data: typer.echo(result.data)
     ctx.exit(result.exit_code)
+
+# --- History Management Commands ---
+history_app = typer.Typer(help="管理 Axon 历史记录的高级命令。")
+app.add_typer(history_app, name="history")
+
+@history_app.command("migrate")
+def migrate_history(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w",
+            help="操作执行的根目录（工作区）",
+            file_okay=False,
+            dir_okay=True,
+            resolve_path=True
+        )
+    ] = DEFAULT_WORK_DIR,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="仅模拟迁移过程，不写入 Git。")
+    ] = False,
+):
+    """
+    将旧版文件系统历史记录迁移到 Git 对象存储格式 (QDPS v1.0)。
+    """
+    setup_logging()
+    root = resolve_root(work_dir)
+    
+    try:
+        git_db = GitDB(root)
+        migrator = HistoryMigrator(root, git_db)
+        
+        count = migrator.migrate(dry_run=dry_run)
+        
+        if count > 0:
+            if dry_run:
+                typer.secho(f"\n✅ [Dry Run] 模拟完成，将迁移 {count} 个节点。", fg=typer.colors.GREEN)
+            else:
+                typer.secho(f"\n✅ 迁移成功！已转换 {count} 个历史节点。", fg=typer.colors.GREEN)
+                typer.secho("💡 你现在可以使用 'quipu log' 查看新格式的历史记录。", fg=typer.colors.BLUE)
+                typer.secho("⚠️  建议保留 .quipu/history 目录一段时间作为备份，确认无误后再删除。", fg=typer.colors.YELLOW)
+        else:
+            typer.secho("🤔 未发现需要迁移的节点，或迁移未执行。", fg=typer.colors.YELLOW)
+            
+    except Exception as e:
+        typer.secho(f"❌ 迁移失败: {e}", fg=typer.colors.RED)
+        logger.exception(e)
+        ctx.exit(1)
 
 if __name__ == "__main__":
     app()

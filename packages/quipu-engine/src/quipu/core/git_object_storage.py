@@ -176,7 +176,9 @@ class GitObjectHistoryWriter(HistoryWriter):
             if match:
                 return match.group(1).strip()
             
-            return "Plan executed"
+            # Fallback to the first non-empty line
+            first_line = next((line.strip() for line in content.strip().splitlines() if line.strip()), "Plan executed")
+            return (first_line[:75] + '...') if len(first_line) > 75 else first_line
 
         elif node_type == "capture":
             user_message = (kwargs.get("message") or "").strip()

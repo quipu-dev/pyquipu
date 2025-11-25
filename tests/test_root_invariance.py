@@ -70,13 +70,14 @@ class TestRootInvariance:
         assert expected_file.exists(), "文件应该在项目根目录创建，而不是子目录"
         assert expected_file.read_text("utf-8") == "Success from subdir"
 
-        # 2. 验证 Engine 状态记录的正确性
-        history_dir = project_root / ".quipu" / "history"
-        assert history_dir.exists(), "历史目录应在项目根目录创建"
+        # 2. 验证 Engine 状态记录的正确性 (后端无关)
+        from quipu.cli.factory import create_engine
+        engine = create_engine(project_root)
+        nodes = engine.reader.load_all_nodes()
         
-        history_files = list(history_dir.glob("*.md"))
-        assert len(history_files) >= 1, "应至少生成一个历史节点"
+        # 应该有一个 drift capture 节点和一个 plan 节点
+        assert len(nodes) >= 2, "应至少生成捕获节点和计划节点"
         
-        # 验证生成的 Plan Node 内容正确，证明 Engine 在正确的上下文中计算了 Tree Hash
-        # (简单验证，更复杂的 hash 比较需要固定文件时间戳等，这里验证文件存在即可)
-        assert any("plan" in f.read_text("utf-8") for f in history_files)
+        plan_nodes = [n for n in nodes if n.node_type == 'plan']
+        assert len(plan_nodes) >= 1, "应至少有一个 plan 节点"
+        assert "Success from subdir" in plan_nodes[-1].content

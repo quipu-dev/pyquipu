@@ -56,6 +56,7 @@ class Engine:
     def __init__(self, root_dir: Path, reader: HistoryReader, writer: HistoryWriter):
         self.root_dir = root_dir.resolve()
         self.quipu_dir = self.root_dir / ".quipu"
+        self.quipu_dir.mkdir(exist_ok=True)  # 确保 .quipu 目录存在
         self.history_dir = self.quipu_dir / "history"
         self.head_file = self.quipu_dir / "HEAD"
 

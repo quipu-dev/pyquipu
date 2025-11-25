@@ -8,8 +8,9 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# 放宽对 input_hash 的校验，以兼容损坏或非标准的历史文件名
 FILENAME_PATTERN = re.compile(
-    r"([0-9a-f]{40}|_{40})_([0-9a-f]{40})_(\d{14})\.md"
+    r"(.+?)_([0-9a-f]{40})_(\d{14})\.md"
 )
 
 def _parse_frontmatter(text: str) -> tuple[Dict, str]:
@@ -62,7 +63,10 @@ def load_all_history_nodes(history_dir: Path) -> List[QuipuNode]:
                         if clean_line:
                             temp_summary = clean_line
                             break
-                summary = temp_summary or "Plan executed"
+                summary = temp_summary
+                if not summary:
+                    # Fallback: find first non-empty line
+                    summary = next((line.strip() for line in body_content.strip().split('\n') if line.strip()), "Plan executed")
             elif node_type == 'capture':
                 # Prioritize user message from the body
                 match = re.search(r"### 💬 备注:\n(.*?)\n\n", body_content, re.DOTALL)
