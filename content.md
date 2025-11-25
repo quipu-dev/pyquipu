@@ -1,177 +1,119 @@
-# feat-core: 实现持久化本地忽略规则以保护环境文件
+# test: 为持久化忽略规则同步逻辑添加单元测试
 
 ## 目标
-防止 `quipu checkout` 和 `quipu discard` 等命令删除用户本地的、未被版本控制的开发环境文件 (例如 `.envs/`, `.idea/`, `o.md`)，即使 `.gitignore` 文件在不同历史状态间发生变化。
+为 `Engine` 类中新增的 `_sync_persistent_ignores` 方法编写一套完整的单元测试用例。这将确保该功能在各种场景下都能正确地创建、更新和维护 `.git/info/exclude` 文件，同时不会破坏用户已有的自定义规则。
 
 ## 基本原理
-当前问题在于，当 `checkout` 操作还原了一个不包含特定忽略规则的旧版 `.gitignore` 文件后，`git clean` 就会删除那些之前被忽略但现在未被忽略的文件。
+测试将在一个临时的、隔离的 Git 仓库中进行。我们将通过 `pytest` 的 fixture 来准备这个环境。测试用例将覆盖以下核心场景：
+1.  **首次创建**: 当 `.git/info/exclude` 文件不存在时，能够根据配置正确创建文件和 Quipu 管理块。
+2.  **内容追加**: 当文件已存在但没有 Quipu 管理块时，能够将 Quipu 规则追加到文件末尾，而不影响原有内容。
+3.  **内容更新**: 当文件中已存在 Quipu 管理块时，能够用新配置更新该块，同时保持块外内容不变。
+4.  **默认配置**: 当 `.quipu/config.yml` 中没有相关配置时，能够正确应用 `DEFAULTS` 中的默认忽略规则。
 
-解决方案是利用 Git 的一个标准功能：`.git/info/exclude` 文件。这个文件中的忽略规则只对本地仓库生效，不会被提交，因此它独立于任何历史状态。它为我们提供了一个完美的“本地配置”与“项目状态”的分离层。
-
-本计划将实现以下自动化流程：
-1.  在 `.quipu/config.yml` 中引入一个新的配置项 `sync.persistent_ignores`，允许用户定义他们希望在所有历史状态下都保持忽略的文件和目录。
-2.  `quipu-engine` 的 `Engine` 在初始化时，会自动读取此配置。
-3.  `Engine` 会将这些规则写入到 `.git/info/exclude` 文件的一个由 Quipu 管理的特定块中。
-4.  这样，当 `git clean` 运行时，它会同时参考项目当前的 `.gitignore` 和持久化的 `.git/info/exclude` 规则，从而保护用户的本地环境文件不被误删。
+通过覆盖这些场景，我们可以确保该功能的健壮性和可靠性。
 
 ## 标签
-#feat #core #git #config
+#test #core #config
 
 ---
 
 ## Script
 
-### Act 1: 在 `quipu-engine` 中定义配置项与默认值
+### Act 1: 在 `test_engine.py` 中添加新的测试用例
 
-我们将向 `ConfigManager` 添加一组新的默认配置，用于定义持久化忽略规则。用户可以在他们自己的 `.quipu/config.yml` 文件中覆盖或扩展这些规则。
-
-~~~~~act
-replace packages/quipu-engine/src/quipu/core/config.py
-~~~~~
-
-~~~~~python
-# 默认配置，为所有可能的设置提供一个基础
-DEFAULTS = {
-    "sync": {
-        "remote_name": "origin"
-    },
-    "list_files": {
-        "ignore_patterns": [".git", "__pycache__", ".idea", ".vscode", "node_modules", ".quipu"]
-    }
-}
-~~~~~
-
-~~~~~python
-# 默认配置，为所有可能的设置提供一个基础
-DEFAULTS = {
-    "sync": {
-        "remote_name": "origin",
-        "persistent_ignores": [
-            ".idea",
-            ".vscode",
-            ".envs",
-            "__pycache__",
-            "node_modules",
-            "o.md"
-        ]
-    },
-    "list_files": {
-        "ignore_patterns": [".git", "__pycache__", ".idea", ".vscode", "node_modules", ".quipu"]
-    }
-}
-~~~~~
-
-### Act 2: 在 `Engine` 初始化时自动同步忽略规则
-
-我们将修改 `Engine` 类，使其在初始化时自动执行将配置同步到 `.git/info/exclude` 的逻辑。这确保了在执行任何操作之前，本地环境都是受保护的。
+我们将向 `tests/test_engine.py` 文件追加一个新的测试类 `TestPersistentIgnores`，其中包含所有相关的测试用例。
 
 ~~~~~act
-replace packages/quipu-engine/src/quipu/core/state_machine.py
+append_file tests/test_engine.py
 ~~~~~
 
 ~~~~~python
-import logging
-from pathlib import Path
-from typing import Dict, Optional
-import yaml
-from datetime import datetime
 
-from .git_db import GitDB
-from .history import load_history_graph
-from quipu.core.models import QuipuNode
+class TestPersistentIgnores:
+    def test_sync_creates_file_if_not_exists(self, engine_setup):
+        """测试：如果 exclude 文件不存在，应能根据默认配置创建它。"""
+        engine, repo_path = engine_setup
+        
+        # 重新初始化 Engine 以触发 _sync... 逻辑
+        # fixture 里的 engine 是在没有任何 quipu 配置的情况下初始化的
+        # 这里我们确保 .quipu 目录存在，并再次初始化
+        (repo_path / ".quipu").mkdir()
+        
+        # 触发器
+        engine = Engine(repo_path)
+        
+        exclude_file = repo_path / ".git" / "info" / "exclude"
+        assert exclude_file.exists()
+        content = exclude_file.read_text("utf-8")
+        
+        assert "# --- Managed by Quipu ---" in content
+        assert ".envs" in content  # 检查默认规则之一
 
-logger = logging.getLogger(__name__)
+    def test_sync_appends_to_existing_file(self, engine_setup):
+        """测试：如果 exclude 文件已存在，应追加 Quipu 块而不是覆盖。"""
+        engine, repo_path = engine_setup
+        
+        exclude_file = repo_path / ".git" / "info" / "exclude"
+        exclude_file.parent.mkdir(exist_ok=True)
+        user_content = "# My personal ignores\n*.log\n"
+        exclude_file.write_text(user_content)
+        
+        # 触发器
+        engine = Engine(repo_path)
+        
+        content = exclude_file.read_text("utf-8")
+        assert user_content in content
+        assert "# --- Managed by Quipu ---" in content
+        assert "o.md" in content
 
-class Engine:
-    """
-    Axon 状态引擎。
-    负责协调 Git 物理状态和 Axon 逻辑图谱。
-    """
-    def __init__(self, root_dir: Path):
-        self.root_dir = root_dir.resolve()
-~~~~~
+    def test_sync_updates_existing_block(self, engine_setup):
+        """测试：如果 Quipu 块已存在，应更新其内容。"""
+        engine, repo_path = engine_setup
+        
+        exclude_file = repo_path / ".git" / "info" / "exclude"
+        exclude_file.parent.mkdir(exist_ok=True)
+        
+        old_block = (
+            "# --- Managed by Quipu ---\n"
+            "old_rule/\n"
+            "# --- End Managed by Quipu ---"
+        )
+        user_content = f"# My ignores\n{old_block}\n# More ignores"
+        exclude_file.write_text(user_content)
+        
+        # 触发器
+        engine = Engine(repo_path)
+        
+        content = exclude_file.read_text("utf-8")
+        assert "old_rule/" not in content
+        assert ".vscode" in content  # 检查默认规则之一
+        assert "# My ignores" in content
+        assert "# More ignores" in content
 
-~~~~~python
-import logging
-from pathlib import Path
-from typing import Dict, Optional
-import yaml
-import re
-from datetime import datetime
-
-from .git_db import GitDB
-from .history import load_history_graph
-from .config import ConfigManager
-from quipu.core.models import QuipuNode
-
-logger = logging.getLogger(__name__)
-
-class Engine:
-    """
-    Axon 状态引擎。
-    负责协调 Git 物理状态和 Axon 逻辑图谱。
-    """
-
-    def _sync_persistent_ignores(self):
-        """将 config.yml 中的持久化忽略规则同步到 .git/info/exclude。"""
-        try:
-            config = ConfigManager(self.root_dir)
-            patterns = config.get("sync.persistent_ignores", [])
-            if not patterns:
-                return
-
-            exclude_file = self.root_dir / ".git" / "info" / "exclude"
-            exclude_file.parent.mkdir(exist_ok=True)
-
-            header = "# --- Managed by Quipu ---"
-            footer = "# --- End Managed by Quipu ---"
-            
-            content = ""
-            if exclude_file.exists():
-                content = exclude_file.read_text("utf-8")
-
-            # 使用 re.DOTALL (s) 标志来匹配包括换行符在内的任何字符
-            managed_block_pattern = re.compile(rf"{re.escape(header)}.*{re.escape(footer)}", re.DOTALL)
-            
-            new_block = f"{header}\n" + "\n".join(patterns) + f"\n{footer}"
-
-            new_content, count = managed_block_pattern.subn(new_block, content)
-            if count == 0:
-                # 如果没有找到匹配项，则在末尾追加
-                if content and not content.endswith("\n"):
-                    content += "\n"
-                new_content = content + "\n" + new_block + "\n"
-            
-            if new_content != content:
-                exclude_file.write_text(new_content, "utf-8")
-                logger.debug("✅ .git/info/exclude 已更新。")
-
-        except Exception as e:
-            logger.warning(f"⚠️  无法同步持久化忽略规则: {e}")
-
-    def __init__(self, root_dir: Path):
-        self.root_dir = root_dir.resolve()
-~~~~~
-
-### Act 3: 在 `Engine` 构造函数中调用同步方法
-
-现在，我们将确保在 `Engine` 实例化时调用这个新的同步方法。
-
-~~~~~act
-replace packages/quipu-engine/src/quipu/core/state_machine.py
-~~~~~
-
-~~~~~python
-        self.git_db = GitDB(self.root_dir)
-        self.history_graph: Dict[str, QuipuNode] = {}
-        self.current_node: Optional[QuipuNode] = None
-~~~~~
-
-~~~~~python
-        self.git_db = GitDB(self.root_dir)
-        self.history_graph: Dict[str, QuipuNode] = {}
-        self.current_node: Optional[QuipuNode] = None
-
-        # 自动同步本地配置，如持久化忽略规则
-        self._sync_persistent_ignores()
+    def test_sync_uses_user_config(self, engine_setup):
+        """测试：应优先使用 .quipu/config.yml 中的用户配置。"""
+        import yaml
+        engine, repo_path = engine_setup
+        
+        # 创建用户配置文件
+        config_dir = repo_path / ".quipu"
+        config_dir.mkdir()
+        config_file = config_dir / "config.yml"
+        
+        user_ignores = {
+            "sync": {
+                "persistent_ignores": ["custom_dir/", "*.tmp"]
+            }
+        }
+        config_file.write_text(yaml.dump(user_ignores), "utf-8")
+        
+        # 触发器
+        engine = Engine(repo_path)
+        
+        exclude_file = repo_path / ".git" / "info" / "exclude"
+        content = exclude_file.read_text("utf-8")
+        
+        assert "custom_dir/" in content
+        assert "*.tmp" in content
+        assert ".envs" not in content # 默认值应被覆盖
 ~~~~~
