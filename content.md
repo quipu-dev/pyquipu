@@ -4,6 +4,6 @@
 
 ### 📝 变更文件摘要:
 ```
-tests/test_branching.py | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+.../quipu-interfaces/src/quipu/core/storage.py     | 25 +++++++++++-----------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
 ```
