@@ -35,9 +35,10 @@ def _load_extra_plugins(executor: Executor, work_dir: Path):
         plugin_sources.append(("🔧 Env", Path(env_path)))
     
     # 3. Project Root (Highest priority)
-    project_root = find_project_root(work_dir)
-    if project_root:
-        proj_acts = project_root / ".quipu" / "acts"
+    # 仅在此处使用 find_project_root，且仅用于加载插件
+    project_root_for_plugins = find_project_root(work_dir)
+    if project_root_for_plugins:
+        proj_acts = project_root_for_plugins / ".quipu" / "acts"
         plugin_sources.append(("📦 Project", proj_acts))
 
     seen_paths = set()
@@ -65,17 +66,11 @@ def run_quipu(
     任何异常都会被捕获并转化为失败的 QuipuResult。
     """
     try:
-        # --- Phase 0: Root Canonicalization (根目录规范化) ---
-        project_root = find_project_root(work_dir)
-        if not project_root:
-            # 如果不在 Git 仓库内，则使用原始 work_dir，但 Engine 初始化可能会失败。
-            project_root = work_dir
-        
-        logger.info(f"Project Root resolved to: {project_root}")
-
         # --- Phase 1: Engine Initialization & Perception ---
-        # 使用工厂创建 Engine，这会自动处理存储后端检测和 align
+        # 使用工厂创建 Engine，严格在 work_dir 中操作
         engine = create_engine(work_dir)
+        
+        logger.info(f"Operation boundary set to: {work_dir}")
         
         # --- Phase 2: Decision (Lazy Capture) ---
         current_hash = engine.git_db.get_tree_hash()
@@ -123,11 +118,12 @@ def run_quipu(
             )
 
         # 3.2 Executor Setup
-        executor = Executor(root_dir=project_root, yolo=yolo) # 使用 project_root
+        # Executor 的根目录也严格为 work_dir
+        executor = Executor(root_dir=work_dir, yolo=yolo)
         
         # 加载插件
         register_core_acts(executor) # 内置 (从 runtime 包加载)
-        _load_extra_plugins(executor, project_root)       # 外部 (也基于 project_root)
+        _load_extra_plugins(executor, work_dir) # 外部插件加载逻辑现在封装在辅助函数中
 
         # 3.3 Execute
         executor.execute(statements)

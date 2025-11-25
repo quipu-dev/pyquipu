@@ -8,7 +8,7 @@ from typing import Annotated, Optional, Dict
 from .logger_config import setup_logging
 from .controller import run_quipu
 from .config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
-from .factory import create_engine, resolve_root, find_project_root # 导入工厂方法
+from .factory import create_engine, find_project_root # 导入工厂方法
 from quipu.core.plugin_loader import load_plugins
 from quipu.core.executor import Executor
 from quipu.core.state_machine import Engine
@@ -213,14 +213,17 @@ def sync(
     与远程仓库同步 Axon 历史图谱。
     """
     setup_logging()
-    work_dir = resolve_root(work_dir) # Sync needs root
-    config = ConfigManager(work_dir)
+    # Sync 必须在 git 项目根目录执行
+    sync_dir = find_project_root(work_dir) or work_dir
+    config = ConfigManager(sync_dir)
+    
     if remote is None:
         remote = config.get("sync.remote_name", "origin")
     refspec = "refs/quipu/history:refs/quipu/history"
+    
     def run_git_command(args: list[str]):
         try:
-            result = subprocess.run(["git"] + args, cwd=work_dir, capture_output=True, text=True, check=True)
+            result = subprocess.run(["git"] + args, cwd=sync_dir, capture_output=True, text=True, check=True)
             if result.stdout: typer.echo(result.stdout, err=True)
             if result.stderr: typer.echo(result.stderr, err=True)
         except subprocess.CalledProcessError as e:
@@ -230,12 +233,14 @@ def sync(
         except FileNotFoundError:
             typer.secho("❌ 错误: 未找到 'git' 命令。", fg=typer.colors.RED, err=True)
             ctx.exit(1)
+            
     typer.secho(f"⬇️  正在从 '{remote}' 拉取 Axon 历史...", fg=typer.colors.BLUE, err=True)
     run_git_command(["fetch", remote, refspec])
     typer.secho(f"⬆️  正在向 '{remote}' 推送 Axon 历史...", fg=typer.colors.BLUE, err=True)
     run_git_command(["push", remote, refspec])
     typer.secho("\n✅ Axon 历史同步完成。", fg=typer.colors.GREEN, err=True)
-    config_get_res = subprocess.run(["git", "config", "--get", f"remote.{remote}.fetch"], cwd=work_dir, capture_output=True, text=True)
+    
+    config_get_res = subprocess.run(["git", "config", "--get", f"remote.{remote}.fetch"], cwd=sync_dir, capture_output=True, text=True)
     if refspec not in config_get_res.stdout:
         typer.secho("\n💡 提示: 为了让 `git pull` 自动同步 Axon 历史，请执行以下命令:", fg=typer.colors.YELLOW, err=True)
         typer.echo(f'  git config --add remote.{remote}.fetch "{refspec}"')
