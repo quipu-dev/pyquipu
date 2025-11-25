@@ -19,7 +19,17 @@ class QuipuUiApp(App):
         Binding("h", "toggle_hidden", "显隐非关联分支"),
         Binding("up", "cursor_up", "上移", show=False),
         Binding("down", "cursor_down", "下移", show=False),
+        Binding("k", "move_up", "上移", show=False),
+        Binding("j", "move_down", "下移", show=False),
     ]
+
+    def action_move_up(self) -> None:
+        """在 DataTable 中上移光标。"""
+        self.query_one(DataTable).action_cursor_up()
+
+    def action_move_down(self) -> None:
+        """在 DataTable 中下移光标。"""
+        self.query_one(DataTable).action_cursor_down()
 
     def __init__(self, nodes: List[QuipuNode], current_hash: Optional[str] = None):
         super().__init__()
