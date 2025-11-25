@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "refactor: 清理旧版文件系统存储与迁移代码", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764076159.2387931, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 更新 test_navigation.py 以使用 GitObjectStorage", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764076236.3802655, "duration_ms": 0}}
