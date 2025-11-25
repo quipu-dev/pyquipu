@@ -1,84 +1,78 @@
-# fix 完善 GitDB 测试
+# test 为读取器补充 F-O-R-K 历史场景测试
 
 ## 用户需求
-完善 `tests/test_git_db.py` 中的 `test_cat_file_types` 测试用例，使其能够真正验证 Tree 对象的读取功能，而不是简单地 `pass`。
+经过检查，现有测试覆盖了线性历史和数据损坏的场景，但遗漏了对 **分叉 (Forked) 历史** 的验证。在协作场景中，历史记录可能会出现分叉，`GitObjectHistoryReader` 必须能够正确地将它们全部加载并链接到共同的父节点上。
 
 ## 目标
-更新测试代码，确保 Git 底层对象读取功能的正确性。
+在 `tests/test_storage_reader.py` 中补充一个 `test_load_forked_history` 测试用例，以确保系统的健壮性。
+
+## 基本原理
+测试将模拟一个 `A -> B` 和 `A -> C` 的分叉结构。这需要手动操作 Git 的 `refs/quipu/history` 引用来实现。
 
 ## 标签
-#comp/tests #fix
+#comp/tests #comp/engine #concept/history #scope/core
 
 ---
 
 ## Script
 
-### Acts 1: 完善 test_cat_file_types
+### Acts 1: 补充 F-O-R-K 历史测试用例
+
+将新的测试用例追加到 `tests/test_storage_reader.py`。
 
 ~~~~~act
-replace tests/test_git_db.py
+append_file tests/test_storage_reader.py
 ~~~~~
 
 ~~~~~python
-    def test_cat_file_types(self, git_repo, db):
-        """测试 cat_file 处理不同类型对象的能力"""
-        # Create a file
-        content = b"content"
-        blob_hash = db.hash_object(content)
-        
-        # Read as blob
-        read_content = db.cat_file(blob_hash, "blob")
-        assert read_content == content
-        
-        # Create a commit to test tree/commit cat
-        subprocess.run(["git", "commit", "--allow-empty", "-m", "test"], cwd=git_repo, check=True)
-        head_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=git_repo).decode().strip()
-        
-        # Read commit (pretty print)
-        commit_content = db.cat_file(head_hash, "commit")
-        assert b"tree " in commit_content
-        assert b"author " in commit_content
-        
-        # Read tree
-        tree_hash = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=git_repo).decode().strip()
-        tree_content = db.cat_file(tree_hash, "tree")
-        # tree content is text-like in pretty mode (ls-tree style output from cat-file -p?)
-        # GitDB.cat_file uses -p for tree, which outputs parsed text format.
-        # Let's verify it contains entries if any, or is empty-ish.
-        # Since we allowed empty commit, it might be empty tree or have initial files from previous tests?
-        # In this isolated test, git_repo fixture gives a clean repo? 
-        # Wait, git_repo fixture in test_git_db.py does `git init`.
-        # So it might be empty.
-        pass
-~~~~~
 
-~~~~~python
-    def test_cat_file_types(self, git_repo, db):
-        """测试 cat_file 处理不同类型对象的能力"""
-        # 1. Prepare data: create file, add, and commit
-        (git_repo / "test_file").write_text("file content", encoding="utf-8")
-        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
-        subprocess.run(["git", "commit", "-m", "test commit"], cwd=git_repo, check=True)
+    def test_load_forked_history(self, reader_setup):
+        """测试：正确加载分叉的历史 A -> B and A -> C"""
+        reader, writer, git_db, repo = reader_setup
         
-        # 2. Get hashes using git command for verification source
-        head_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=git_repo).decode().strip()
-        tree_hash = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=git_repo).decode().strip()
-        # Get blob hash via ls-tree
-        ls_out = subprocess.check_output(["git", "ls-tree", "HEAD", "test_file"], cwd=git_repo).decode()
-        blob_hash = ls_out.split()[2]
+        # 1. Create base node A
+        h0 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        (repo/"base").touch()
+        hash_a = git_db.get_tree_hash()
+        writer.create_node("plan", h0, hash_a, "Plan A", start_time=1000)
+        commit_a = subprocess.check_output(
+            ["git", "rev-parse", "refs/quipu/history"], cwd=git_db.root
+        ).decode().strip()
+        time.sleep(0.1)
 
-        # 3. Verify Blob reading
-        read_blob = db.cat_file(blob_hash, "blob")
-        assert read_blob == b"file content"
+        # 2. Create branch B (child of A)
+        (repo/"file_b").touch()
+        hash_b = git_db.get_tree_hash()
+        writer.create_node("plan", hash_a, hash_b, "Plan B", start_time=2000)
+        time.sleep(0.1)
+
+        # 3. Create branch C (also child of A)
+        # To do this, we reset the history ref back to commit_a
+        git_db.update_ref("refs/quipu/history", commit_a)
         
-        # 4. Verify Commit reading
-        read_commit = db.cat_file(head_hash, "commit")
-        assert b"tree " in read_commit
-        assert b"test commit" in read_commit
+        (repo/"file_c").touch()
+        (repo/"file_b").unlink() # Make state distinct
+        hash_c = git_db.get_tree_hash()
+        writer.create_node("plan", hash_a, hash_c, "Plan C", start_time=3000)
+
+        # Now, `git log refs/quipu/history` would show two branches from A.
+        nodes = reader.load_all_nodes()
         
-        # 5. Verify Tree reading
-        read_tree = db.cat_file(tree_hash, "tree")
-        # cat-file -p tree_hash output format: "100644 blob <hash>\ttest_file"
-        assert b"test_file" in read_tree
-        assert blob_hash.encode() in read_tree
+        assert len(nodes) == 3
+        
+        nodes_by_content = {n.content.strip(): n for n in nodes}
+        node_a = nodes_by_content["Plan A"]
+        node_b = nodes_by_content["Plan B"]
+        node_c = nodes_by_content["Plan C"]
+        
+        # Verify parent-child links
+        assert node_a.parent is None
+        assert node_b.parent == node_a
+        assert node_c.parent == node_a
+        
+        # Verify children list on the parent
+        assert len(node_a.children) == 2
+        # Children should be sorted by timestamp
+        child_contents = [child.content.strip() for child in node_a.children]
+        assert child_contents == ["Plan B", "Plan C"]
 ~~~~~
