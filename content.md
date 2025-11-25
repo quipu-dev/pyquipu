@@ -1,8 +1,11 @@
-为了实现类似 `git log --graph` 的多轨道分支视图，我们需要在 `ui/tui.py` 中实现一个简易的图形渲染算法。这个算法将维护当前活跃的“轨道（Tracks）”，并在遍历历史节点时动态绘制节点符号（`●`）和连接线（`│`）。
+这是一个细致的 UI 优化需求。我们将引入“可达性分析”逻辑，并在 `AxonUiApp` 中添加状态过滤功能。
 
-### 1. 重写 `ui/tui.py`
+### 1. 修改 `ui/tui.py`
 
-我们将引入一个 `GraphRenderer` 逻辑来处理 ASCII 图形的生成，并将其集成到 `AxonUiApp` 中。
+我们需要做以下改动：
+1.  **计算可达集 (`reachable_hashes`)**: 包含当前节点的所有祖先（Undo 路径）和所有后代（Redo 路径）。
+2.  **样式变暗**: 在渲染时，如果节点不在可达集中，使用 `[dim]` 样式。
+3.  **切换显隐**: 添加 `h` 快捷键，切换是否完全隐藏不可达节点。
 
 ~~~act
 write_file
@@ -13,7 +16,7 @@ ui/tui.py
 ~~~python
 import sys
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import List, Optional, Set
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, DataTable
 from textual.binding import Binding
@@ -25,7 +28,7 @@ from core.models import AxonNode
 class AxonUiApp(App):
     """
     Axon Timeline Explorer
-    一个基于 DataTable 的时间轴历史浏览器，实现了类似 git log --graph 的多轨道视图。
+    一个基于 DataTable 的时间轴历史浏览器，支持分支视图、状态高亮和可达性过滤。
     """
 
     CSS = """
@@ -40,195 +43,204 @@ class AxonUiApp(App):
         Binding("q", "quit", "退出"),
         Binding("c", "checkout_node", "检出节点"),
         Binding("enter", "checkout_node", "检出节点"),
+        Binding("h", "toggle_hidden", "显隐非关联分支"), # New binding
         Binding("up", "cursor_up", "上移", show=False),
         Binding("down", "cursor_down", "下移", show=False),
     ]
 
     def __init__(self, nodes: List[AxonNode], current_hash: Optional[str] = None):
         super().__init__()
-        # 1. 数据预处理：按时间戳倒序排列 (最新的在上面)
+        self.nodes = nodes # Keep original unsorted list for graph reconstruction if needed
         self.sorted_nodes = sorted(nodes, key=lambda n: n.timestamp, reverse=True)
         self.current_hash = current_hash
         self.node_map = {node.output_tree: node for node in nodes}
+        
+        # 状态控制
+        self.show_unreachable = True # 默认显示但变暗
+        
+        # 计算可达性集合 (Undo/Redo 路径上的所有节点)
+        self.reachable_hashes = self._calculate_reachable_hashes()
+
+    def _calculate_reachable_hashes(self) -> Set[str]:
+        """
+        计算从当前节点出发，通过 Undo (祖先) 或 Redo (后代) 可达的所有节点哈希。
+        """
+        if not self.current_hash or self.current_hash not in self.node_map:
+            return set()
+
+        current_node = self.node_map[self.current_hash]
+        reachable = {current_node.output_tree}
+
+        # 1. 向上追溯 (Ancestors / Undo Path)
+        curr = current_node
+        while curr.parent:
+            curr = curr.parent
+            reachable.add(curr.output_tree)
+
+        # 2. 向下扩散 (Descendants / Redo Path)
+        # 使用 BFS 遍历所有后代
+        queue = [current_node]
+        while queue:
+            node = queue.pop(0)
+            for child in node.children:
+                reachable.add(child.output_tree)
+                queue.append(child)
+
+        return reachable
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        # zebra_stripes=False 以避免干扰 ASCII 图形的连贯性
         yield DataTable(cursor_type="row", zebra_stripes=False)
         yield Footer()
 
     def on_mount(self) -> None:
-        """初始化表格数据与样式"""
         table = self.query_one(DataTable)
-        
-        # 定义列
-        # Graph 列需要足够的宽度来展示多分支
         table.add_columns("Time", "Graph", "Node Info")
-        
-        # 填充数据
+        self._refresh_table()
+
+    def action_toggle_hidden(self) -> None:
+        """切换是否隐藏不可达节点"""
+        self.show_unreachable = not self.show_unreachable
+        self._refresh_table()
+
+    def _refresh_table(self):
+        """清空并重新填充表格"""
+        table = self.query_one(DataTable)
+        table.clear()
         self._populate_table(table)
-        
-        # 自动定位到当前状态
         self._focus_current_node(table)
-        
-        table.focus()
 
     def _populate_table(self, table: DataTable):
         """
         构建时间轴视图。
-        使用轨道追踪算法生成类似 git log --graph 的 ASCII 图形。
         """
-        # 轨道列表：存储当前每一列正在追踪的 parent_hash
-        # 列表索引对应列索引。None 表示该位置为空（之前的分支已结束）。
+        # 筛选需要显示的节点
+        nodes_to_render = []
+        for node in self.sorted_nodes:
+            is_reachable = node.output_tree in self.reachable_hashes
+            if not self.show_unreachable and not is_reachable:
+                continue
+            nodes_to_render.append(node)
+
+        # 轨道追踪逻辑
         tracks: List[Optional[str]] = []
 
-        for node in self.sorted_nodes:
+        for node in nodes_to_render:
             node_hash = node.output_tree
             parent_hash = node.input_tree
+            is_reachable = node_hash in self.reachable_hashes
 
-            # 1. 确定当前节点所在的轨道索引
-            # 如果 node_hash 在 tracks 中，说明它是上面某个节点的 parent，承接该轨道
-            # 如果不在，说明它是某个分支的顶端 (Head)，需要分配新轨道
-            
-            # 查找所有指向当前节点的轨道（可能是在倒序中发生的合并）
+            # 确定样式前缀
+            # 如果不可达，且模式为显示所有(即Dim模式)，则添加 [dim]
+            # 注意：如果 self.show_unreachable 为 False，不可达节点根本不会进入此循环
+            dim_tag = "[dim]" if (self.show_unreachable and not is_reachable) else ""
+            end_dim_tag = "[/dim]" if dim_tag else ""
+
+            # --- 1. 轨道分配 ---
             merging_indices = [i for i, h in enumerate(tracks) if h == node_hash]
             
             if merging_indices:
-                # 继承第一个匹配的轨道
                 col_idx = merging_indices[0]
             else:
-                # 新的分支顶端：找一个空位或追加
                 try:
                     col_idx = tracks.index(None)
-                    tracks[col_idx] = node_hash # 临时占位
+                    tracks[col_idx] = node_hash
                 except ValueError:
                     tracks.append(node_hash)
                     col_idx = len(tracks) - 1
                     
-            # 2. 生成图形字符串
+            # --- 2. 生成图形 ---
             graph_chars = []
-            
-            # 为了美观，我们使用 2 个字符宽度的列：符号 + 空格
             for i, track_hash in enumerate(tracks):
                 if track_hash is None:
                     graph_chars.append("  ")
                     continue
                 
-                # 确定当前位置的符号
+                # 确定基础符号
                 if i == col_idx:
-                    # 当前节点位置
-                    # 区分 Plan 和 Capture
                     symbol = "●" if node.node_type == 'plan' else "○"
+                    # 基础颜色
+                    color = "cyan" if node.node_type == 'plan' else "magenta"
+                    symbol = f"[{color}]{symbol}[/]"
                     
-                    # 颜色处理 (使用 Rich 标记)
-                    if node.node_type == 'plan':
-                        symbol = f"[cyan]{symbol}[/]"
-                    else:
-                        symbol = f"[magenta]{symbol}[/]"
-                        
-                    # 如果有合并（其他轨道汇入此轨道）
-                    if len(merging_indices) > 1:
-                        # 这里可以显示特殊合并符号，但简单起见，我们只在那些轨道画连线
-                        pass
-                    
-                    graph_chars.append(f"{symbol} ")
+                    # 组合: Dim + Color + Symbol
+                    # 例如 [dim][cyan]●[/][/dim]
+                    cell_str = f"{dim_tag}{symbol} {end_dim_tag}"
+                    graph_chars.append(cell_str)
                     
                 elif i in merging_indices:
-                    # 这是一条汇入当前节点的轨道 (倒序视图中的分叉点)
-                    # 显示向左合并的连接符
-                    graph_chars.append("┘ ") 
+                    graph_chars.append(f"{dim_tag}┘ {end_dim_tag}") 
                 else:
-                    # 这是一条路过的轨道，与当前节点无关
-                    graph_chars.append("│ ")
+                    graph_chars.append(f"{dim_tag}│ {end_dim_tag}")
 
             graph_str = "".join(graph_chars)
 
-            # 3. 更新轨道状态 (为下一行做准备)
-            # 当前轨道的使命结束，它的目标更新为当前节点的父节点
+            # --- 3. 更新轨道 ---
             tracks[col_idx] = parent_hash
-            
-            # 其他汇入的轨道已终结 (Merged)
             for i in merging_indices[1:]:
                 tracks[i] = None
-            
-            # 优化：清理末尾的 None，防止轨道列表无限增长
             while tracks and tracks[-1] is None:
                 tracks.pop()
 
-            # 4. 构建其他列信息
+            # --- 4. 文本信息 ---
             ts_str = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            # 时间戳也应用 dim
+            ts_str = f"{dim_tag}{ts_str}{end_dim_tag}"
             
             node_type_code = "[P]" if node.node_type == "plan" else "[C]"
             short_hash = node.short_hash
             summary = self._get_node_summary(node)
             
-            # 颜色高亮
-            color = "cyan" if node.node_type == "plan" else "magenta"
-            info_str = f"[{color}]{node_type_code} {short_hash}[/] - {summary}"
+            # Info 列颜色逻辑
+            base_color = "cyan" if node.node_type == "plan" else "magenta"
+            
+            # 组合 Info 字符串
+            # 结构: [dim] [color][P] hash[/] - summary [/dim]
+            info_str = f"{dim_tag}[{base_color}]{node_type_code} {short_hash}[/] - {summary}{end_dim_tag}"
 
-            # 5. 添加行
             table.add_row(ts_str, graph_str, info_str, key=node.output_tree)
 
     def _get_node_summary(self, node: AxonNode) -> str:
-        """提取简洁的摘要信息"""
         content = node.content.strip()
         lines = content.split('\n')
-        
         summary = "No description"
-        
         if node.node_type == 'plan':
             for line in lines:
                 clean_line = line.strip()
-                if clean_line.startswith(('~~~', '```')):
-                    continue
-                if clean_line:
-                    summary = clean_line
-                    break
+                if clean_line.startswith(('~~~', '```')): continue
+                if clean_line: summary = clean_line; break
         elif node.node_type == 'capture':
             user_msg = ""
             for line in lines:
-                if "### 💬 备注:" in line:
-                    continue
-                if line.strip() and not line.startswith(('#', '`', '-')):
-                     user_msg = line.strip()
-                     break
-            if user_msg:
-                summary = user_msg
-            else:
-                summary = "Workspace Snapshot"
-
+                if "### 💬 备注:" in line: continue
+                if line.strip() and not line.startswith(('#', '`', '-')): user_msg = line.strip(); break
+            summary = user_msg if user_msg else "Workspace Snapshot"
         return (summary[:60] + '...') if len(summary) > 60 else summary
 
     def _focus_current_node(self, table: DataTable):
-        """尝试定位并高亮当前工作区对应的行"""
-        if not self.current_hash:
-            return
+        if not self.current_hash: return
         try:
             row_index = table.get_row_index(self.current_hash)
             table.move_cursor(row=row_index)
-        except Exception:
-            pass
+        except Exception: pass
 
     def action_checkout_node(self) -> None:
-        """处理检出动作"""
         table = self.query_one(DataTable)
         try:
             selected_hash = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
-            if selected_hash:
-                self.exit(result=selected_hash)
-        except Exception:
-            pass
+            if selected_hash: self.exit(result=selected_hash)
+        except Exception: pass
 ~~~
 
-### 2. 更新测试用例
+### 2. 更新测试
 
-由于我们修改了 `AxonUiApp` 的内部逻辑（主要是 `_populate_table` 的实现方式），虽然公开接口没变，但为了保险起见，我们更新测试以覆盖新的渲染逻辑。特别是，我们需要验证即使节点顺序或父子关系复杂时，代码也不会崩溃。
+我们需要更新测试逻辑，验证“可达性计算”是否正确。
 
 ~~~act
 write_file
 ~~~
 ~~~path
-tests/test_ui_logic.py
+tests/test_ui_reachability.py
 ~~~
 ~~~python
 import pytest
@@ -236,68 +248,89 @@ from pathlib import Path
 from datetime import datetime
 from core.models import AxonNode
 from ui.tui import AxonUiApp
-from textual.widgets import DataTable
 
-class TestUiLogic:
+class TestUiReachability:
     
-    def test_graph_renderer_simple_linear(self):
-        """测试简单的线性历史渲染"""
-        # A <- B <- C
+    def test_calculate_reachable(self):
+        """
+        测试可达性计算逻辑:
+        Tree Structure:
+              Root
+             /    \
+            A      B
+           /
+        Current
+        """
+        root = AxonNode("null", "root", datetime(2023,1,1), Path("f"), "plan")
+        
+        node_a = AxonNode("root", "a", datetime(2023,1,2), Path("f"), "plan")
+        node_a.parent = root
+        root.children.append(node_a)
+        
+        node_b = AxonNode("root", "b", datetime(2023,1,3), Path("f"), "plan")
+        node_b.parent = root
+        root.children.append(node_b)
+        
+        node_current = AxonNode("a", "curr", datetime(2023,1,4), Path("f"), "plan")
+        node_current.parent = node_a
+        node_a.children.append(node_current)
+        
+        # Scenario 1: Focus on 'curr'
+        # Reachable should be: curr, a, root (Ancestors) + (Descendants: None)
+        # Unreachable: b
+        app = AxonUiApp([root, node_a, node_b, node_current], current_hash="curr")
+        reachable = app.reachable_hashes
+        
+        assert "curr" in reachable
+        assert "a" in reachable
+        assert "root" in reachable
+        assert "b" not in reachable
+        
+        # Scenario 2: Focus on 'root'
+        # Reachable: root + all descendants (a, b, curr)
+        app_root = AxonUiApp([root, node_a, node_b, node_current], current_hash="root")
+        reachable_root = app_root.reachable_hashes
+        
+        assert "curr" in reachable_root
+        assert "b" in reachable_root
+        
+    def test_filter_unreachable(self):
+        """测试 populate 时的过滤逻辑"""
+        # Linear: A -> B
         node_a = AxonNode("root", "a", datetime(2023,1,1), Path("f"), "plan")
         node_b = AxonNode("a", "b", datetime(2023,1,2), Path("f"), "plan")
-        node_c = AxonNode("b", "c", datetime(2023,1,3), Path("f"), "plan")
+        # Link them manually as load_history_graph would
+        node_b.parent = node_a
+        node_a.children.append(node_b)
         
-        app = AxonUiApp([node_a, node_b, node_c])
+        # Focus on A. 
+        # Reachable: A (self), B (descendant). 
+        # Wait, if focus is A, B is reachable via Redo. Correct.
         
-        # 我们可以通过 mock table 来验证，或者简单地运行 _populate_table 看是否报错
-        # 由于 Textual 组件需要在 App 运行上下文中才能完整工作 (query_one)，
-        # 这里主要做单元测试级别的逻辑验证（如果把渲染逻辑抽离会更好测，但在 App 内我们就做集成式验证）
+        # Let's make an unreachable node C (sibling of A)
+        node_c = AxonNode("root", "c", datetime(2023,1,3), Path("f"), "plan")
         
-        # 验证排序
-        assert app.sorted_nodes[0].output_tree == "c"
+        nodes = [node_a, node_b, node_c]
+        app = AxonUiApp(nodes, current_hash="a")
         
-    def test_graph_renderer_branching(self):
-        """测试分叉历史渲染 (Smoke Test)"""
-        # A <- B
-        # A <- C
-        node_a = AxonNode("root", "a", datetime(2023,1,1), Path("f"), "plan")
-        node_b = AxonNode("a", "b", datetime(2023,1,2), Path("f"), "plan")
-        node_c = AxonNode("a", "c", datetime(2023,1,3), Path("f"), "plan") # Branch C is newer
+        # 1. Default: Show all, but C is dim (logic handled in rendering string, hard to test here without inspecting Textual widgets deep state)
+        # But we can check internal logic
+        assert "c" not in app.reachable_hashes
         
-        app = AxonUiApp([node_a, node_b, node_c])
+        # 2. Toggle Hide
+        app.action_toggle_hidden()
+        assert app.show_unreachable is False
         
-        # 验证排序: C (newest), B, A
-        assert app.sorted_nodes[0].output_tree == "c"
-        assert app.sorted_nodes[1].output_tree == "b"
-        assert app.sorted_nodes[2].output_tree == "a"
-        
-        # 手动模拟 populate 逻辑中的关键部分：Tracks 更新
-        tracks = []
-        # Row 1: Node C. input=a. New track.
-        # tracks -> [a] (visual: ●)
-        
-        # Row 2: Node B. input=a. New track (because 'a' in tracks is occupied by C's ancestry line).
-        # tracks -> [a, a] (visual: │ ●)
-        
-        # Row 3: Node A. input=root.
-        # Node A matches tracks[0] AND tracks[1] (both point to 'a').
-        # Merge! 
-        # tracks -> [root] (visual: ● ┘)
-        
-        # 这个测试主要确保逻辑本身没有异常抛出
-        pass
-
-    def test_get_node_summary(self):
-        node = AxonNode("a", "b", datetime.now(), Path("f"), "plan", content="~~~act\nrun\n~~~")
-        app = AxonUiApp([], None)
-        assert app._get_node_summary(node) == "run"
-~~~
-
-### 3. 执行测试
-
-~~~act
-run_command
-~~~
-~~~command
-pytest tests/test_ui_logic.py
+        # If we populate now, C should be skipped
+        # We can simulate the loop from _populate_table
+        rendered_nodes = []
+        for n in app.sorted_nodes:
+            is_reachable = n.output_tree in app.reachable_hashes
+            if not app.show_unreachable and not is_reachable:
+                continue
+            rendered_nodes.append(n)
+            
+        assert node_a in rendered_nodes
+        assert node_b in rendered_nodes
+        assert node_c not in rendered_nodes
 ~~~
