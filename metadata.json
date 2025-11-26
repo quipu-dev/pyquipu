@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: M .gitignore", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764154475.255048, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "chore: 实现 SQLite 数据补水机制", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764154479.9270315, "duration_ms": 0}}
