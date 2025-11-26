@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[feat]: UI 性能优化与私有数据展示", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764156535.550998, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[fix]: 修复 TUI 无限滚动事件绑定错误", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764156604.4482174, "duration_ms": 0}}
