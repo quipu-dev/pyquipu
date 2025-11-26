@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Acts 1: 提交补水机制", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764154636.7587273, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "feat: 激活 SQLite 读取路径以提升性能", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764154772.890353, "duration_ms": 0}}
