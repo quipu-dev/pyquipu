@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[Feature] 实现 SQLiteHistoryReader 的分页与高级查询接口", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764157509.076256, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "refactor: 为 UI 实现 SQLite 分页与私有数据读取", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764158128.1711457, "duration_ms": 0}}
