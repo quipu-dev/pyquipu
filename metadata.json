@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: M controller.py, M factory.py, M plugin_manager.py ... and 4 more files", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764150947.209622, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "test: 完善测试覆盖率并集成 pytest-cov", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764150950.543442, "duration_ms": 0}}
