@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[Fix] 修复接口定义错误放置导致的 Writer 实例化失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764157305.2895002, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[Feature] 实现 SQLiteHistoryReader 的分页与高级查询接口", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764157509.076256, "duration_ms": 0}}
