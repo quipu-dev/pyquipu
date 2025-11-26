@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 from pathlib import Path
 from typing import List
@@ -123,9 +124,14 @@ class QuipuApplication:
         executor.execute(statements)
 
         # --- Phase 4: Recording (Plan Crystallization) ---
-        smart_summary = None
-        if statements:
-            smart_summary = executor.summarize_statement(statements[0])
+        final_summary = None
+        # 优先级 1: 从 Markdown 内容中提取 # 标题
+        title_match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
+        if title_match:
+            final_summary = title_match.group(1).strip()
+        # 优先级 2: 从第一个 act 指令生成摘要
+        elif statements:
+            final_summary = executor.summarize_statement(statements[0])
 
         output_tree_hash = self.engine.git_db.get_tree_hash()
 
@@ -133,7 +139,7 @@ class QuipuApplication:
             input_tree=input_tree_hash,
             output_tree=output_tree_hash,
             plan_content=content,
-            summary_override=smart_summary,
+            summary_override=final_summary,
         )
 
         return QuipuResult(success=True, exit_code=0, message="✨ 执行成功")

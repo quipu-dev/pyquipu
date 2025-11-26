@@ -271,31 +271,13 @@ class GitObjectHistoryWriter(HistoryWriter):
             return kwargs["summary_override"]
 
         if node_type == "plan":
-            # 优先从 act 块中提取摘要
-            summary = ""
-            in_act_block = False
-            for line in content.strip().splitlines():
-                clean_line = line.strip()
-                if clean_line.startswith(("~~~act", "```act")):
-                    in_act_block = True
-                    continue
-
-                if in_act_block:
-                    if clean_line.startswith(("~~~", "```")):
-                        break  # 块结束
-                    if clean_line:
-                        summary = clean_line
-                        break  # 找到摘要
-
-            if summary:
-                return (summary[:75] + "...") if len(summary) > 75 else summary
-
-            # 回退：尝试从 Markdown 的第一个标题中提取
+            # Controller 优先负责生成摘要。此处的逻辑仅作为当 controller 未提供摘要时的回退。
+            # 优先级 1: 尝试从 Markdown 的第一个标题中提取
             match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
             if match:
                 return match.group(1).strip()
 
-            # Fallback to the first non-empty line
+            # 最终回退: 使用内容的第一行
             first_line = next((line.strip() for line in content.strip().splitlines() if line.strip()), "Plan executed")
             return (first_line[:75] + "...") if len(first_line) > 75 else first_line
 
