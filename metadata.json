@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "为什么在 test_engine.py 中不使用 InMemoryDB", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764148491.2170424, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Capture: M controller.py, M factory.py, M plugin_manager.py ... and 4 more files", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764150947.209622, "duration_ms": 0}}
