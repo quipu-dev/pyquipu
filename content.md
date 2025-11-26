@@ -1,29 +1,32 @@
-# fix: 修复 SQLite 写入器集成测试中的逻辑错误
+# fix: 解决数据库连接未关闭的资源警告
 
 ## 用户需求
-在执行“第二步：SQLite 存储后端实现”后，`pytest` 中出现了一个 `AssertionError`，需要修复。
+检查当前的开发状态，并解决 `pytest` 输出中出现的 `ResourceWarning`。
 
 ## 评论
-经过分析，失败的测试 (`test_dual_write_on_run`) 包含了一个逻辑缺陷。它在两次 `quipu run` 调用之间手动修改了工作区文件，这会触发系统的“状态漂移捕捉” (`capture_drift`) 机制，从而在预期的两个 Plan 节点之间自动插入一个 Capture 节点。测试的断言没有考虑到这个中间节点，因此失败了。这是一个很好的例子，说明了测试需要精确地模拟预期的工作流，以避免系统特性（如自动快照）的干扰。
+当前状态非常好。所有 125 个测试均已通过，这证明了上一阶段对 `test_sqlite_writer.py` 的修复是成功的，并且核心的 SQLite 双写功能已经按预期工作。
+
+同时，测试输出中出现了两条新的 `ResourceWarning: unclosed database`。这是一个明确的信号，表明在某些代码路径中，我们创建了 SQLite 数据库连接，但在测试结束时没有显式地关闭它。这虽然在短期内不影响功能，但属于资源泄漏，是潜在的不稳定因素，必须修复。
+
+问题的根源在于 `factory.py` 中创建了 `DatabaseManager` 实例，但没有一个明确的机制来调用其 `close()` 方法。
 
 ## 目标
-修复 `tests/test_sqlite_writer.py` 中的测试用例，使其能够正确、稳定地验证以下行为：
-1.  在 SQLite 模式下，`quipu run` 能够成功地将节点数据写入 Git Commit。
-2.  同时，能够将节点的元数据和正确的父子关系（`edge`）写入 SQLite 数据库。
+1.  消除所有 `ResourceWarning`。
+2.  建立一个健壮的资源管理模式，确保 `DatabaseManager` 创建的数据库连接总能被安全关闭。
 
 ## 基本原理
-修复方案是重写该测试用例，使其更直接地反映核心业务流程，避免触发边缘情况。
-1.  **移除手动文件操作**：不再使用 `(path).touch()` 来制造“脏”工作区。
-2.  **使用连续的 Plan**: 创建两个独立的、会实际改变文件系统的 Plan (`PLAN_A` 和 `PLAN_B`)。
-3.  **顺序执行**: 连续执行这两个 Plan。由于每次执行后工作区都是“干净”的（与上一个历史节点一致），因此不会触发 `capture_drift`。
-4.  **精确断言**: 这样，第二个 Plan 节点会直接以第一个 Plan 节点为父节点。测试现在可以简单而精确地断言 `edges` 表中存在从第二个节点的 commit_hash 指向第一个节点的 commit_hash 的记录。
-5.  **健壮性提升**: 同时，将测试中获取最新 commit hash 的方式从 `git log` 改为更精确的 `git rev-parse refs/quipu/history`，确保我们总是拿到 Quipu 历史记录的真正头部。
+我们将实施一个简单的资源管理生命周期，确保由 `QuipuApplication` 创建的核心资源 (`Engine`) 能够被妥善清理。
 
-这个修改后的测试用例不仅修复了错误，而且更清晰地表达了其测试意图。
+1.  **资源传递**: `Engine` 将直接持有 `DatabaseManager` 实例的引用，而不是通过 `Writer` 间接持有。这使得 `Engine` 成为所有核心资源的统一管理者。
+2.  **添加清理接口**: 为 `Engine` 添加一个 `close()` 方法，该方法会调用其持有的 `DatabaseManager` 实例的 `close()` 方法。
+3.  **生命周期管理**: 在核心业务逻辑的入口包装器 `run_quipu` (位于 `controller.py`) 中，使用 `try...finally` 结构。无论业务逻辑成功还是失败，`finally` 块都将确保调用 `app.engine.close()`，从而安全地关闭数据库连接。
+4.  **安全回退 (Safety Net)**: 在 `DatabaseManager` 中添加一个 `__del__` 方法。这是一个安全措施，如果 `close()` 由于某种原因未能被调用，Python 的垃圾回收机制在销毁对象时会尝试关闭连接，这有助于在非预期的情况下减少资源泄漏。
+
+这个方案将资源管理的责任放在了应用生命周期的最高层，确保了无论发生何种异常，资源清理步骤都会被执行。
 
 ## 标签
-#intent/fix #flow/ready #priority/critical
-#comp/engine #comp/tests #concept/state #concept/history
+#intent/fix #flow/ready #priority/high
+#comp/engine #comp/cli #concept/state
 #ai/delegate
 #task/domain/storage #task/object/sqlite-backend #task/action/integration
 #task/state/continue #task/status/active
@@ -32,173 +35,338 @@
 
 ## Script
 
-### Acts 1: 修复测试文件
+### Acts 1: 增强资源管理
 
-我们将用一个更健壮、逻辑更清晰的版本替换掉 `TestSQLiteWriterIntegration` 类。
+我们将修改 `Engine`、`factory` 和 `controller`，以建立一个明确的资源初始化和清理流程。
 
 ~~~~~act
-replace tests/test_sqlite_writer.py
+replace packages/quipu-engine/src/quipu/core/state_machine.py
 ~~~~~
 ~~~~~python
-PLAN_A = """
-```act
-write_file a.txt
-```
-```content
-File A content
-```
-"""
+from .git_db import GitDB
+from .config import ConfigManager
+from quipu.core.models import QuipuNode
+from quipu.core.storage import HistoryReader, HistoryWriter
 
-@pytest.fixture
-def sqlite_workspace(tmp_path: Path) -> Path:
-    """创建一个配置为使用 SQLite 后端的 Git 工作区。"""
-    ws = tmp_path / "ws_sqlite"
-    ws.mkdir()
-    
-    # Init Git
-    subprocess.run(["git", "init"], cwd=ws, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=ws, check=True)
-    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=ws, check=True)
+logger = logging.getLogger(__name__)
 
-    # Init Quipu config for SQLite
-    quipu_dir = ws / ".quipu"
-    quipu_dir.mkdir()
-    (quipu_dir / "config.yml").write_text("storage:\n  type: sqlite\n")
-    
-    return ws
 
-class TestSQLiteWriterIntegration:
-    def test_dual_write_on_run(self, sqlite_workspace):
-        """
-        验证 `quipu run` 在 SQLite 模式下是否能正确地双写到 Git 和 DB。
-        """
-        # --- Action ---
-        result = run_quipu(PLAN_A, work_dir=sqlite_workspace, yolo=True)
-        assert result.success, f"run_quipu failed: {result.message}"
+class Engine:
+    """
+    Axon 状态引擎。
+    负责协调 Git 物理状态和 Axon 逻辑图谱。
+    """
 
-        # --- Verification ---
-        
-        # 1. Verify Git Commit was created
-        git_log = subprocess.check_output(
-            ["git", "log", "--all", "--format=%H"], cwd=sqlite_workspace, text=True
-        ).strip()
-        assert len(git_log) > 0, "Git log should not be empty"
-        commit_hash = git_log.splitlines()[0]
+    def _sync_persistent_ignores(self):
+        """将 config.yml 中的持久化忽略规则同步到 .git/info/exclude。"""
+        try:
+            config = ConfigManager(self.root_dir)
+            patterns = config.get("sync.persistent_ignores", [])
+            if not patterns:
+                return
 
-        # 2. Verify SQLite DB was created and populated
-        db_path = sqlite_workspace / ".quipu" / "history.sqlite"
-        assert db_path.exists()
+            exclude_file = self.root_dir / ".git" / "info" / "exclude"
+            exclude_file.parent.mkdir(exist_ok=True)
 
-        db = DatabaseManager(sqlite_workspace)
-        conn = db._get_conn()
-        
-        # Check nodes table
-        cursor = conn.execute("SELECT * FROM nodes WHERE commit_hash = ?", (commit_hash,))
-        node_row = cursor.fetchone()
-        assert node_row is not None
-        assert node_row["summary"] == "Write: a.txt"
-        assert node_row["node_type"] == "plan"
-        assert node_row["plan_md_cache"] is not None # Should be hot-cached
+            header = "# --- Managed by Quipu ---"
+            footer = "# --- End Managed by Quipu ---"
 
-        # Check edges table (for the second commit)
-        (sqlite_workspace / "b.txt").touch()
-        run_quipu("```act\nend\n```", work_dir=sqlite_workspace, yolo=True)
-        
-        git_log_2 = subprocess.check_output(
-            ["git", "log", "--all", "--format=%H"], cwd=sqlite_workspace, text=True
-        ).strip()
-        commit_hash_2 = git_log_2.splitlines()[0]
-        
-        cursor_edge = conn.execute("SELECT * FROM edges WHERE child_hash = ?", (commit_hash_2,))
-        edge_row = cursor_edge.fetchone()
-        assert edge_row is not None
-        assert edge_row["parent_hash"] == commit_hash
-        
-        db.close()
+            content = ""
+            if exclude_file.exists():
+                content = exclude_file.read_text("utf-8")
+
+            managed_block_pattern = re.compile(rf"{re.escape(header)}.*{re.escape(footer)}", re.DOTALL)
+
+            new_block = f"{header}\n" + "\n".join(patterns) + f"\n{footer}"
+
+            new_content, count = managed_block_pattern.subn(new_block, content)
+            if count == 0:
+                if content and not content.endswith("\n"):
+                    content += "\n"
+                new_content = content + "\n" + new_block + "\n"
+
+            if new_content != content:
+                exclude_file.write_text(new_content, "utf-8")
+                logger.debug("✅ .git/info/exclude 已更新。")
+
+        except Exception as e:
+            logger.warning(f"⚠️  无法同步持久化忽略规则: {e}")
+
+    def __init__(self, root_dir: Path, db: Any, reader: HistoryReader, writer: HistoryWriter):
+        self.root_dir = root_dir.resolve()
+        self.quipu_dir = self.root_dir / ".quipu"
+        self.quipu_dir.mkdir(exist_ok=True)  # 确保 .quipu 目录存在
+        self.history_dir = self.quipu_dir / "history"
+        self.head_file = self.quipu_dir / "HEAD"
+
+        self.nav_log_file = self.quipu_dir / "nav_log"
+        self.nav_ptr_file = self.quipu_dir / "nav_ptr"
+
+        quipu_gitignore = self.quipu_dir / ".gitignore"
+        if not quipu_gitignore.exists():
+            try:
+                quipu_gitignore.write_text("*\n", encoding="utf-8")
+            except Exception as e:
+                logger.warning(f"无法创建隔离文件 {quipu_gitignore}: {e}")
+
+        self.git_db = db  # <-- 依赖注入
+        self.reader = reader
+        self.writer = writer
+        self.history_graph: Dict[str, QuipuNode] = {}
+        self.current_node: Optional[QuipuNode] = None
+
+        # Only sync ignores if it's a real git repo
+        if isinstance(db, GitDB):
+            self._sync_persistent_ignores()
 ~~~~~
 ~~~~~python
-PLAN_A = """
-```act
-write_file a.txt
-```
-```content
-File A content
-```
-"""
+from .git_db import GitDB
+from .config import ConfigManager
+from quipu.core.models import QuipuNode
+from quipu.core.storage import HistoryReader, HistoryWriter
 
-PLAN_B = """
-```act
-write_file b.txt
-```
-```content
-File B content
-```
-"""
+# 导入类型以进行类型提示
+try:
+    from .sqlite_db import DatabaseManager
+except ImportError:
+    DatabaseManager = None
+
+logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def sqlite_workspace(tmp_path: Path) -> Path:
-    """创建一个配置为使用 SQLite 后端的 Git 工作区。"""
-    ws = tmp_path / "ws_sqlite"
-    ws.mkdir()
+class Engine:
+    """
+    Axon 状态引擎。
+    负责协调 Git 物理状态和 Axon 逻辑图谱。
+    """
 
-    # Init Git
-    subprocess.run(["git", "init"], cwd=ws, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=ws, check=True)
-    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=ws, check=True)
+    def _sync_persistent_ignores(self):
+        """将 config.yml 中的持久化忽略规则同步到 .git/info/exclude。"""
+        try:
+            config = ConfigManager(self.root_dir)
+            patterns = config.get("sync.persistent_ignores", [])
+            if not patterns:
+                return
 
-    # Init Quipu config for SQLite
-    quipu_dir = ws / ".quipu"
-    quipu_dir.mkdir()
-    (quipu_dir / "config.yml").write_text("storage:\n  type: sqlite\n")
+            exclude_file = self.root_dir / ".git" / "info" / "exclude"
+            exclude_file.parent.mkdir(exist_ok=True)
 
-    return ws
+            header = "# --- Managed by Quipu ---"
+            footer = "# --- End Managed by Quipu ---"
 
+            content = ""
+            if exclude_file.exists():
+                content = exclude_file.read_text("utf-8")
 
-class TestSQLiteWriterIntegration:
-    def test_dual_write_on_run_and_link(self, sqlite_workspace):
-        """
-        验证 `quipu run` 在 SQLite 模式下是否能正确地双写到 Git 和 DB，并建立父子关系。
-        """
-        # --- Action 1: Create first node ---
-        result_a = run_quipu(PLAN_A, work_dir=sqlite_workspace, yolo=True)
-        assert result_a.success, f"run_quipu failed on Plan A: {result_a.message}"
+            managed_block_pattern = re.compile(rf"{re.escape(header)}.*{re.escape(footer)}", re.DOTALL)
 
-        # Get its commit hash using the stable ref
-        commit_hash_a = subprocess.check_output(
-            ["git", "rev-parse", "refs/quipu/history"], cwd=sqlite_workspace, text=True
-        ).strip()
-        assert len(commit_hash_a) == 40
+            new_block = f"{header}\n" + "\n".join(patterns) + f"\n{footer}"
 
-        # --- Action 2: Create second node, which should be a child of the first ---
-        result_b = run_quipu(PLAN_B, work_dir=sqlite_workspace, yolo=True)
-        assert result_b.success, f"run_quipu failed on Plan B: {result_b.message}"
+            new_content, count = managed_block_pattern.subn(new_block, content)
+            if count == 0:
+                if content and not content.endswith("\n"):
+                    content += "\n"
+                new_content = content + "\n" + new_block + "\n"
 
-        # Get the new commit hash from the updated ref
-        commit_hash_b = subprocess.check_output(
-            ["git", "rev-parse", "refs/quipu/history"], cwd=sqlite_workspace, text=True
-        ).strip()
-        assert len(commit_hash_b) == 40
-        assert commit_hash_a != commit_hash_b, "History ref was not updated after second run"
+            if new_content != content:
+                exclude_file.write_text(new_content, "utf-8")
+                logger.debug("✅ .git/info/exclude 已更新。")
 
-        # --- Verification ---
-        db_path = sqlite_workspace / ".quipu" / "history.sqlite"
-        assert db_path.exists()
-        db = DatabaseManager(sqlite_workspace)
-        conn = db._get_conn()
+        except Exception as e:
+            logger.warning(f"⚠️  无法同步持久化忽略规则: {e}")
 
-        # 1. Verify node B exists
-        cursor_node = conn.execute("SELECT * FROM nodes WHERE commit_hash = ?", (commit_hash_b,))
-        node_row = cursor_node.fetchone()
-        assert node_row is not None
-        assert node_row["summary"] == "Write: b.txt"
-        assert node_row["plan_md_cache"] is not None  # Should be hot-cached
+    def __init__(
+        self,
+        root_dir: Path,
+        db: Any,
+        reader: HistoryReader,
+        writer: HistoryWriter,
+        db_manager: Optional[Any] = None,
+    ):
+        self.root_dir = root_dir.resolve()
+        self.quipu_dir = self.root_dir / ".quipu"
+        self.quipu_dir.mkdir(exist_ok=True)
+        self.history_dir = self.quipu_dir / "history"
+        self.head_file = self.quipu_dir / "HEAD"
 
-        # 2. Verify the edge exists and points to node A
-        cursor_edge = conn.execute("SELECT * FROM edges WHERE child_hash = ?", (commit_hash_b,))
-        edge_row = cursor_edge.fetchone()
-        assert edge_row is not None, "Edge for the second node was not created in the database."
-        assert edge_row["parent_hash"] == commit_hash_a, "The parent hash in the edge is incorrect."
+        self.nav_log_file = self.quipu_dir / "nav_log"
+        self.nav_ptr_file = self.quipu_dir / "nav_ptr"
 
-        db.close()
+        quipu_gitignore = self.quipu_dir / ".gitignore"
+        if not quipu_gitignore.exists():
+            try:
+                quipu_gitignore.write_text("*\n", encoding="utf-8")
+            except Exception as e:
+                logger.warning(f"无法创建隔离文件 {quipu_gitignore}: {e}")
+
+        self.git_db = db
+        self.reader = reader
+        self.writer = writer
+        self.db_manager = db_manager  # 持有数据库管理器引用
+        self.history_graph: Dict[str, QuipuNode] = {}
+        self.current_node: Optional[QuipuNode] = None
+
+        if isinstance(db, GitDB):
+            self._sync_persistent_ignores()
+
+    def close(self):
+        """关闭引擎持有的所有资源，如数据库连接。"""
+        if self.db_manager:
+            self.db_manager.close()
+~~~~~
+
+~~~~~act
+replace packages/quipu-cli/src/quipu/cli/factory.py
+~~~~~
+~~~~~python
+def create_engine(work_dir: Path) -> Engine:
+    """
+    实例化完整的 Engine 堆栈。
+
+    会自动向上查找项目根目录 (Git Root) 来初始化 Engine。
+    此工厂由配置驱动，以决定使用何种存储后端。
+    """
+    project_root = find_git_repository_root(work_dir) or work_dir
+    config = ConfigManager(project_root)
+    storage_type = config.get("storage.type", "git_object")
+    git_db = GitDB(project_root)
+
+    # 默认和备用后端
+    reader = GitObjectHistoryReader(git_db)
+    writer = GitObjectHistoryWriter(git_db)
+
+    if storage_type == "sqlite":
+        if not DatabaseManager or not SQLiteHistoryWriter:
+            raise ImportError("SQLite dependencies could not be loaded. Please check your installation.")
+
+        logger.debug("Using SQLite storage format for writes.")
+        db_manager = DatabaseManager(project_root)
+        db_manager.init_schema()
+
+        # **关键**: 写入路径被替换，读取路径保持不变
+        # 这允许我们在后台安全地填充数据库，而不影响现有功能
+        writer = SQLiteHistoryWriter(git_writer=writer, db_manager=db_manager)
+
+    elif storage_type != "git_object":
+        raise NotImplementedError(f"Storage type '{storage_type}' is not supported.")
+
+    engine = Engine(project_root, db=git_db, reader=reader, writer=writer)
+    engine.align()
+
+    return engine
+~~~~~
+~~~~~python
+def create_engine(work_dir: Path) -> Engine:
+    """
+    实例化完整的 Engine 堆栈。
+
+    会自动向上查找项目根目录 (Git Root) 来初始化 Engine。
+    此工厂由配置驱动，以决定使用何种存储后端。
+    """
+    project_root = find_git_repository_root(work_dir) or work_dir
+    config = ConfigManager(project_root)
+    storage_type = config.get("storage.type", "git_object")
+    git_db = GitDB(project_root)
+    db_manager = None
+
+    # 默认和备用后端
+    reader = GitObjectHistoryReader(git_db)
+    writer = GitObjectHistoryWriter(git_db)
+
+    if storage_type == "sqlite":
+        if not DatabaseManager or not SQLiteHistoryWriter:
+            raise ImportError("SQLite dependencies could not be loaded. Please check your installation.")
+
+        logger.debug("Using SQLite storage format for writes.")
+        db_manager = DatabaseManager(project_root)
+        db_manager.init_schema()
+
+        writer = SQLiteHistoryWriter(git_writer=writer, db_manager=db_manager)
+
+    elif storage_type != "git_object":
+        raise NotImplementedError(f"Storage type '{storage_type}' is not supported.")
+
+    # 将所有资源注入 Engine
+    engine = Engine(project_root, db=git_db, reader=reader, writer=writer, db_manager=db_manager)
+    engine.align()
+
+    return engine
+~~~~~
+
+~~~~~act
+replace packages/quipu-cli/src/quipu/cli/controller.py
+~~~~~
+~~~~~python
+def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: bool = False) -> QuipuResult:
+    """
+    Quipu 核心业务逻辑的入口包装器。
+
+    实例化并运行 QuipuApplication，捕获所有异常并转化为 QuipuResult。
+    """
+    try:
+        app = QuipuApplication(work_dir=work_dir, yolo=yolo)
+        return app.run(content=content, parser_name=parser_name)
+
+    except CoreExecutionError as e:
+        # 预期的执行错误 (如文件找不到，Git 冲突等)
+        logger.error(f"❌ 操作失败: {e}")
+        return QuipuResult(success=False, exit_code=1, message=str(e), error=e)
+
+    except Exception as e:
+        # 意外的运行时错误
+        logger.error(f"运行时错误: {e}", exc_info=True)
+        return QuipuResult(success=False, exit_code=1, message=f"系统错误: {e}", error=e)
+~~~~~
+~~~~~python
+def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: bool = False) -> QuipuResult:
+    """
+    Quipu 核心业务逻辑的入口包装器。
+
+    实例化并运行 QuipuApplication，捕获所有异常并转化为 QuipuResult。
+    确保资源被安全释放。
+    """
+    app = None
+    try:
+        app = QuipuApplication(work_dir=work_dir, yolo=yolo)
+        return app.run(content=content, parser_name=parser_name)
+
+    except CoreExecutionError as e:
+        logger.error(f"❌ 操作失败: {e}")
+        return QuipuResult(success=False, exit_code=1, message=str(e), error=e)
+
+    except Exception as e:
+        logger.error(f"运行时错误: {e}", exc_info=True)
+        return QuipuResult(success=False, exit_code=1, message=f"系统错误: {e}", error=e)
+    finally:
+        # 确保无论成功或失败，引擎资源都被关闭
+        if app and hasattr(app, "engine") and app.engine:
+            app.engine.close()
+~~~~~
+
+### Acts 2: 增加数据库连接安全网
+
+为了进一步提高健壮性，我们在 `DatabaseManager` 中添加 `__del__` 方法。
+
+~~~~~act
+replace packages/quipu-engine/src/quipu/core/sqlite_db.py
+~~~~~
+~~~~~python
+    def close(self):
+        """关闭数据库连接。"""
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+            logger.debug("🗃️  数据库连接已关闭。")
+~~~~~
+~~~~~python
+    def close(self):
+        """关闭数据库连接。"""
+        if self._conn:
+            self._conn.close()
+            self._conn = None
+            logger.debug("🗃️  数据库连接已关闭。")
+
+    def __del__(self):
+        """析构函数，作为关闭连接的最后一道防线。"""
+        self.close()
 ~~~~~
