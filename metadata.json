@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "refactor: 将 find 命令重构为使用 SQLite 后端", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764155084.0868607, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复因缺少类型导入导致的 NameError", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764155161.9485571, "duration_ms": 0}}
