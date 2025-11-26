@@ -1,54 +1,43 @@
-# fix: 修正 pytest-cov 配置并恢复测试详细输出
+# chore: 创建提交以固化测试改进成果
 
 ## 用户需求
-`pytest-cov` 由于配置错误而未能收集到任何覆盖率数据，同时 `pytest` 的输出因 `-q` 标志而过于简化。你希望修复这两个问题，以便能正确地生成覆盖率报告并看到详细的测试进度。
+在所有测试通过并且覆盖率报告正常显示后，将当前的所有代码变更提交到版本控制中。
 
 ## 评论
-这个问题是由于测试配置 (`pyproject.toml`) 与项目的实际目录结构和导入方式不匹配造成的。`--cov=src` 适用于标准的 `src-layout`，但我们的项目使用了命名空间包，并且 `pythonpath` 指向了更深的目录，因此需要将覆盖率目标明确指向 `quipu` 包。同时，移除 `-q` 标志将改善开发者体验 (DX)，在运行测试时提供更清晰的反馈。
+这是一个标准的工作流程节点。在完成一个功能或修复一系列问题后，创建一个清晰的提交是至关重要的。这将为项目历史留下一个稳定的、可回溯的快照。
 
 ## 目标
-1.  修改 `pyproject.toml`，将 `pytest-cov` 的目标从 `--cov=src` 改为 `--cov=quipu`。
-2.  从 `pytest` 的 `addopts` 配置中移除 `-q` 标志，以恢复默认的详细测试进度输出。
+1.  将所有未暂存的变更添加到 Git 暂存区。
+2.  创建一个符合 Conventional Commits 规范的提交。
 
 ## 基本原理
-通过使 `pytest-cov` 的配置与项目的命名空间包结构保持一致，我们可以确保覆盖率工具能够正确地挂钩 (hook) 到被测试的代码模块。移除 `-q` 标志则是一个简单的配置调整，用于恢复 `pytest` 的标准输出行为，提升开发过程中的透明度。
+使用 `git_add .` 命令来暂存所有变更，然后使用 `git_commit` 命令创建一个新的提交。提交消息将清晰地反映本次任务的核心内容：完善测试。
 
 ## 标签
-#intent/fix #flow/ready #priority/high
-#comp/build #comp/tests
+#intent/tooling #flow/ready #priority/high
+#comp/build
 #scope/dx
 #ai/instruct
-#task/domain/testing #task/object/coverage #task/action/fix
-#task/state/continue #task/status/active
+#task/domain/testing #task/object/coverage #task/action/improvement
+#task/state/end #task/status/completed
 
 ---
 
 ## Script
 
-### Acts 1: 修正 `pyproject.toml` 中的 `pytest` 配置
-
-我们将一次性更新 `[tool.pytest.ini_options]` 部分，同时修正覆盖率目标并移除 quiet 标志。
+### Acts 1: 暂存并提交所有变更
 
 ~~~~~act
-replace pyproject.toml
+git_add .
+~~~~~
+~~~~~act
+git_commit
 ~~~~~
 ~~~~~
-[tool.pytest.ini_options]
-addopts = "-ra -q --cov=src --cov-report=term-missing"
-pythonpath = [
-  "packages/quipu-interfaces/src",
-  "packages/quipu-engine/src",
-  "packages/quipu-runtime/src",
-  "packages/quipu-cli/src",
-]
-~~~~~
-~~~~~
-[tool.pytest.ini_options]
-addopts = "-ra --cov=quipu --cov-report=term-missing"
-pythonpath = [
-  "packages/quipu-interfaces/src",
-  "packages/quipu-engine/src",
-  "packages/quipu-runtime/src",
-  "packages/quipu-cli/src",
-]
+test: Integrate pytest-cov and enhance test suite
+
+- Configures pytest-cov in pyproject.toml to correctly measure coverage for the 'quipu' namespace package.
+- Adds comprehensive CLI tests for error paths and boundary conditions, including handling of non-existent files and clean workspace states.
+- Implements resilience tests for the plugin loader to ensure it gracefully handles syntax errors or registration failures in plugins.
+- Fixes a bug in the 'quipu save' command where it incorrectly created a snapshot for a clean genesis state.
 ~~~~~
