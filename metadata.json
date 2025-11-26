@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "为 `GitObjectHistoryReader` 添加新接口的兼容性实现。这些实现效率较低，但能确保在不使用 SQLite 时系统依然可以正常工作。", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764159137.9029553, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "分析", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764159271.9489415, "duration_ms": 0}}
