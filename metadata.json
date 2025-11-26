@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Write: packages/quipu-runtime/src/quipu/core/executor.py", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146359.6682398, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Replace in: packages/quipu-runtime/src/quipu/core/executor.py", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146449.9391453, "duration_ms": 0}}
