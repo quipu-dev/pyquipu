@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: 更新 CLI 入口及测试以适配 UI 重构", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764167870.4845955, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "大小写测试修复 Capture: M test_ui_logic.py", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764168060.772516, "duration_ms": 0}}
