@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "chore: 提交核心解耦重构", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146213.7103884, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Write: packages/quipu-runtime/src/quipu/core/executor.py", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146359.6682398, "duration_ms": 0}}
