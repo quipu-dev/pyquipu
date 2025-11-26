@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: M bootstrap.py, M dev_setup.fish, M dev_setup.sh ... and 50 more files", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146154.8765032, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Write: packages/quipu-cli/src/quipu/cli/utils.py", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764146157.6280057, "duration_ms": 0}}
