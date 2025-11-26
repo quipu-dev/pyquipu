@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "chore: 提交 SQLite 数据层测试的阶段性成果", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764163508.2539835, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Capture: M main.py, M git_object_storage.py, M hydrator.py ... and 8 more files", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764163739.4896717, "duration_ms": 0}}
