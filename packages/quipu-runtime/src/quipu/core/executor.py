@@ -22,7 +22,7 @@ class Executor:
         self.yolo = yolo
         # Map: name -> (func, arg_mode, summarizer)
         self._acts: Dict[str, tuple[ActFunction, str, Any]] = {}
-        
+
         if not self.root_dir.exists():
             try:
                 self.root_dir.mkdir(parents=True, exist_ok=True)
@@ -41,7 +41,7 @@ class Executor:
         valid_modes = {"hybrid", "exclusive", "block_only"}
         if arg_mode not in valid_modes:
             raise ValueError(f"Invalid arg_mode: {arg_mode}. Must be one of {valid_modes}")
-            
+
         self._acts[name] = (func, arg_mode, summarizer)
         logger.debug(f"注册 Act: {name} (Mode: {arg_mode})")
 
@@ -59,22 +59,22 @@ class Executor:
             tokens = shlex.split(raw_act_line)
         except ValueError:
             return None
-            
+
         if not tokens:
             return None
-            
+
         act_name = tokens[0]
         inline_args = tokens[1:]
         contexts = stmt["contexts"]
-        
+
         if act_name not in self._acts:
             return None
-            
+
         _, _, summarizer = self._acts[act_name]
-        
+
         if not summarizer:
             return None
-            
+
         try:
             return summarizer(inline_args, contexts)
         except Exception as e:
@@ -88,10 +88,10 @@ class Executor:
         """
         clean_rel = rel_path.strip()
         abs_path = (self.root_dir / clean_rel).resolve()
-        
+
         if not str(abs_path).startswith(str(self.root_dir)):
             raise ExecutionError(f"安全警告：路径 '{clean_rel}' 试图访问工作区外部: {abs_path}")
-            
+
         return abs_path
 
     def request_confirmation(self, file_path: Path, old_content: str, new_content: str) -> bool:
@@ -102,12 +102,14 @@ class Executor:
         if self.yolo:
             return True
 
-        diff = list(difflib.unified_diff(
-            old_content.splitlines(keepends=True),
-            new_content.splitlines(keepends=True),
-            fromfile=f"a/{file_path.name}",
-            tofile=f"b/{file_path.name}",
-        ))
+        diff = list(
+            difflib.unified_diff(
+                old_content.splitlines(keepends=True),
+                new_content.splitlines(keepends=True),
+                fromfile=f"a/{file_path.name}",
+                tofile=f"b/{file_path.name}",
+            )
+        )
 
         if not diff:
             logger.info("⚠️  内容无变化")
@@ -115,21 +117,21 @@ class Executor:
 
         typer.echo("\n🔍 变更预览:")
         for line in diff:
-            if line.startswith('+'):
-                typer.secho(line.strip('\n'), fg=typer.colors.GREEN)
-            elif line.startswith('-'):
-                typer.secho(line.strip('\n'), fg=typer.colors.RED)
-            elif line.startswith('^'):
-                typer.secho(line.strip('\n'), fg=typer.colors.BLUE)
+            if line.startswith("+"):
+                typer.secho(line.strip("\n"), fg=typer.colors.GREEN)
+            elif line.startswith("-"):
+                typer.secho(line.strip("\n"), fg=typer.colors.RED)
+            elif line.startswith("^"):
+                typer.secho(line.strip("\n"), fg=typer.colors.BLUE)
             else:
-                typer.echo(line.strip('\n'))
-        
+                typer.echo(line.strip("\n"))
+
         typer.echo("")
         prompt = f"❓ 是否对 {file_path.name} 执行上述修改?"
 
         if sys.stdin.isatty():
             return typer.confirm(prompt, default=True)
-        
+
         try:
             with open("/dev/tty", "r") as tty:
                 typer.echo(f"{prompt} [Y/n]: ", nl=False)
@@ -143,28 +145,28 @@ class Executor:
     def execute(self, statements: List[Statement]):
         """执行一系列语句"""
         logger.info(f"Starting execution of {len(statements)} operations...")
-        
+
         # 创建一个可重用的上下文对象
         ctx = ActContext(self)
-        
+
         for i, stmt in enumerate(statements):
             raw_act_line = stmt["act"]
             block_contexts = stmt["contexts"]
-            
+
             try:
                 tokens = shlex.split(raw_act_line)
             except ValueError as e:
                 raise ExecutionError(f"Error parsing Act command line: {raw_act_line} ({e})")
-            
+
             if not tokens:
-                logger.warning(f"Skipping empty instruction [{i+1}/{len(statements)}]")
+                logger.warning(f"Skipping empty instruction [{i + 1}/{len(statements)}]")
                 continue
-                
+
             act_name = tokens[0]
             inline_args = tokens[1:]
-            
+
             if act_name not in self._acts:
-                logger.warning(f"Skipping unknown operation [{i+1}/{len(statements)}]: {act_name}")
+                logger.warning(f"Skipping unknown operation [{i + 1}/{len(statements)}]: {act_name}")
                 continue
 
             func, arg_mode, _ = self._acts[act_name]
@@ -176,16 +178,20 @@ class Executor:
                 if inline_args:
                     final_args = inline_args
                     if block_contexts:
-                        logger.debug(f"ℹ️  [{act_name} - Exclusive] Inline args detected, ignoring {len(block_contexts)} subsequent Block(s).")
+                        logger.debug(
+                            f"ℹ️  [{act_name} - Exclusive] Inline args detected, ignoring {len(block_contexts)} subsequent Block(s)."
+                        )
                 else:
                     final_args = block_contexts
             elif arg_mode == "block_only":
                 if inline_args:
                     logger.warning(f"⚠️  [{act_name} - BlockOnly] Ignoring illegal inline arguments: {inline_args}")
                 final_args = block_contexts
-            
+
             try:
-                logger.info(f"Executing operation [{i+1}/{len(statements)}]: {act_name} (Mode: {arg_mode}, Args: {len(final_args)})")
+                logger.info(
+                    f"Executing operation [{i + 1}/{len(statements)}]: {act_name} (Mode: {arg_mode}, Args: {len(final_args)})"
+                )
                 # 传递上下文对象，而不是 executor 实例
                 func(ctx, final_args)
             except Exception as e:

@@ -9,24 +9,17 @@ logger = logging.getLogger(__name__)
 DEFAULTS = {
     "sync": {
         "remote_name": "origin",
-        "persistent_ignores": [
-            ".idea",
-            ".vscode",
-            ".envs",
-            "__pycache__",
-            "node_modules",
-            "o.md"
-        ]
+        "persistent_ignores": [".idea", ".vscode", ".envs", "__pycache__", "node_modules", "o.md"],
     },
-    "list_files": {
-        "ignore_patterns": [".git", "__pycache__", ".idea", ".vscode", "node_modules", ".quipu"]
-    }
+    "list_files": {"ignore_patterns": [".git", "__pycache__", ".idea", ".vscode", "node_modules", ".quipu"]},
 }
+
 
 class ConfigManager:
     """
     负责加载和管理 .quipu/config.yml 文件。
     """
+
     def __init__(self, work_dir: Path):
         self.config_path = work_dir.resolve() / ".quipu" / "config.yml"
         self.user_config: Dict[str, Any] = self._load_config()
@@ -35,9 +28,9 @@ class ConfigManager:
         """加载并解析 YAML 配置文件，如果文件不存在或无效则返回空字典。"""
         if not self.config_path.exists():
             return {}
-        
+
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
+            with open(self.config_path, "r", encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
                 if not isinstance(config_data, dict):
                     logger.warning(f"⚠️  配置文件 '{self.config_path}' 不是有效的字典格式，已忽略。")
@@ -53,7 +46,7 @@ class ConfigManager:
     def get(self, key: str, fallback: Any = None) -> Any:
         """
         获取一个配置值，支持点状符号进行嵌套访问 (e.g., 'sync.remote_name')。
-        
+
         查找顺序:
         1. 用户配置 (`config.yml`)
         2. 内置默认值 (`DEFAULTS`)
@@ -63,18 +56,18 @@ class ConfigManager:
         user_val = self._get_nested(self.user_config, key)
         if user_val is not None:
             return user_val
-            
+
         # 尝试从默认配置中获取
         default_val = self._get_nested(DEFAULTS, key)
         if default_val is not None:
             return default_val
-            
+
         # 返回最终的备用值
         return fallback
 
     def _get_nested(self, data: Dict, key: str) -> Any:
         """使用点状符号安全地访问嵌套字典。"""
-        keys = key.split('.')
+        keys = key.split(".")
         current = data
         for k in keys:
             if isinstance(current, dict) and k in current:

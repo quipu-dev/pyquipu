@@ -9,11 +9,13 @@ from quipu.core.exceptions import ExecutionError
 
 logger = logging.getLogger(__name__)
 
+
 class GitDB:
     """
     Axon 的 Git 底层接口 (Plumbing Interface)。
     负责与 Git 对象数据库交互，维护 Shadow Index 和 Refs。
     """
+
     def __init__(self, root_dir: Path):
         if not shutil.which("git"):
             raise ExecutionError("未找到 'git' 命令。请安装 Git 并确保它在系统的 PATH 中。")
@@ -34,13 +36,13 @@ class GitDB:
         env: Optional[Dict] = None,
         check: bool = True,
         log_error: bool = True,
-        input_data: Optional[str] = None
+        input_data: Optional[str] = None,
     ) -> subprocess.CompletedProcess:
         """执行 git 命令的底层封装，返回完整的 CompletedProcess 对象"""
         full_env = os.environ.copy()
         if env:
             full_env.update(env)
-            
+
         try:
             result = subprocess.run(
                 ["git"] + args,
@@ -49,7 +51,7 @@ class GitDB:
                 capture_output=True,
                 text=True,
                 check=check,
-                input=input_data
+                input=input_data,
             )
             return result
         except subprocess.CalledProcessError as e:
@@ -65,10 +67,10 @@ class GitDB:
         """
         index_path = self.quipu_dir / "tmp_index"
         self.quipu_dir.mkdir(exist_ok=True)
-        
+
         # 定义隔离的环境变量
         env = {"GIT_INDEX_FILE": str(index_path)}
-        
+
         try:
             yield env
         finally:
@@ -89,11 +91,8 @@ class GitDB:
             # 使用 ':(exclude).quipu' 确保 Axon 自身数据不影响状态计算
             # -A: 自动处理添加、修改、删除
             # --ignore-errors: 即使某些文件无法读取也继续（尽力而为）
-            self._run(
-                ["add", "-A", "--ignore-errors", ".", ":(exclude).quipu"],
-                env=env
-            )
-            
+            self._run(["add", "-A", "--ignore-errors", ".", ":(exclude).quipu"], env=env)
+
             # 2. 将索引写入对象库，返回 Tree Hash
             result = self._run(["write-tree"], env=env)
             return result.stdout.strip()
@@ -108,11 +107,11 @@ class GitDB:
                 cwd=self.root,
                 input=content_bytes,
                 capture_output=True,
-                check=True
+                check=True,
             )
-            return result.stdout.decode('utf-8').strip()
+            return result.stdout.decode("utf-8").strip()
         except subprocess.CalledProcessError as e:
-            stderr_str = e.stderr.decode('utf-8') if e.stderr else "No stderr"
+            stderr_str = e.stderr.decode("utf-8") if e.stderr else "No stderr"
             logger.error(f"Git hash-object failed: {stderr_str}")
             raise RuntimeError(f"Git command failed: hash-object\n{stderr_str}") from e
 
@@ -131,7 +130,7 @@ class GitDB:
         if parent_hashes:
             for p in parent_hashes:
                 cmd.extend(["-p", p])
-        
+
         result = self._run(cmd, input_data=message)
         return result.stdout.strip()
 
@@ -154,13 +153,7 @@ class GitDB:
         # 使用 grep 搜索所有 refs/quipu/ 下的记录
         # 注意：这假设 Output Tree 是唯一的，这在大概率上是成立的，
         # 且即使有重复（如 merge），找到任意一个作为父节点通常也是可接受的起点。
-        cmd = [
-            "log",
-            "--all",
-            f"--grep=X-Quipu-Output-Tree: {tree_hash}",
-            "--format=%H",
-            "-n", "1"
-        ]
+        cmd = ["log", "--all", f"--grep=X-Quipu-Output-Tree: {tree_hash}", "--format=%H", "-n", "1"]
         res = self._run(cmd, check=False)
         if res.returncode == 0 and res.stdout.strip():
             return res.stdout.strip()
@@ -172,7 +165,7 @@ class GitDB:
             result = self._run(["rev-parse", "HEAD"])
             return result.stdout.strip()
         except RuntimeError:
-            return None # 可能是空仓库
+            return None  # 可能是空仓库
 
     def is_ancestor(self, ancestor: str, descendant: str) -> bool:
         """
@@ -183,8 +176,8 @@ class GitDB:
         # 我们在这里直接调用 subprocess，因为我们关心返回码而不是输出
         result = self._run(
             ["merge-base", "--is-ancestor", ancestor, descendant],
-            check=False, # 必须禁用 check，否则非 0 退出码会抛异常
-            log_error=False # 我们不认为这是一个错误
+            check=False,  # 必须禁用 check，否则非 0 退出码会抛异常
+            log_error=False,  # 我们不认为这是一个错误
         )
         return result.returncode == 0
 
@@ -216,19 +209,19 @@ class GitDB:
         这是一个底层方法，上层应确保工作区的未提交更改已被处理。
         """
         logger.info(f"Executing hard checkout to tree: {tree_hash[:7]}")
-        
+
         # 1. 使用 read-tree 更新索引，这是一个安全的操作
         self._run(["read-tree", tree_hash])
-        
+
         # 2. 从更新后的索引检出文件，-a (all) -f (force)
         self._run(["checkout-index", "-a", "-f"])
-        
+
         # 3. 清理工作区中多余的文件和目录
         # -d: 目录, -f: 强制
         # 移除了 -x 参数，以尊重 .gitignore 规则
         # -e .quipu: 排除 .quipu 目录，防止自毁
         self._run(["clean", "-df", "-e", ".quipu"])
-        
+
         logger.info("✅ Workspace reset to target state.")
 
     def cat_file(self, object_hash: str, object_type: str = "blob") -> bytes:
@@ -242,31 +235,31 @@ class GitDB:
         cmd.append(object_hash)
 
         result = self._run(cmd)
-        return result.stdout.encode('utf-8')
+        return result.stdout.encode("utf-8")
 
     def batch_cat_file(self, object_hashes: List[str]) -> Dict[str, bytes]:
         """
         批量读取 Git 对象。
         解决 N+1 查询性能问题。
-        
+
         Args:
             object_hashes: 需要读取的对象哈希列表 (可以重复，内部会自动去重)
-            
+
         Returns:
             Dict[hash, content_bytes]: 哈希到内容的映射。
             如果对象不存在，则不会出现在返回字典中。
         """
         if not object_hashes:
             return {}
-            
+
         # Deduplicate
         unique_hashes = list(set(object_hashes))
-        
+
         # Prepare input: <hash>\n
         input_str = "\n".join(unique_hashes) + "\n"
-        
+
         results = {}
-        
+
         try:
             # git cat-file --batch format:
             # <hash> <type> <size>\n
@@ -278,12 +271,11 @@ class GitDB:
                 stdout=subprocess.PIPE,
                 # bufsize=0 is often recommended for binary streams but careful buffering is usually fine
             ) as proc:
-                
                 # Write requests and close stdin to signal EOF
                 if proc.stdin:
-                    proc.stdin.write(input_str.encode('utf-8'))
+                    proc.stdin.write(input_str.encode("utf-8"))
                     proc.stdin.close()
-                
+
                 if not proc.stdout:
                     return {}
 
@@ -292,35 +284,35 @@ class GitDB:
                     header_line = proc.stdout.readline()
                     if not header_line:
                         break
-                    
+
                     header_parts = header_line.strip().split()
                     if not header_parts:
                         continue
-                        
+
                     obj_hash_bytes = header_parts[0]
-                    obj_hash = obj_hash_bytes.decode('utf-8')
-                    
+                    obj_hash = obj_hash_bytes.decode("utf-8")
+
                     # Check for missing object: "<hash> missing"
                     if len(header_parts) == 2 and header_parts[1] == b"missing":
                         continue
-                    
+
                     if len(header_parts) < 3:
                         logger.warning(f"Unexpected git cat-file header: {header_line}")
                         continue
-                        
+
                     # size is at index 2
                     try:
                         size = int(header_parts[2])
                     except ValueError:
                         logger.warning(f"Invalid size in header: {header_line}")
                         continue
-                    
+
                     # Read content bytes + trailing newline
                     content = proc.stdout.read(size)
-                    proc.stdout.read(1) # Consume the trailing LF
-                    
+                    proc.stdout.read(1)  # Consume the trailing LF
+
                     results[obj_hash] = content
-                    
+
         except Exception as e:
             logger.error(f"Batch cat-file failed: {e}")
             raise RuntimeError(f"Git batch operation failed: {e}") from e
@@ -346,7 +338,7 @@ class GitDB:
         DELIMITER = "---QUIPU-LOG-ENTRY---"
         # Format: H=hash, P=parent, T=tree, ct=commit_timestamp, B=body
         log_format = f"%H%n%P%n%T%n%ct%n%B{DELIMITER}"
-        
+
         if isinstance(ref_names, str):
             refs_to_log = [ref_names]
         else:
@@ -354,7 +346,7 @@ class GitDB:
 
         if not refs_to_log:
             return []
-        
+
         # Git log on multiple refs will automatically show the union of their histories without duplicates.
         cmd = ["log", f"--format={log_format}"] + refs_to_log
         res = self._run(cmd, check=False, log_error=False)
@@ -367,14 +359,16 @@ class GitDB:
         for entry in entries:
             if not entry.strip():
                 continue
-            
-            parts = entry.strip().split('\n', 4)
+
+            parts = entry.strip().split("\n", 4)
             if len(parts) >= 4:
-                parsed_logs.append({
-                    "hash": parts[0],
-                    "parent": parts[1],
-                    "tree": parts[2],
-                    "timestamp": parts[3],
-                    "body": parts[4] if len(parts) > 4 else ""
-                })
+                parsed_logs.append(
+                    {
+                        "hash": parts[0],
+                        "parent": parts[1],
+                        "tree": parts[2],
+                        "timestamp": parts[3],
+                        "body": parts[4] if len(parts) > 4 else "",
+                    }
+                )
         return parsed_logs

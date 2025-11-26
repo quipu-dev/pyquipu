@@ -6,10 +6,12 @@ from quipu.core.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
 
+
 def register(executor: Executor):
     """注册检查类操作"""
     executor.register("check_files_exist", _check_files_exist, arg_mode="exclusive")
     executor.register("check_cwd_match", _check_cwd_match, arg_mode="exclusive")
+
 
 def _check_files_exist(ctx: ActContext, args: List[str]):
     """
@@ -19,15 +21,15 @@ def _check_files_exist(ctx: ActContext, args: List[str]):
     """
     if len(args) < 1:
         ctx.fail("check_files_exist 需要至少一个参数: [file_list_string]")
-    
-    raw_files = args[0].strip().split('\n')
+
+    raw_files = args[0].strip().split("\n")
     missing_files = []
 
     for raw_path in raw_files:
         clean_path = raw_path.strip()
         if not clean_path:
             continue
-            
+
         target_path = ctx.resolve_path(clean_path)
         if not target_path.exists():
             missing_files.append(clean_path)
@@ -35,8 +37,9 @@ def _check_files_exist(ctx: ActContext, args: List[str]):
     if missing_files:
         msg = f"❌ [Check] 以下文件在工作区中未找到:\n" + "\n".join(f"  - {f}" for f in missing_files)
         ctx.fail(msg)
-    
+
     logger.info(f"✅ [Check] 所有符合条件的文件均存在。")
+
 
 def _check_cwd_match(ctx: ActContext, args: List[str]):
     """
@@ -52,10 +55,6 @@ def _check_cwd_match(ctx: ActContext, args: List[str]):
     expected_path = Path(os.path.expanduser(expected_path_str)).resolve()
 
     if current_root != expected_path:
-        ctx.fail(
-            f"❌ [Check] 工作区目录不匹配!\n"
-            f"  预期: {expected_path}\n"
-            f"  实际: {current_root}"
-        )
-        
+        ctx.fail(f"❌ [Check] 工作区目录不匹配!\n  预期: {expected_path}\n  实际: {current_root}")
+
     logger.info(f"✅ [Check] 工作区目录匹配: {current_root}")

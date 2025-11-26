@@ -21,6 +21,7 @@ class GitObjectHistoryReader(HistoryReader):
     一个从 Git 底层对象读取历史的实现。
     使用批处理优化加载性能。
     """
+
     def __init__(self, git_db: GitDB):
         self.git_db = git_db
 
@@ -39,28 +40,28 @@ class GitObjectHistoryReader(HistoryReader):
         length = len(data)
         while idx < length:
             # 1. Find space after mode
-            space_idx = data.find(b' ', idx)
+            space_idx = data.find(b" ", idx)
             if space_idx == -1:
                 break
-            
+
             # 2. Find null byte after filename
-            null_idx = data.find(b'\0', space_idx + 1)
+            null_idx = data.find(b"\0", space_idx + 1)
             if null_idx == -1:
                 break
-                
+
             # 3. Extract filename
-            filename = data[space_idx + 1 : null_idx].decode('utf-8', errors='ignore')
-            
+            filename = data[space_idx + 1 : null_idx].decode("utf-8", errors="ignore")
+
             # 4. Extract hash (next 20 bytes)
             hash_start = null_idx + 1
             if hash_start + 20 > length:
                 break
-            
+
             hash_bytes = data[hash_start : hash_start + 20]
             hex_hash = hash_bytes.hex()
-            
+
             entries[filename] = hex_hash
-            
+
             # Move to next entry
             idx = hash_start + 20
         return entries
@@ -114,7 +115,7 @@ class GitObjectHistoryReader(HistoryReader):
         for entry in log_entries:
             commit_hash = entry["hash"]
             tree_hash = entry["tree"]
-            
+
             # Skip if already processed (though log entries shouldn't duplicate commits usually)
             if commit_hash in temp_nodes:
                 continue
@@ -124,9 +125,9 @@ class GitObjectHistoryReader(HistoryReader):
                 if tree_hash not in tree_to_meta_blob:
                     logger.warning(f"Skipping commit {commit_hash[:7]}: metadata.json not found in tree.")
                     continue
-                
+
                 meta_blob_hash = tree_to_meta_blob[tree_hash]
-                
+
                 if meta_blob_hash not in metas_content:
                     logger.warning(f"Skipping commit {commit_hash[:7]}: metadata blob missing.")
                     continue
@@ -140,19 +141,21 @@ class GitObjectHistoryReader(HistoryReader):
                     continue
 
                 # Content is lazy loaded
-                content = "" 
+                content = ""
 
                 node = QuipuNode(
                     # Placeholder, will be filled in the linking phase
-                    input_tree="", 
+                    input_tree="",
                     output_tree=output_tree,
-                    timestamp=datetime.fromtimestamp(float(meta_data.get("exec", {}).get("start") or entry["timestamp"])),
+                    timestamp=datetime.fromtimestamp(
+                        float(meta_data.get("exec", {}).get("start") or entry["timestamp"])
+                    ),
                     filename=Path(f".quipu/git_objects/{commit_hash}"),
                     node_type=meta_data.get("type", "unknown"),
                     content=content,
                     summary=meta_data.get("summary", "No summary available"),
                 )
-                
+
                 temp_nodes[commit_hash] = node
                 parent_hash = entry["parent"].split(" ")[0] if entry["parent"] else None
                 if parent_hash:
@@ -175,7 +178,7 @@ class GitObjectHistoryReader(HistoryReader):
         # Sort children by timestamp
         for node in temp_nodes.values():
             node.children.sort(key=lambda n: n.timestamp)
-            
+
         return list(temp_nodes.values())
 
     def get_node_content(self, node: QuipuNode) -> str:
@@ -189,7 +192,7 @@ class GitObjectHistoryReader(HistoryReader):
         try:
             # Extract commit hash from the virtual filename
             commit_hash = node.filename.name
-            
+
             # 1. Get Tree Hash from Commit
             commit_bytes = self.git_db.cat_file(commit_hash, "commit")
             # Parse "tree {hash}" from the first line
@@ -203,19 +206,19 @@ class GitObjectHistoryReader(HistoryReader):
             tree_content_map = self.git_db.batch_cat_file([tree_hash])
             if tree_hash not in tree_content_map:
                 return ""
-            
+
             tree_content = tree_content_map[tree_hash]
             entries = self._parse_tree_binary(tree_content)
-            
+
             blob_hash = entries.get("content.md")
-            
+
             if not blob_hash:
-                return "" # No content found
-            
+                return ""  # No content found
+
             # 3. Read Blob (also raw binary)
             content_bytes = self.git_db.cat_file(blob_hash)
-            content = content_bytes.decode('utf-8', errors='ignore')
-            
+            content = content_bytes.decode("utf-8", errors="ignore")
+
             # Cache it
             node.content = content
             return content
@@ -273,32 +276,32 @@ class GitObjectHistoryWriter(HistoryWriter):
             in_act_block = False
             for line in content.strip().splitlines():
                 clean_line = line.strip()
-                if clean_line.startswith(('~~~act', '```act')):
+                if clean_line.startswith(("~~~act", "```act")):
                     in_act_block = True
                     continue
-                
+
                 if in_act_block:
-                    if clean_line.startswith(('~~~', '```')):
+                    if clean_line.startswith(("~~~", "```")):
                         break  # 块结束
                     if clean_line:
                         summary = clean_line
                         break  # 找到摘要
-            
+
             if summary:
-                return (summary[:75] + '...') if len(summary) > 75 else summary
+                return (summary[:75] + "...") if len(summary) > 75 else summary
 
             # 回退：尝试从 Markdown 的第一个标题中提取
             match = re.search(r"^\s*#{1,6}\s+(.*)", content, re.MULTILINE)
             if match:
                 return match.group(1).strip()
-            
+
             # Fallback to the first non-empty line
             first_line = next((line.strip() for line in content.strip().splitlines() if line.strip()), "Plan executed")
-            return (first_line[:75] + '...') if len(first_line) > 75 else first_line
+            return (first_line[:75] + "...") if len(first_line) > 75 else first_line
 
         elif node_type == "capture":
             user_message = (kwargs.get("message") or "").strip()
-            
+
             changes = self.git_db.get_diff_name_status(input_tree, output_tree)
             if not changes:
                 auto_summary = "Capture: No changes detected"
@@ -310,7 +313,7 @@ class GitObjectHistoryWriter(HistoryWriter):
                 auto_summary = f"Capture: {summary_part}"
 
             return f"{user_message} {auto_summary}".strip() if user_message else auto_summary
-        
+
         return "Unknown node type"
 
     def create_node(
@@ -328,9 +331,7 @@ class GitObjectHistoryWriter(HistoryWriter):
         end_time = time.time()
         duration_ms = int((end_time - start_time) * 1000)
 
-        summary = self._generate_summary(
-            node_type, content, input_tree, output_tree, **kwargs
-        )
+        summary = self._generate_summary(node_type, content, input_tree, output_tree, **kwargs)
 
         metadata = {
             "meta_version": "1.0",
@@ -341,38 +342,33 @@ class GitObjectHistoryWriter(HistoryWriter):
             "exec": {"start": start_time, "duration_ms": duration_ms},
         }
 
-        meta_json_bytes = json.dumps(
-            metadata, sort_keys=False, ensure_ascii=False
-        ).encode("utf-8")
+        meta_json_bytes = json.dumps(metadata, sort_keys=False, ensure_ascii=False).encode("utf-8")
         content_md_bytes = content.encode("utf-8")
 
         meta_blob_hash = self.git_db.hash_object(meta_json_bytes)
         content_blob_hash = self.git_db.hash_object(content_md_bytes)
 
         # 使用 100444 权限 (只读文件)
-        tree_descriptor = (
-            f"100444 blob {meta_blob_hash}\tmetadata.json\n"
-            f"100444 blob {content_blob_hash}\tcontent.md"
-        )
+        tree_descriptor = f"100444 blob {meta_blob_hash}\tmetadata.json\n100444 blob {content_blob_hash}\tcontent.md"
         tree_hash = self.git_db.mktree(tree_descriptor)
 
         # 1. 确定父节点 (Topological Parent)
         parent_commit = self.git_db.get_commit_by_output_tree(input_tree)
         parents = [parent_commit] if parent_commit else None
-        
+
         if not parent_commit and input_tree != "4b825dc642cb6eb9a060e54bf8d69288fbee4904":
-             logger.warning(f"⚠️  Could not find parent commit for input state {input_tree[:7]}. This node may be detached.")
+            logger.warning(
+                f"⚠️  Could not find parent commit for input state {input_tree[:7]}. This node may be detached."
+            )
 
         # 2. 创建 Commit
         commit_message = f"{summary}\n\nX-Quipu-Output-Tree: {output_tree}"
-        new_commit_hash = self.git_db.commit_tree(
-            tree_hash=tree_hash, parent_hashes=parents, message=commit_message
-        )
+        new_commit_hash = self.git_db.commit_tree(tree_hash=tree_hash, parent_hashes=parents, message=commit_message)
 
         # 3. 引用管理 (Multi-Head Strategy)
         self.git_db.update_ref("refs/quipu/history", new_commit_hash)
         self.git_db.update_ref(f"refs/quipu/heads/{new_commit_hash}", new_commit_hash)
-        
+
         if parent_commit:
             self.git_db.delete_ref(f"refs/quipu/heads/{parent_commit}")
 

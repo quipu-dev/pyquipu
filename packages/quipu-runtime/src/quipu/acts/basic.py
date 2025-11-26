@@ -6,6 +6,7 @@ from quipu.core.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
 
+
 def register(executor: Executor):
     """注册基础文件系统操作"""
     executor.register("write_file", _write_file, arg_mode="hybrid", summarizer=_summarize_write)
@@ -14,17 +15,21 @@ def register(executor: Executor):
     executor.register("end", _end, arg_mode="hybrid")
     executor.register("echo", _echo, arg_mode="hybrid")
 
+
 def _summarize_write(args: List[str], contexts: List[str]) -> str:
     path = args[0] if args else (contexts[0] if contexts else "???")
     return f"Write: {path}"
+
 
 def _summarize_replace(args: List[str], contexts: List[str]) -> str:
     path = args[0] if args else (contexts[0] if contexts else "???")
     return f"Replace in: {path}"
 
+
 def _summarize_append(args: List[str], contexts: List[str]) -> str:
     path = args[0] if args else (contexts[0] if contexts else "???")
     return f"Append to: {path}"
+
 
 def _end(ctx: ActContext, args: List[str]):
     """
@@ -36,6 +41,7 @@ def _end(ctx: ActContext, args: List[str]):
     """
     pass
 
+
 def _echo(ctx: ActContext, args: List[str]):
     """
     Act: echo
@@ -46,6 +52,7 @@ def _echo(ctx: ActContext, args: List[str]):
 
     print(args[0])
 
+
 def _write_file(ctx: ActContext, args: List[str]):
     """
     Act: write_file
@@ -53,16 +60,16 @@ def _write_file(ctx: ActContext, args: List[str]):
     """
     if len(args) < 2:
         ctx.fail("write_file 需要至少两个参数: [path, content]")
-    
+
     raw_path = args[0]
     content = args[1]
-    
+
     target_path = ctx.resolve_path(raw_path)
-    
+
     old_content = ""
     if target_path.exists():
         try:
-            old_content = target_path.read_text(encoding='utf-8')
+            old_content = target_path.read_text(encoding="utf-8")
         except Exception:
             old_content = "[Binary or Unreadable]"
 
@@ -72,13 +79,14 @@ def _write_file(ctx: ActContext, args: List[str]):
 
     try:
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_text(content, encoding='utf-8')
+        target_path.write_text(content, encoding="utf-8")
     except PermissionError:
         ctx.fail(f"写入文件失败: 对 '{raw_path}' 的访问权限不足。")
     except Exception as e:
         ctx.fail(f"写入文件时发生未知错误: {e}")
-    
+
     logger.info(f"✅ [Write] 文件已写入: {target_path.relative_to(ctx.root_dir)}")
+
 
 def _replace(ctx: ActContext, args: List[str]):
     """
@@ -87,35 +95,36 @@ def _replace(ctx: ActContext, args: List[str]):
     """
     if len(args) < 3:
         ctx.fail("replace 需要至少三个参数: [path, old_string, new_string]")
-    
+
     raw_path, old_str, new_str = args[0], args[1], args[2]
     target_path = ctx.resolve_path(raw_path)
-    
+
     if not target_path.exists():
         ctx.fail(f"文件未找到: {raw_path}")
-    
+
     try:
-        content = target_path.read_text(encoding='utf-8')
+        content = target_path.read_text(encoding="utf-8")
     except Exception as e:
         ctx.fail(f"读取文件 {raw_path} 失败: {e}")
-    
+
     if old_str not in content:
         ctx.fail(f"在文件 {raw_path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。")
-    
+
     new_content = content.replace(old_str, new_str, 1)
-    
+
     if not ctx.request_confirmation(target_path, content, new_content):
         logger.warning(f"❌ [Skip] 用户取消替换: {raw_path}")
         return
 
     try:
-        target_path.write_text(new_content, encoding='utf-8')
+        target_path.write_text(new_content, encoding="utf-8")
     except PermissionError:
         ctx.fail(f"替换文件内容失败: 对 '{raw_path}' 的访问权限不足。")
     except Exception as e:
         ctx.fail(f"更新文件时发生未知错误: {e}")
-        
+
     logger.info(f"✅ [Replace] 文件内容已更新: {target_path.relative_to(ctx.root_dir)}")
+
 
 def _append_file(ctx: ActContext, args: List[str]):
     """
@@ -124,16 +133,16 @@ def _append_file(ctx: ActContext, args: List[str]):
     """
     if len(args) < 2:
         ctx.fail("append_file 需要至少两个参数: [path, content]")
-    
+
     raw_path, content_to_append = args[0], args[1]
     target_path = ctx.resolve_path(raw_path)
-    
+
     if not target_path.exists():
         ctx.fail(f"文件不存在，无法追加: {raw_path}")
-    
+
     old_content = ""
     try:
-        old_content = target_path.read_text(encoding='utf-8')
+        old_content = target_path.read_text(encoding="utf-8")
     except Exception:
         old_content = "[Binary or Unreadable]"
 
@@ -144,11 +153,11 @@ def _append_file(ctx: ActContext, args: List[str]):
         return
 
     try:
-        with open(target_path, 'a', encoding='utf-8') as f:
+        with open(target_path, "a", encoding="utf-8") as f:
             f.write(content_to_append)
     except PermissionError:
         ctx.fail(f"追加文件内容失败: 对 '{raw_path}' 的访问权限不足。")
     except Exception as e:
         ctx.fail(f"追加文件时发生未知错误: {e}")
-    
+
     logger.info(f"✅ [Append] 内容已追加到: {target_path.relative_to(ctx.root_dir)}")

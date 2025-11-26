@@ -1,5 +1,6 @@
 from quipu.core.parser import detect_best_parser
 
+
 class TestAutoDetect:
     def test_detect_backtick_simple(self):
         text = """

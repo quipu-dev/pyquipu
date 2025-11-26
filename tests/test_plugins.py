@@ -5,8 +5,8 @@ from quipu.core.executor import Executor
 from quipu.core.plugin_loader import load_plugins
 from quipu.cli.factory import find_project_root  # 从 Factory 导入辅助函数
 
+
 class TestPluginLoading:
-    
     @pytest.fixture
     def custom_plugin_dir(self, tmp_path):
         """创建一个模拟的外部插件目录"""
@@ -29,7 +29,7 @@ def register(executor):
 
         # 3. 验证是否注册成功
         assert "hello_world" in executor._acts
-        
+
         # 验证模块是否被正确隔离加载（检查 sys.modules 中的名称）
         # 我们的 loader 使用了 "quipu_plugin_" 前缀
         loaded_modules = [m for m in sys.modules.keys() if "quipu_plugin_hello_world" in m]
@@ -39,12 +39,12 @@ def register(executor):
         """测试忽略非 Python 文件和无 register 函数的文件"""
         # 非 py 文件
         (custom_plugin_dir / "readme.md").write_text("# Readme")
-        
+
         # 无 register 的 py 文件
         (custom_plugin_dir / "helper.py").write_text("def foo(): pass")
-        
+
         load_plugins(executor, custom_plugin_dir)
-        
+
         # 应该没有报错，且 acts 列表没有增加
         # (executor fixture 默认带有一些 basic acts，所以只要不崩溃且没增加奇怪的东西就行)
         assert "foo" not in executor._acts
@@ -55,18 +55,18 @@ def register(executor):
         root = tmp_path / "my_project"
         root.mkdir()
         (root / ".git").mkdir()
-        
+
         subdir = root / "src" / "subdir"
         subdir.mkdir(parents=True)
-        
+
         # 从子目录查找
         found = find_project_root(subdir)
         assert found == root.resolve()
-        
+
         # 从根目录查找
         found_root = find_project_root(root)
         assert found_root == root.resolve()
-        
+
         # 在非 git 目录查找
         orphan = tmp_path / "orphan"
         orphan.mkdir()

@@ -11,18 +11,24 @@ from quipu.core.exceptions import ExecutionError
 
 logger = logging.getLogger(__name__)
 
+
 def register(executor: Executor):
     """注册读取与检索操作"""
     executor.register("read_file", _read_file, arg_mode="hybrid")
     executor.register("list_files", _list_files, arg_mode="exclusive")
     executor.register("search_files", _search_files, arg_mode="exclusive")
 
+
 class SafeArgumentParser(argparse.ArgumentParser):
     """覆盖 ArgumentParser 以抛出 ExecutionError。"""
+
     def error(self, message):
         raise ExecutionError(f"参数解析错误: {message}")
+
     def exit(self, status=0, message=None):
-        if message: raise ExecutionError(message)
+        if message:
+            raise ExecutionError(message)
+
 
 def _search_files(ctx: ActContext, args: List[str]):
     """
@@ -32,7 +38,7 @@ def _search_files(ctx: ActContext, args: List[str]):
     parser = SafeArgumentParser(prog="search_files", add_help=False)
     parser.add_argument("pattern", help="搜索内容的正则表达式")
     parser.add_argument("--path", "-p", default=".", help="搜索的根目录")
-    
+
     try:
         parsed_args = parser.parse_args(args)
     except ExecutionError as e:
@@ -58,9 +64,10 @@ def _search_files(ctx: ActContext, args: List[str]):
             return
         except Exception as e:
             logger.warning(f"⚠️  ripgrep 执行出错，回退到 Python 搜索: {e}")
-    
+
     logger.info("🐢 Using Python native search (Fallback).")
     _python_search(ctx, search_path, parsed_args.pattern)
+
 
 def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
     try:
@@ -70,11 +77,11 @@ def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
 
     matches = []
     for root, dirs, files in os.walk(start_path):
-        dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', '.idea', '.vscode', 'node_modules', '.quipu'}]
+        dirs[:] = [d for d in dirs if d not in {".git", "__pycache__", ".idea", ".vscode", "node_modules", ".quipu"}]
         for file in files:
             file_path = Path(root) / file
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     for i, line in enumerate(f, 1):
                         if regex.search(line):
                             clean_line = line.strip()
@@ -89,6 +96,7 @@ def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
     else:
         logger.info("No matches found (via Python).")
 
+
 def _read_file(ctx: ActContext, args: List[str]):
     """
     Act: read_file
@@ -96,7 +104,7 @@ def _read_file(ctx: ActContext, args: List[str]):
     """
     if not args:
         ctx.fail("read_file 需要一个参数: [path]")
-    
+
     target_path = ctx.resolve_path(args[0])
     if not target_path.exists():
         ctx.fail(f"文件不存在: {args[0]}")
@@ -104,13 +112,14 @@ def _read_file(ctx: ActContext, args: List[str]):
         ctx.fail(f"这是一个目录，请使用 list_files: {args[0]}")
 
     try:
-        content = target_path.read_text(encoding='utf-8')
+        content = target_path.read_text(encoding="utf-8")
         logger.info(f"📖 [Read] Reading {target_path.name}...")
         print(content)
     except UnicodeDecodeError:
         logger.error(f"❌ [Read] 无法读取二进制文件或非 UTF-8 文件: {args[0]}")
     except Exception as e:
         ctx.fail(f"读取文件失败: {e}")
+
 
 def _list_files(ctx: ActContext, args: List[str]):
     """
@@ -120,7 +129,7 @@ def _list_files(ctx: ActContext, args: List[str]):
     parser = SafeArgumentParser(prog="list_files", add_help=False)
     parser.add_argument("path", nargs="?", default=".", help="目标目录")
     parser.add_argument("--tree", "-t", action="store_true", help="以树状结构递归显示")
-    
+
     try:
         parsed_args = parser.parse_args(args)
     except Exception as e:
@@ -134,17 +143,20 @@ def _list_files(ctx: ActContext, args: List[str]):
     if parsed_args.tree:
         logger.info(f"📂 [List] Directory Tree: {target_dir}")
         # Simplified tree implementation
-        for path_object in sorted(target_dir.rglob('*')):
-             if '.git' in path_object.parts or '.quipu' in path_object.parts: continue
-             depth = len(path_object.relative_to(target_dir).parts) -1
-             indent = '    ' * depth
-             output.append(f"{indent}└── {path_object.name}{'/' if path_object.is_dir() else ''}")
+        for path_object in sorted(target_dir.rglob("*")):
+            if ".git" in path_object.parts or ".quipu" in path_object.parts:
+                continue
+            depth = len(path_object.relative_to(target_dir).parts) - 1
+            indent = "    " * depth
+            output.append(f"{indent}└── {path_object.name}{'/' if path_object.is_dir() else ''}")
     else:
         logger.info(f"📂 [List] Directory: {target_dir}")
         items = sorted(list(target_dir.iterdir()), key=lambda p: (p.is_file(), p.name.lower()))
         for item in items:
-             if item.name.startswith('.'): continue
-             output.append(f"📁 {item.name}/" if item.is_dir() else f"📄 {item.name}")
-    
-    if not output: output.append("(Empty directory)")
+            if item.name.startswith("."):
+                continue
+            output.append(f"📁 {item.name}/" if item.is_dir() else f"📄 {item.name}")
+
+    if not output:
+        output.append("(Empty directory)")
     print("\n".join(output))

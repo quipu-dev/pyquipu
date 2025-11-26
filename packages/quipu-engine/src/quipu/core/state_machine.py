@@ -97,11 +97,13 @@ class Engine:
                 content = self.nav_log_file.read_text(encoding="utf-8").strip()
                 if content:
                     log = content.splitlines()
-            except Exception: pass
+            except Exception:
+                pass
         if self.nav_ptr_file.exists():
             try:
                 ptr = int(self.nav_ptr_file.read_text(encoding="utf-8").strip())
-            except Exception: pass
+            except Exception:
+                pass
         if not log:
             ptr = -1
         elif ptr < 0:
@@ -125,7 +127,7 @@ class Engine:
                 log.append(current_head)
                 ptr = 0
         if ptr < len(log) - 1:
-            log = log[:ptr + 1]
+            log = log[: ptr + 1]
         if log and log[-1] == tree_hash:
             ptr = len(log) - 1
             self._write_nav(log, ptr)
@@ -168,8 +170,7 @@ class Engine:
         all_nodes = self.reader.load_all_nodes()
         final_graph: Dict[str, QuipuNode] = {}
         for node in all_nodes:
-            if node.output_tree not in final_graph or \
-               node.timestamp > final_graph[node.output_tree].timestamp:
+            if node.output_tree not in final_graph or node.timestamp > final_graph[node.output_tree].timestamp:
                 final_graph[node.output_tree] = node
         self.history_graph = final_graph
         if all_nodes:
@@ -211,7 +212,7 @@ class Engine:
             符合条件的节点列表，按时间戳降序排列。
         """
         candidates = list(self.history_graph.values())
-        
+
         if summary_regex:
             try:
                 pattern = re.compile(summary_regex, re.IGNORECASE)
@@ -219,13 +220,13 @@ class Engine:
             except re.error as e:
                 logger.error(f"无效的正则表达式: {summary_regex} ({e})")
                 return []
-        
+
         if node_type:
             candidates = [node for node in candidates if node.node_type == node_type]
-            
+
         # 按时间戳降序排序
         candidates.sort(key=lambda n: n.timestamp, reverse=True)
-        
+
         return candidates[:limit]
 
     def capture_drift(self, current_hash: str, message: Optional[str] = None) -> QuipuNode:
@@ -252,11 +253,7 @@ class Engine:
         )
 
         new_node = self.writer.create_node(
-            node_type="capture",
-            input_tree=input_hash,
-            output_tree=current_hash,
-            content=body,
-            message=message
+            node_type="capture", input_tree=input_hash, output_tree=current_hash, content=body, message=message
         )
 
         self.history_graph[current_hash] = new_node
@@ -268,11 +265,7 @@ class Engine:
         return new_node
 
     def create_plan_node(
-        self, 
-        input_tree: str, 
-        output_tree: str, 
-        plan_content: str,
-        summary_override: Optional[str] = None
+        self, input_tree: str, output_tree: str, plan_content: str, summary_override: Optional[str] = None
     ) -> QuipuNode:
         if input_tree == output_tree:
             logger.info(f"📝 记录幂等操作节点 (Idempotent Node): {output_tree[:7]}")
@@ -284,7 +277,7 @@ class Engine:
             input_tree=input_tree,
             output_tree=output_tree,
             content=plan_content,
-            summary_override=summary_override
+            summary_override=summary_override,
         )
 
         self.history_graph[output_tree] = new_node

@@ -7,6 +7,7 @@ from quipu.acts.basic import register as register_basic_acts
 if TYPE_CHECKING:
     from quipu.core.executor import Executor
 
+
 @pytest.fixture
 def isolated_vault(tmp_path: Path) -> Path:
     """
@@ -16,6 +17,7 @@ def isolated_vault(tmp_path: Path) -> Path:
     vault.mkdir()
     return vault
 
+
 @pytest.fixture
 def executor(isolated_vault: Path) -> "Executor":
     """
@@ -24,7 +26,7 @@ def executor(isolated_vault: Path) -> "Executor":
     """
     # 将导入操作延迟到 fixture 函数内部执行
     from quipu.core.executor import Executor
-    
+
     exc = Executor(root_dir=isolated_vault, yolo=True)
     register_basic_acts(exc)
     return exc

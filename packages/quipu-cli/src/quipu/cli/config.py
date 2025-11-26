@@ -3,6 +3,7 @@ from pathlib import Path
 
 # 全局配置中心
 
+
 def _find_project_root() -> Path:
     """
     向上递归查找项目根目录。
@@ -23,6 +24,7 @@ def _find_project_root() -> Path:
     # Fallback: 如果找不到（比如已安装到 site-packages），则指向当前文件所在目录
     # 这种情况下，acts 可能需要以其他方式加载（待定）
     return Path(__file__).parent.resolve()
+
 
 # 项目根目录（代码所在位置）
 PROJECT_ROOT: Path = _find_project_root()
