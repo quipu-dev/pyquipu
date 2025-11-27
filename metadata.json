@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "feat(cli, engine): 修复 UI 可达性分析及光标定位回归问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764238929.4457076, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix(tests): 实现新的 HistoryReader 接口方法并修复测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764239281.651816, "duration_ms": 0}}
