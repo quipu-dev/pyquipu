@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix typo Capture: M pyproject.toml, M pyproject.toml, M pyproject.toml", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764236484.151051, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复可达性分析，使其包含后代节点", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764236780.054397, "duration_ms": 0}}
