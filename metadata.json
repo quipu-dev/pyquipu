@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix(tests): 实现新的 HistoryReader 接口方法并修复测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764239281.651816, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix(tests): 为 InMemoryDB 实现 diff 方法以修复引擎测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764239419.5675097, "duration_ms": 0}}
