@@ -1,95 +1,151 @@
-## fix 修复 `SQLiteHistoryReader` 中图谱重建的逻辑，确保它能 100% 准确地反映 Git 仓库中的 DAG 结构，从根本上杜绝循环引用的可能性。
+## test 创建一个新的测试文件 `tests/test_sqlite_reader_integrity.py`
+好的，这是一个非常好的实践。在修复一个严重错误后，为其编写一个专门的回归测试，可以确保该问题在未来的重构中不再出现。
 
-好的，这是一个非常隐蔽且严重的问题。根据你的日志和 Quipu 的架构，我已经定位到问题所在。
+### 用户需求
 
-### 错误分析
+你需要一个单元测试，用于验证 `SQLiteHistoryReader` 在面对数据库中存在循环引用（一个节点将自己作为父节点）的脏数据时，是否能够正确处理，避免在内存中构建出带循环的图谱，从而防止 UI 等上层应用陷入无限循环。
 
-问题的根源在于 `SQLite` 存储后端和 `Git Object` 存储后端在构建历史图谱时的细微差异，这个差异与 `quipu ui` 命令的内部实现相结合，导致了在特定情况下（即创建了一个新的 `capture` 节点后）`tui.py` 中的图遍历代码陷入了无限循环，从而使 UI 卡死。
+### 评论
 
-1.  **问题触发点**: 当你执行 `qs save` 时，`SQLiteHistoryWriter` 会在 Git 中创建一个新的 commit 对象，并**同时**将这个新节点的元数据和父子关系（一条 `edge` 记录）写入到 `history.sqlite` 数据库中。
-2.  **数据读取差异**:
-    *   **Git Object 后端 (正常)**: 当 `quipu ui` 启动时，`GitObjectHistoryReader` 通过 `git log` 读取历史。Git 的数据结构从根本上保证了历史是一个有向无环图 (DAG)。因此，从它构建的 `QuipuNode` 链表的 `parent` 指针永远不会形成循环。
-    *   **SQLite 后端 (异常)**: `SQLiteHistoryReader.load_all_nodes()` 方法通过查询 `nodes` 表和 `edges` 表来在内存中重建图谱。虽然写入逻辑看起来是正确的，但在读取和重建所有节点和边的过程中，存在一个未被发现的边界情况，导致新创建的 `capture` 节点在被加载时，其 `parent` 引用链中产生了一个**循环** (即某个祖先节点的 `parent` 错误地指向了它自身或它的一个子孙)。
-3.  **UI 卡死原因**:
-    *   `quipu ui` 命令启动 `QuipuUiApp` (`tui.py`)。
-    *   在其初始化方法 `__init__` 中，它会调用 `_calculate_reachable_hashes()` 来计算当前分支上所有可达的节点，以便在 UI 中将非关联分支的节点变暗显示。
-    *   这个函数中存在一个 `while curr.parent:` 循环，用于向上遍历到历史的根节点。
-    *   当 `SQLiteHistoryReader` 提供了一个带有循环引用的节点列表时，这个 `while` 循环就变成了**无限循环**，导致主线程被阻塞，UI 无法渲染，程序卡死。
-4.  **为什么 `log` 命令正常**: `quipu log` 命令只是简单地从数据库读取节点列表，并按时间戳排序后打印。它**不**遍历 `parent` 或 `children` 引用，因此不会触发无限循环。这有力地证明了问题出在图的**链接关系**上，而不是节点数据本身。
+这是一个关键的健壮性测试。数据库中的数据可能会因为各种原因（例如，旧版本的 bug、手动修改、不完整的同步操作）而被破坏。数据读取层必须有能力在这种情况下保持稳定，而不是将问题传递给上层逻辑。这个测试将直接模拟最坏情况，并验证我们刚刚应用的修复。
 
 ### 目标
 
-修复 `SQLiteHistoryReader` 中图谱重建的逻辑，确保它能 100% 准确地反映 Git 仓库中的 DAG 结构，从根本上杜绝循环引用的可能性。
+创建一个新的测试文件 `tests/test_sqlite_reader_integrity.py`，其中包含一个测试用例，该用例：
+1.  手动在 SQLite 数据库中插入一个自引用的 `edge` 记录。
+2.  调用 `SQLiteHistoryReader.load_all_nodes()`。
+3.  断言该调用能够正常返回，不会挂起。
+4.  断言返回的节点列表中不包含循环引用。
 
 ### 基本原理
 
-为了确保 `SQLite` 缓存与 Git 这一“事实来源”的结构绝对一致，我们需要修改 `SQLiteHistoryReader.load_all_nodes()` 的实现。与其先加载所有节点再加载所有边来“凭空”连接，不如模拟 `git log` 的行为：以 `commit_hash` 为核心，将 `parent_hash` 视为节点的内置属性进行查询和链接，这样更不容易出错。
-
-具体来说，在构建图的过程中，对 `parent_hash` 进行更严格的检查，并确保在任何情况下 `child_hash` 和 `parent_hash` 不可能引用同一个节点对象，从而打破循环。
+我们将利用 `pytest` 框架和项目现有的测试夹具 (fixtures) 来创建一个干净的测试环境。测试的核心是直接对 `history.sqlite` 文件进行写操作，以模拟数据损坏的场景。然后，我们实例化 `SQLiteHistoryReader` 并调用其 `load_all_nodes` 方法。最后，我们通过一个图遍历算法 (DFS) 来检测返回的 `QuipuNode` 对象列表中是否存在 `.parent` 指针形成的循环。
 
 ### 标签
 
-#intent/fix #flow/ready #priority/critical
-#comp/engine #concept/history #scope/core
-#ai/brainstorm
+#intent/tooling #flow/ready #priority/high
+#comp/engine #comp/tests #concept/history #scope/core
+#ai/instruct
 #task/domain/storage
 #task.object/sqlite-backend
 #task.action/bug-fix
-#task/state/begin
+#task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 修复 SQLiteHistoryReader 的图重建逻辑
+#### Acts 1: 创建单元测试文件
 
-我们将直接修改 `sqlite_storage.py` 中的 `load_all_nodes` 方法。修改的核心是改变图的构建顺序，并增加一个检查，防止一个节点被错误地设置为自己的父节点，这通常是导致循环的直接原因。
+我们将创建一个新的测试文件，以保持这个关键的完整性测试的独立性和清晰性。
 
 ~~~~~act
-patch_file
+write_file
 ~~~~~
 ~~~~~path
-packages/quipu-engine/src/quipu/core/sqlite_storage.py
+tests/test_sqlite_reader_integrity.py
 ~~~~~
 ~~~~~python
-        # 3. 在内存中构建图
-        for row in edges_data:
-            child_hash, parent_hash = row["child_hash"], row["parent_hash"]
-            if child_hash in temp_nodes and parent_hash in temp_nodes:
-                child_node = temp_nodes[child_hash]
-                parent_node = temp_nodes[parent_hash]
+import pytest
+import time
+from typing import List
 
-                child_node.parent = parent_node
-                parent_node.children.append(child_node)
-                # 根据父节点设置 input_tree
-                child_node.input_tree = parent_node.output_tree
-~~~~~
-~~~~~python
-        # 3. 在内存中构建图
-        for row in edges_data:
-            child_hash, parent_hash = row["child_hash"], row["parent_hash"]
+from quipu.core.models import QuipuNode
+from quipu.core.sqlite_storage import SQLiteHistoryReader
 
-            # 关键修复：增加一个健全性检查，防止循环引用
-            if child_hash == parent_hash:
-                logger.warning(f"检测到并忽略了一个自引用边: {child_hash[:7]}")
-                continue
+# We rely on a fixture from conftest.py, which is a standard pattern in this project.
+# The fixture `repo_with_sqlite_db` should provide a tuple of (DatabaseManager, GitDB)
+# in a clean temporary directory.
 
-            if child_hash in temp_nodes and parent_hash in temp_nodes:
-                child_node = temp_nodes[child_hash]
-                parent_node = temp_nodes[parent_hash]
 
-                # 确保一个节点只有一个父节点（对于非合并节点）
-                if child_node.parent is None:
-                    child_node.parent = parent_node
-                    parent_node.children.append(child_node)
-                    # 根据父节点设置 input_tree
-                    child_node.input_tree = parent_node.output_tree
-                else:
-                    # 如果一个节点有多个父节点（合并提交），我们只处理第一个
-                    # 真正的合并逻辑需要更复杂的处理，但对于防止循环，此逻辑是安全的
-                    logger.debug(f"节点 {child_hash[:7]} 已有父节点，忽略额外的父节点 {parent_hash[:7]}")
+def _has_cycle(nodes: List[QuipuNode]) -> bool:
+    """
+    ## test: Detects cycles in a graph represented by parent pointers.
+
+    Uses a standard Depth-First Search traversal. For each node, it traverses
+    up the parent chain, keeping track of the nodes in the current path. If a
+    node is encountered that is already in the current path, a cycle is detected.
+    """
+    # A set for all nodes visited during the entire traversal, to avoid re-checking paths
+    global_visited = set()
+    for node in nodes:
+        if node.output_tree in global_visited:
+            continue
+
+        # A set for nodes visited in the current traversal path
+        path_visited = set()
+        curr = node
+        while curr:
+            if curr.output_tree in path_visited:
+                # We've seen this node before in the *same* path, cycle detected
+                return True
+            if curr.output_tree in global_visited:
+                # We've seen this node in a previous path that was checked and found to be safe
+                break
+
+            path_visited.add(curr.output_tree)
+            curr = curr.parent
+
+        # Mark all nodes in the now-verified-acyclic path as globally visited
+        global_visited.update(path_visited)
+
+    return False
+
+
+@pytest.mark.timeout(5)  # Fails the test if it hangs for more than 5 seconds
+def test_load_all_nodes_handles_self_referencing_edge(repo_with_sqlite_db):
+    """
+    ## test: SQLite reader should not create a graph with cycles from corrupted data.
+
+    This test ensures that `SQLiteHistoryReader.load_all_nodes` can gracefully
+    handle a corrupted `edges` table where a node incorrectly lists itself as
+    its own parent. The reader should ignore this edge and not produce an
+    in-memory graph with a cycle, which would otherwise cause infinite loops.
+    """
+    db_manager, git_db = repo_with_sqlite_db
+
+    # --- Setup: Manually inject corrupted data into the SQLite database ---
+
+    # 1. Create a legitimate node that we will then corrupt
+    conn = db_manager._get_conn()
+    commit_hash = "cycledeadbeefdeadbeefdeadbeefdeadbeef01"
+    output_tree = "outputdeadbeefdeadbeefdeadbeefdeadbeef01"
+
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO nodes (commit_hash, output_tree, node_type, timestamp, summary, meta_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (commit_hash, output_tree, "capture", time.time(), "Corrupted Self-Loop Node", "{}"),
+        )
+
+        # 2. Inject the self-referencing edge that would cause an infinite loop
+        conn.execute(
+            "INSERT INTO edges (child_hash, parent_hash) VALUES (?, ?)",
+            (commit_hash, commit_hash),
+        )
+
+    # --- Act: Attempt to load the graph from the corrupted database ---
+    reader = SQLiteHistoryReader(db_manager=db_manager, git_db=git_db)
+    all_nodes = reader.load_all_nodes()
+
+    # --- Assert ---
+    # The `@pytest.mark.timeout(5)` decorator implicitly asserts that the call did not hang.
+
+    # 1. Verify that the node itself was still loaded, despite the bad edge
+    corrupted_node = next((n for n in all_nodes if n.filename.name == commit_hash), None)
+    assert corrupted_node is not None, "The node with the corrupted edge should still be loaded."
+
+    # 2. Verify that its parent pointer is None, because the self-referencing edge was ignored
+    assert corrupted_node.parent is None, "The node's parent should be None after ignoring the self-loop."
+
+    # 3. Verify the entire loaded graph structure is free of cycles
+    assert not _has_cycle(all_nodes), "The final loaded graph should not contain any cycles."
 ~~~~~
 
 ### 下一步建议
 
-在应用此修复后，请重新运行 `qs save` 和 `qs ui` 的流程来验证问题是否解决。如果问题依然存在，下一步我们将需要为 `SQLiteHistoryReader` 编写一个单元测试，专门用于检测返回的图谱中是否存在循环引用。
+现在，你可以运行 `pytest tests/test_sqlite_reader_integrity.py`。
+*   **如果测试失败**，说明我们对 `sqlite_storage.py` 的修复还不够完善，需要进一步调试。
+*   **如果测试通过**，那么我们可以非常有信心地确认，即使数据库中存在自引用脏数据，系统也不会再因此而卡死。接下来就可以继续推进 UI 性能优化的其他步骤了。
