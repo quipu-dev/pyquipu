@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "加速测试 Capture: M tui.py, M view_model.py, M test_tui_reachability.py ... and 1 more files", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764245066.0778425, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "refactor: 提取 CLI Engine 上下文管理以消除重复代码", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764245991.3075845, "duration_ms": 0}}

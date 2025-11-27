@@ -1,15 +1,785 @@
-# 📸 Snapshot Capture
+好的，我将执行这项重构任务。
 
-### 💬 备注:
-加速测试
+这是一个典型的技术债清理工作，重点在于提升代码库的可维护性和健壮性。通过引入一个上下文管理器来处理 `Engine` 实例的生命周期，我们不仅能消除重复的初始化代码，还能确保数据库连接等资源被正确关闭，修复了潜在的资源泄漏问题。
 
-检测到工作区发生变更。
+以下是本次操作的详细计划。
 
-### 📝 变更文件摘要:
-```
-packages/quipu-cli/src/quipu/cli/tui.py        | 10 +++---
- packages/quipu-cli/src/quipu/cli/view_model.py |  2 +-
- tests/cli/test_tui_reachability.py             |  8 +++--
- tests/engine/sqlite/test_reader.py             | 49 +++++++++++++++++++-------
- 4 files changed, 48 insertions(+), 21 deletions(-)
-```
+## refactor: 提取 CLI Engine 上下文管理以消除重复代码
+
+### 用户需求
+在 `quipu.cli.main` 中，多个命令函数包含了重复的 `setup_logging()` 和 `create_engine(work_dir)` 代码。这不仅冗余，而且没有统一处理 `engine.close()`，存在资源泄漏的风险。需要通过重构来解决此问题。
+
+### 评论
+这是一个重要的开发者体验 (DX) 和代码质量改进。使用 `contextmanager` 是处理此类“设置-执行-清理”模式的 Pythonic 方式，它能显著提升代码的清晰度和正确性。
+
+### 目标
+1.  在 `quipu.cli.main` 中创建一个名为 `engine_context` 的上下文管理器。
+2.  该管理器将封装 `setup_logging()`、`create_engine()` 的调用以及 `engine.close()` 的清理逻辑。
+3.  重构所有适用命令 (如 `save`, `checkout`, `log` 等)，使用 `with engine_context(...) as engine:` 语句来获取和管理 `Engine` 实例。
+4.  确保重构后的代码逻辑与之前完全一致，但更简洁、更安全。
+
+### 基本原理
+利用 Python 的 `contextlib.contextmanager` 装饰器，我们可以轻松创建一个管理 `Engine` 生命周期的上下文。`with` 语句确保了即使在命令执行过程中发生异常，`finally` 块中的 `engine.close()` 也总能被执行，从而保证了资源的正确释放。
+
+### 标签
+#intent/refine #flow/ready #priority/high #comp/cli #scope/dx #ai/instruct #task/domain/testing #task/object/refactor #task/action/bug-fix #task/state/continue
+
+---
+
+### Script
+
+#### Acts 1: 重构 main.py 以使用上下文管理器
+
+我们将使用 `write_file` 来完整地替换 `packages/quipu-cli/src/quipu/cli/main.py` 的内容，以应用新的模式。
+
+~~~~~act
+write_file
+packages/quipu-cli/src/quipu/cli/main.py
+~~~~~
+~~~~~python
+import typer
+import logging
+import sys
+import click  # 导入 click 库
+from pathlib import Path
+from typing import Annotated, Optional, Dict, Generator
+from contextlib import contextmanager
+
+from .logger_config import setup_logging, configure_file_logging
+from .controller import run_quipu
+from .config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
+from .factory import create_engine
+from .utils import find_git_repository_root
+from .view_model import GraphViewModel
+from quipu.core.plugin_loader import load_plugins
+from quipu.core.executor import Executor
+from quipu.core.state_machine import Engine
+from quipu.core.models import QuipuNode
+from quipu.core.git_db import GitDB
+import inspect
+import subprocess
+from quipu.core.config import ConfigManager
+
+
+# 注意：不要在模块级别直接调用 setup_logging()，
+# 否则会导致 CliRunner 测试中的 I/O 流过早绑定/关闭问题。
+logger = logging.getLogger(__name__)
+
+app = typer.Typer(add_completion=False, name="quipu")
+cache_app = typer.Typer(name="cache", help="管理本地 SQLite 缓存。")
+app.add_typer(cache_app)
+
+
+@contextmanager
+def engine_context(work_dir: Path) -> Generator[Engine, None, None]:
+    """Context manager to set up logging, create, and automatically close a Quipu engine."""
+    setup_logging()
+    engine = None
+    try:
+        # create_engine handles align() internally, which is correct
+        engine = create_engine(work_dir)
+        yield engine
+    finally:
+        if engine:
+            engine.close()
+
+
+def _prompt_for_confirmation(message: str, default: bool = False) -> bool:
+    """
+    使用单字符输入请求用户确认，无需回车。
+    """
+    prompt_suffix = " [Y/n]: " if default else " [y/N]: "
+    typer.secho(message + prompt_suffix, nl=False, err=True)
+
+    # click.getchar() 不适用于非 TTY 环境 (如 CI/CD 或管道)
+    # 在这种情况下，我们回退到 False，强制使用 --force
+    if not sys.stdin.isatty():
+        typer.echo(" (non-interactive)", err=True)
+        return False  # 在非交互环境中，安全起见总是拒绝
+
+    char = click.getchar()
+    click.echo(char, err=True)  # 回显用户输入
+
+    if char.lower() == "y":
+        return True
+    if char.lower() == "n":
+        return False
+
+    # 对于回车或其他键，返回默认值
+    return default
+
+
+# --- 导航命令辅助函数 ---
+def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
+    """在图中查找与当前工作区状态匹配的节点"""
+    current_hash = engine.git_db.get_tree_hash()
+    node = graph.get(current_hash)
+    if not node:
+        typer.secho("⚠️  当前工作区状态未在历史中找到，或存在未保存的变更。", fg=typer.colors.YELLOW, err=True)
+        typer.secho("💡  请先运行 'quipu save' 创建一个快照，再进行导航。", fg=typer.colors.YELLOW, err=True)
+    return node
+
+
+def _execute_visit(ctx: typer.Context, engine: Engine, target_hash: str, description: str):
+    """辅助函数：执行 engine.visit 并处理结果"""
+    typer.secho(f"🚀 {description}", err=True)
+    try:
+        engine.visit(target_hash)
+        typer.secho(f"✅ 已成功切换到状态 {target_hash[:7]}。", fg=typer.colors.GREEN, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 导航操作失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
+
+# --- 核心命令 ---
+
+
+@app.command()
+def ui(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    以交互式 TUI 模式显示 Quipu 历史图谱。
+    """
+    try:
+        from .tui import QuipuUiApp
+    except ImportError:
+        typer.secho("❌ TUI 依赖 'textual' 未安装。", fg=typer.colors.RED, err=True)
+        typer.secho("💡 请运行: pip install 'textual>=0.58.0'", err=True)
+        ctx.exit(1)
+
+    # 在 TUI 模式下，强制将日志重定向到文件，防止 stderr 干扰 UI 渲染
+    log_file = work_dir / ".quipu" / "tui.debug.log"
+    configure_file_logging(log_file)
+    logging.info("Starting Quipu UI command...")
+
+    # 1. 预检查阶段：使用临时 Engine 快速检查历史是否为空
+    logging.debug("Creating temporary engine for pre-check...")
+    temp_engine = create_engine(work_dir, lazy=True)
+    try:
+        count = temp_engine.reader.get_node_count()
+        logging.debug(f"Pre-check complete. Node count: {count}")
+        if count == 0:
+            typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
+    finally:
+        logging.debug("Closing temporary engine.")
+        temp_engine.close()
+
+    # 2. 启动 UI 阶段：资源由 UI 内部独立管理
+    logging.info("Launching QuipuUiApp...")
+    app_instance = QuipuUiApp(work_dir=work_dir)
+    result = app_instance.run()
+    logging.info(f"QuipuUiApp finished with result: {result}")
+
+    # 3. 处理结果阶段：此时 UI 已关闭，我们需要重新获取 Engine 来执行业务操作
+    if result:
+        action, data = result
+
+        if action == "checkout":
+            target_hash = data
+            # 重新创建 Engine 执行导航操作
+            with engine_context(work_dir) as action_engine:
+                typer.secho(f"\n> TUI 请求检出到: {target_hash[:7]}", err=True)
+                _execute_visit(ctx, action_engine, target_hash, f"正在导航到 TUI 选定节点: {target_hash[:7]}")
+
+        elif action == "dump":
+            # 直接将内容打印到 stdout
+            print(data)
+            ctx.exit(0)
+
+
+@app.command()
+def save(
+    ctx: typer.Context,
+    message: Annotated[Optional[str], typer.Argument(help="本次快照的简短描述。")] = None,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    捕获当前工作区的状态，创建一个“微提交”快照。
+    """
+    with engine_context(work_dir) as engine:
+        # create_engine 内部已经调用了 align
+
+        # 判断是否 clean
+        current_tree_hash = engine.git_db.get_tree_hash()
+
+        # 1. 正常 Clean: current_node 存在且与当前 hash 一致
+        is_node_clean = (engine.current_node is not None) and (engine.current_node.output_tree == current_tree_hash)
+
+        # 2. 创世 Clean: 历史为空 且 当前是空树
+        EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        is_genesis_clean = (not engine.history_graph) and (current_tree_hash == EMPTY_TREE_HASH)
+
+        if is_node_clean or is_genesis_clean:
+            typer.secho("✅ 工作区状态未发生变化，无需创建快照。", fg=typer.colors.GREEN, err=True)
+            ctx.exit(0)
+
+        current_hash = engine.git_db.get_tree_hash()
+        try:
+            node = engine.capture_drift(current_hash, message=message)
+            msg_suffix = f" ({message})" if message else ""
+            typer.secho(f"📸 快照已保存: {node.short_hash}{msg_suffix}", fg=typer.colors.GREEN, err=True)
+        except Exception as e:
+            typer.secho(f"❌ 创建快照失败: {e}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+
+@app.command(name="find")
+def find_command(
+    ctx: typer.Context,
+    summary_regex: Annotated[
+        Optional[str], typer.Option("--summary", "-s", help="用于匹配节点摘要的正则表达式 (不区分大小写)。")
+    ] = None,
+    node_type: Annotated[Optional[str], typer.Option("--type", "-t", help="节点类型 ('plan' 或 'capture')。")] = None,
+    limit: Annotated[int, typer.Option("--limit", "-n", help="返回的最大结果数量。")] = 10,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    根据条件查找历史节点。
+    """
+    with engine_context(work_dir) as engine:
+        if not engine.history_graph:
+            typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
+
+        nodes = engine.find_nodes(summary_regex=summary_regex, node_type=node_type, limit=limit)
+
+        if not nodes:
+            typer.secho("🤷 未找到符合条件的历史节点。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
+
+        typer.secho("--- 查找结果 ---", bold=True, err=True)
+        for node in nodes:
+            ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
+            tag = f"[{node.node_type.upper()}]"
+            # 直接打印 output_tree hash，因为这是节点的唯一标识符
+            typer.secho(f"{ts} {tag:<9} {node.output_tree}", fg=color, nl=False, err=True)
+            typer.echo(f" - {node.summary}", err=True)
+
+
+@app.command()
+def sync(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    remote: Annotated[Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")] = None,
+):
+    """
+    与远程仓库同步 Quipu 历史图谱。
+    """
+    setup_logging()
+    # Sync 必须在 git 项目根目录执行
+    sync_dir = find_git_repository_root(work_dir) or work_dir
+    config = ConfigManager(sync_dir)
+
+    if remote is None:
+        remote = config.get("sync.remote_name", "origin")
+    refspec = "refs/quipu/history:refs/quipu/history"
+
+    def run_git_command(args: list[str]):
+        try:
+            result = subprocess.run(["git"] + args, cwd=sync_dir, capture_output=True, text=True, check=True)
+            if result.stdout:
+                typer.echo(result.stdout, err=True)
+            if result.stderr:
+                typer.echo(result.stderr, err=True)
+        except subprocess.CalledProcessError as e:
+            typer.secho(f"❌ Git 命令执行失败: git {' '.join(args)}", fg=typer.colors.RED, err=True)
+            typer.secho(e.stderr, fg=typer.colors.YELLOW, err=True)
+            ctx.exit(1)
+        except FileNotFoundError:
+            typer.secho("❌ 错误: 未找到 'git' 命令。", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+    typer.secho(f"⬇️  正在从 '{remote}' 拉取 Quipu 历史...", fg=typer.colors.BLUE, err=True)
+    run_git_command(["fetch", remote, refspec])
+    typer.secho(f"⬆️  正在向 '{remote}' 推送 Quipu 历史...", fg=typer.colors.BLUE, err=True)
+    run_git_command(["push", remote, refspec])
+    typer.secho("\n✅ Quipu 历史同步完成。", fg=typer.colors.GREEN, err=True)
+
+    config_get_res = subprocess.run(
+        ["git", "config", "--get", f"remote.{remote}.fetch"], cwd=sync_dir, capture_output=True, text=True
+    )
+    if refspec not in config_get_res.stdout:
+        typer.secho(
+            "\n💡 提示: 为了让 `git pull` 自动同步 Quipu 历史，请执行以下命令:", fg=typer.colors.YELLOW, err=True
+        )
+        typer.echo(f'  git config --add remote.{remote}.fetch "{refspec}"')
+
+
+@app.command()
+def discard(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    force: Annotated[bool, typer.Option("--force", "-f", help="强制执行，跳过确认提示。")] = False,
+):
+    """
+    丢弃工作区所有未记录的变更，恢复到上一个干净状态。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+        if not graph:
+            typer.secho("❌ 错误: 找不到任何历史记录，无法确定要恢复到哪个状态。", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+        target_tree_hash = engine._read_head()
+        if not target_tree_hash or target_tree_hash not in graph:
+            latest_node = max(graph.values(), key=lambda n: n.timestamp)
+            target_tree_hash = latest_node.output_tree
+            typer.secho(
+                f"⚠️  HEAD 指针丢失或无效，将恢复到最新历史节点: {latest_node.short_hash}", fg=typer.colors.YELLOW, err=True
+            )
+        else:
+            latest_node = graph[target_tree_hash]
+
+        current_hash = engine.git_db.get_tree_hash()
+        if current_hash == target_tree_hash:
+            typer.secho(f"✅ 工作区已经是干净状态 ({latest_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
+            ctx.exit(0)
+
+        diff_stat = engine.git_db.get_diff_stat(target_tree_hash, current_hash)
+        typer.secho("\n以下是即将被丢弃的变更:", fg=typer.colors.YELLOW, err=True)
+        typer.secho("-" * 20, err=True)
+        typer.echo(diff_stat, err=True)
+        typer.secho("-" * 20, err=True)
+
+        if not force:
+            prompt = f"🚨 即将丢弃上述所有变更，并恢复到状态 {latest_node.short_hash}。\n此操作不可逆。是否继续？"
+            if not _prompt_for_confirmation(prompt, default=False):
+                typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
+                raise typer.Abort()
+
+        try:
+            engine.visit(target_tree_hash)
+            typer.secho(f"✅ 工作区已成功恢复到节点 {latest_node.short_hash}。", fg=typer.colors.GREEN, err=True)
+        except Exception as e:
+            typer.secho(f"❌ 恢复状态失败: {e}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+
+@app.command()
+def checkout(
+    ctx: typer.Context,
+    hash_prefix: Annotated[str, typer.Argument(help="目标状态节点 output_tree 的哈希前缀。")],
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    force: Annotated[bool, typer.Option("--force", "-f", help="强制执行，跳过确认提示。")] = False,
+):
+    """
+    将工作区恢复到指定的历史节点状态。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+
+        matches = [node for output_tree, node in graph.items() if output_tree.startswith(hash_prefix)]
+        if not matches:
+            typer.secho(
+                f"❌ 错误: 未找到 output_tree 哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True
+            )
+            ctx.exit(1)
+        if len(matches) > 1:
+            typer.secho(
+                f"❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {len(matches)} 个节点。", fg=typer.colors.RED, err=True
+            )
+            ctx.exit(1)
+        target_node = matches[0]
+        target_output_tree_hash = target_node.output_tree
+
+        current_hash = engine.git_db.get_tree_hash()
+        if current_hash == target_output_tree_hash:
+            typer.secho(f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
+            ctx.exit(0)
+
+        is_dirty = engine.current_node is None or engine.current_node.output_tree != current_hash
+        if is_dirty:
+            typer.secho("⚠️  检测到当前工作区存在未记录的变更，将自动创建捕获节点...", fg=typer.colors.YELLOW, err=True)
+            engine.capture_drift(current_hash)
+            typer.secho("✅ 变更已捕获。", fg=typer.colors.GREEN, err=True)
+            current_hash = engine.git_db.get_tree_hash()
+
+        diff_stat = engine.git_db.get_diff_stat(current_hash, target_output_tree_hash)
+        if diff_stat:
+            typer.secho("\n以下是将要发生的变更:", fg=typer.colors.YELLOW, err=True)
+            typer.secho("-" * 20, err=True)
+            typer.echo(diff_stat, err=True)
+            typer.secho("-" * 20, err=True)
+
+        if not force:
+            prompt = (
+                f"🚨 即将重置工作区到状态 {target_node.short_hash} ({target_node.timestamp})。\n此操作会覆盖未提交的更改。是否继续？"
+            )
+            if not _prompt_for_confirmation(prompt, default=False):
+                typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
+                raise typer.Abort()
+
+        _execute_visit(ctx, engine, target_output_tree_hash, f"正在导航到节点: {target_node.short_hash}")
+
+
+# --- 结构化导航命令 ---
+@app.command()
+def undo(
+    ctx: typer.Context,
+    count: Annotated[int, typer.Option("--count", "-n", help="向上移动的步数。")] = 1,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [结构化导航] 向上移动到当前状态的父节点。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+        current_node = _find_current_node(engine, graph)
+        if not current_node:
+            ctx.exit(1)
+        target_node = current_node
+        for i in range(count):
+            if not target_node.parent:
+                msg = f"已到达历史根节点 (移动了 {i} 步)。" if i > 0 else "已在历史根节点。"
+                typer.secho(f"✅ {msg}", fg=typer.colors.GREEN, err=True)
+                if target_node == current_node:
+                    ctx.exit(0)
+                break
+            target_node = target_node.parent
+
+        _execute_visit(ctx, engine, target_node.output_tree, f"正在撤销到父节点: {target_node.short_hash}")
+
+
+@app.command()
+def redo(
+    ctx: typer.Context,
+    count: Annotated[int, typer.Option("--count", "-n", help="向下移动的步数。")] = 1,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [结构化导航] 向下移动到子节点 (默认最新)。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+        current_node = _find_current_node(engine, graph)
+        if not current_node:
+            ctx.exit(1)
+        target_node = current_node
+        for i in range(count):
+            if not target_node.children:
+                msg = f"已到达分支末端 (移动了 {i} 步)。" if i > 0 else "已在分支末端。"
+                typer.secho(f"✅ {msg}", fg=typer.colors.GREEN, err=True)
+                if target_node == current_node:
+                    ctx.exit(0)
+                break
+            target_node = target_node.children[-1]
+            if len(current_node.children) > 1:
+                typer.secho(
+                    f"💡 当前节点有多个分支，已自动选择最新分支 -> {target_node.short_hash}",
+                    fg=typer.colors.YELLOW,
+                    err=True,
+                )
+
+        _execute_visit(ctx, engine, target_node.output_tree, f"正在重做到子节点: {target_node.short_hash}")
+
+
+@app.command()
+def prev(
+    ctx: typer.Context,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [结构化导航] 切换到上一个兄弟分支。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+        current_node = _find_current_node(engine, graph)
+        if not current_node:
+            ctx.exit(1)
+        siblings = current_node.siblings
+        if len(siblings) <= 1:
+            typer.secho("✅ 当前节点没有兄弟分支。", fg=typer.colors.GREEN, err=True)
+            ctx.exit(0)
+        try:
+            idx = siblings.index(current_node)
+            if idx == 0:
+                typer.secho("✅ 已在最旧的兄弟分支。", fg=typer.colors.GREEN, err=True)
+                ctx.exit(0)
+            target_node = siblings[idx - 1]
+            _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到上一个兄弟节点: {target_node.short_hash}")
+        except ValueError:
+            pass
+
+
+@app.command()
+def next(
+    ctx: typer.Context,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [结构化导航] 切换到下一个兄弟分支。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+        current_node = _find_current_node(engine, graph)
+        if not current_node:
+            ctx.exit(1)
+        siblings = current_node.siblings
+        if len(siblings) <= 1:
+            typer.secho("✅ 当前节点没有兄弟分支。", fg=typer.colors.GREEN, err=True)
+            ctx.exit(0)
+        try:
+            idx = siblings.index(current_node)
+            if idx == len(siblings) - 1:
+                typer.secho("✅ 已在最新的兄弟分支。", fg=typer.colors.GREEN, err=True)
+                ctx.exit(0)
+            target_node = siblings[idx + 1]
+            _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到下一个兄弟节点: {target_node.short_hash}")
+        except ValueError:
+            pass
+
+
+# --- 时序性导航命令 (新增) ---
+
+
+@app.command()
+def back(
+    ctx: typer.Context,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [时序性导航] 后退：回到上一次访问的历史状态。
+    """
+    with engine_context(work_dir) as engine:
+        try:
+            result_hash = engine.back()
+            if result_hash:
+                typer.secho(f"✅ 已后退到状态: {result_hash[:7]}", fg=typer.colors.GREEN, err=True)
+            else:
+                typer.secho("⚠️  已到达访问历史的起点。", fg=typer.colors.YELLOW, err=True)
+        except Exception as e:
+            typer.secho(f"❌ 后退操作失败: {e}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+
+@app.command()
+def forward(
+    ctx: typer.Context,
+    work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
+):
+    """
+    [时序性导航] 前进：撤销后退操作。
+    """
+    with engine_context(work_dir) as engine:
+        try:
+            result_hash = engine.forward()
+            if result_hash:
+                typer.secho(f"✅ 已前进到状态: {result_hash[:7]}", fg=typer.colors.GREEN, err=True)
+            else:
+                typer.secho("⚠️  已到达访问历史的终点。", fg=typer.colors.YELLOW, err=True)
+        except Exception as e:
+            typer.secho(f"❌ 前进操作失败: {e}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+
+
+@app.command()
+def log(
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    显示 Quipu 历史图谱日志。
+    """
+    with engine_context(work_dir) as engine:
+        graph = engine.history_graph
+
+        if not graph:
+            typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
+            raise typer.Exit(0)
+        nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
+        typer.secho("--- Quipu History Log ---", bold=True, err=True)
+        for node in nodes:
+            ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
+            tag = f"[{node.node_type.upper()}]"
+            summary = node.summary  # Use the authoritative summary from the node object
+            typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False, err=True)
+            typer.echo(f" - {summary}", err=True)
+
+
+@app.command(name="run")
+def run_command(
+    ctx: typer.Context,
+    file: Annotated[Optional[Path], typer.Argument(help=f"包含 Markdown 指令的文件路径。", resolve_path=True)] = None,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    parser_name: Annotated[str, typer.Option("--parser", "-p", help=f"选择解析器语法。默认为 'auto'。")] = "auto",
+    yolo: Annotated[
+        bool, typer.Option("--yolo", "-y", help="跳过所有确认步骤，直接执行 (You Only Look Once)。")
+    ] = False,
+    list_acts: Annotated[bool, typer.Option("--list-acts", "-l", help="列出所有可用的操作指令及其说明。")] = False,
+):
+    """
+    Quipu: 执行 Markdown 文件中的操作指令。
+    """
+    setup_logging()
+    if list_acts:
+        executor = Executor(root_dir=Path("."), yolo=True)
+        from quipu.acts import register_core_acts
+
+        register_core_acts(executor)
+        typer.secho("\n📋 可用的 Quipu 指令列表:\n", fg=typer.colors.GREEN, bold=True, err=True)
+        acts = executor.get_registered_acts()
+        for name in sorted(acts.keys()):
+            doc = acts[name]
+            clean_doc = inspect.cleandoc(doc) if doc else "暂无说明"
+            indented_doc = "\n".join(f"   {line}" for line in clean_doc.splitlines())
+            typer.secho(f"🔹 {name}", fg=typer.colors.CYAN, bold=True, err=True)
+            typer.echo(f"{indented_doc}\n", err=True)
+        ctx.exit(0)
+    content = ""
+    source_desc = ""
+    if file:
+        if not file.exists():
+            typer.secho(f"❌ 错误: 找不到指令文件: {file}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+        if not file.is_file():
+            typer.secho(f"❌ 错误: 路径不是文件: {file}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
+        content = file.read_text(encoding="utf-8")
+        source_desc = f"文件 ({file.name})"
+    elif not sys.stdin.isatty():
+        try:
+            stdin_content = sys.stdin.read()
+            if stdin_content:
+                content = stdin_content
+                source_desc = "STDIN (管道流)"
+        except Exception:
+            pass
+    if not content and DEFAULT_ENTRY_FILE.exists():
+        content = DEFAULT_ENTRY_FILE.read_text(encoding="utf-8")
+        source_desc = f"默认文件 ({DEFAULT_ENTRY_FILE.name})"
+    if file and not file.exists() and file.name in ["log", "checkout", "sync", "init", "ui", "find"]:
+        typer.secho(f"❌ 错误: 找不到指令文件: {file}", fg=typer.colors.RED, err=True)
+        typer.secho(f"💡 提示: 你是不是想执行 'quipu {file.name}' 命令？", fg=typer.colors.YELLOW, err=True)
+        ctx.exit(1)
+    if not content.strip():
+        if not file:
+            typer.secho(
+                f"⚠️  提示: 未提供输入，且当前目录下未找到默认文件 '{DEFAULT_ENTRY_FILE.name}'。",
+                fg=typer.colors.YELLOW,
+                err=True,
+            )
+            typer.echo("\n用法示例:", err=True)
+            typer.echo("  quipu run my_plan.md", err=True)
+            typer.echo("  echo '...' | quipu run", err=True)
+            ctx.exit(0)
+    logger.info(f"已加载指令源: {source_desc}")
+    logger.info(f"工作区根目录: {work_dir}")
+    if yolo:
+        logger.warning("⚠️  YOLO 模式已开启：将自动确认所有修改。")
+    result = run_quipu(content=content, work_dir=work_dir, parser_name=parser_name, yolo=yolo)
+    if result.message:
+        color = typer.colors.GREEN if result.success else typer.colors.RED
+        typer.secho(f"\n{result.message}", fg=color, err=True)
+    if result.data:
+        typer.echo(result.data)
+    ctx.exit(result.exit_code)
+
+
+@cache_app.command("sync")
+def cache_sync(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    将 Git 历史增量同步到 SQLite 缓存。
+    此操作在大多数命令执行时会自动触发。
+    """
+    typer.secho("💧 正在执行增量数据补水...", fg=typer.colors.BLUE, err=True)
+    try:
+        with engine_context(work_dir):
+            # The context manager handles engine creation, alignment, and closing
+            pass
+        typer.secho("✅ 数据同步完成。", fg=typer.colors.GREEN, err=True)
+    except Exception as e:
+        typer.secho(f"❌ 数据同步失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
+
+@cache_app.command("rebuild")
+def cache_rebuild(
+    ctx: typer.Context,
+    force: Annotated[bool, typer.Option("--force", "-f", help="强制执行，跳过确认提示。")] = False,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+):
+    """
+    强制全量重建 SQLite 缓存。
+    这将删除现有的数据库文件，并从 Git 历史中完全重新生成。
+    """
+    setup_logging()
+
+    db_path = work_dir.resolve() / ".quipu" / "history.sqlite"
+    if not db_path.exists():
+        typer.secho("🤷 数据库文件不存在，将直接创建。无需重建。", fg=typer.colors.YELLOW, err=True)
+        cache_sync(ctx, work_dir)
+        return
+
+    if not force:
+        prompt = f"🚨 即将删除并重建数据库 {db_path}。\n所有私有数据（如开发者意图）将丢失！此操作不可逆。是否继续？"
+        if not _prompt_for_confirmation(prompt, default=False):
+            typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
+            raise typer.Abort()
+
+    try:
+        db_path.unlink()
+        typer.secho("🗑️  旧数据库已删除。", err=True)
+    except Exception as e:
+        typer.secho(f"❌ 删除旧数据库失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+
+    # 调用 sync 会自动完成重建
+    cache_sync(ctx, work_dir)
+
+
+if __name__ == "__main__":
+    app()
+~~~~~
+
