@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "ruff Capture: M helpers.py", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764235798.828289, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "add quipu cli css Capture: M pyproject.toml, M pyproject.toml", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764236370.2497606, "duration_ms": 0}}
