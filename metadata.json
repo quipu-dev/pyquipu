@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "refactor(cli): 重构 sync 命令以实现 v1.1 推拉逻辑", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764251769.3128788, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "feat(engine): 扩展数据模型与补水器以支持所有权", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764251933.6178517, "duration_ms": 0}}
