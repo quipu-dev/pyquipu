@@ -1,234 +1,185 @@
-好的，我们已经抵达了 `sync` 功能开发的最后阶段。现在开始执行任务 6.1，为整个工作流编写端到端的集成测试。
+好的，我分析了测试失败的原因。这些失败都指向了一个共同的根源：`quipu sync` 命令中的一个逻辑缺陷，导致它在处理远程仓库名称时行为不当，即使在测试中显式提供了 `--remote` 参数，`git push` 命令依然失败。根本原因在于，当未提供 `--remote` 选项时，传递给 `git` 底层命令的 `remote` 参数为 `None`，这导致了命令执行失败，并连锁引发了后续所有测试的断言失败。
 
-我将创建一个新的集成测试文件，它会模拟一个真实的协作场景：一个裸仓库作为远程服务器，以及两个独立的用户工作区。我们将在这个环境中验证首次推送、跨设备同步、订阅协作以及引用清理等核心功能。
+我将修复这个问题。
 
-这是一个关键的步骤，它将确保我们的架构设计在实际的 Git 环境中能够正确、稳定地运行。
+## fix: 修复 `sync` 命令中远程名称解析的逻辑缺陷
 
-## test: 为 `sync` 功能编写端到端的集成测试
+### 错误分析
+`quipu sync` 命令的实现直接将其 `remote` 参数（当未通过 CLI 传递时，其值为 `None`）传递给了底层的 `git_db` 方法。这导致 `git push None ...` 这样的无效命令被执行，从而使整个 `sync` 操作失败，并返回非零退出码。集成测试捕捉到了这个失败，表现为 `assert result.exit_code == 0` 失败。
 
 ### 用户需求
-为 `quipu sync` 的完整工作流编写一套集成测试，以验证其在真实 Git 环境下的正确性和健壮性。测试需要覆盖以下核心场景：
-1.  首次使用的用户引导 (Onboarding) 和初次推送。
-2.  用户订阅其他协作者并拉取其历史。
-3.  `sync` 操作的幂等性。
-4.  本地删除历史后，远程引用的自动清理 (`--prune`) 功能。
+`quipu sync` 命令应该能够智能地确定要使用的远程仓库名称。其解析顺序应该是：
+1.  优先使用通过 `--remote` CLI 选项传递的值。
+2.  如果未提供 CLI 选项，则从 `.quipu/config.yml` 中读取 `sync.remote_name` 的值。
+3.  如果配置文件中也没有，则回退到 `origin` 作为默认值。
 
 ### 评论
-这是 `sync` 功能交付前的最后一道质量保证。通过模拟真实的多用户协作环境，我们可以捕捉到仅在单元测试中难以发现的配置、环境和流程问题。这将确保我们交付的 `sync` 功能是生产可用的。
+这是一个关键的可用性修复。用户不应该每次都必须输入 `--remote origin`。通过实现一个健全的回退逻辑，我们能提供更流畅的用户体验，并修复导致所有集成测试失败的根本性缺陷。
 
 ### 目标
-1.  创建一个新的测试文件 `tests/integration/test_sync_workflow.py`。
-2.  利用 `pytest` 的 `fixture` 功能，搭建一个包含“远程裸仓库”和两个“用户工作区”的测试环境。
-3.  编写测试用例，覆盖上述所有核心场景。
-4.  确保测试完成后，所有临时创建的仓库和文件都被正确清理。
+修改 `quipu.cli.main.sync` 函数，以正确实现上述的远程名称解析逻辑，确保所有 `push` 和 `fetch` 操作都使用一个有效的远程名称。
 
 ### 基本原理
--   **测试环境**: 使用 `tmp_path` fixture 创建临时目录。通过 `subprocess` 调用 `git` 命令来初始化一个裸仓库 (`--bare`) 作为中央远程，并创建两个克隆作为用户工作区。
--   **命令执行**: 使用 `typer.testing.CliRunner` 来调用 `quipu` 的 CLI 命令，模拟用户的真实操作。
--   **状态验证**: 通过 `subprocess` 调用 `git ls-remote` 和 `git for-each-ref` 等底层命令来检查远程和本地仓库的引用状态。同时，通过直接读取 `.quipu/config.yml` 和查询 SQLite 数据库来验证配置和数据补水的正确性。
+在 `sync` 函数的开头，引入一个新的局部变量 `final_remote`。通过检查 CLI 参数、配置文件和默认值来为其赋值，然后在后续的所有 `git_db` 调用中使用这个经过解析的、保证有效的变量。
 
 ### 标签
-#intent/tooling #flow/ready #priority/high #comp/engine #comp/cli #concept/sync #scope/core #ai/instruct #task/domain/testing #task/object/sync-workflow #task/action/integration #task/state/begin
+#intent/fix #flow/ready #priority/critical #comp/cli #concept/sync #scope/core #ai/instruct #task/domain/testing #task/object/sync-workflow #task/action/bug-fix #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 创建集成测试文件
+#### Acts 1: 修复 `sync` 命令
 
-我将创建 `tests/integration/test_sync_workflow.py` 文件，并填充完整的测试脚手架和所有核心场景的测试用例。
+我将使用 `patch_file` 整体替换 `sync` 命令的实现，以引入正确的远程名称解析逻辑。
 
 ~~~~~act
-write_file
-tests/integration/test_sync_workflow.py
+patch_file
+packages/quipu-cli/src/quipu/cli/main.py
 ~~~~~
 ~~~~~python
-import pytest
-import subprocess
-from pathlib import Path
-from typer.testing import CliRunner
-import yaml
-import sqlite3
-
-from quipu.cli.main import app
-from quipu.common.identity import get_user_id_from_email
-
-runner = CliRunner()
-
-
-def run_git_command(cwd: Path, args: list[str], check: bool = True) -> str:
-    """Helper to run a git command and return stdout."""
-    result = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, check=check)
-    return result.stdout.strip()
-
-
-@pytest.fixture(scope="module")
-def sync_test_environment(tmp_path_factory):
+@app.command()
+def sync(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    remote: Annotated[Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")] = None,
+):
     """
-    Sets up a full sync test environment:
-    1. A bare remote repository.
-    2. Two user workspaces cloned from the remote.
+    与远程仓库同步 Quipu 历史图谱。
     """
-    base_dir = tmp_path_factory.mktemp("sync_tests")
-    remote_path = base_dir / "remote.git"
-    user_a_path = base_dir / "user_a"
-    user_b_path = base_dir / "user_b"
+    setup_logging()
+    # Sync 必须在 git 项目根目录执行
+    sync_dir = find_git_repository_root(work_dir) or work_dir
+    config = ConfigManager(sync_dir)
 
-    # 1. Create bare remote
-    run_git_command(base_dir, ["init", "--bare", str(remote_path)])
+    # --- 1.3: 首次使用的“引导 (Onboarding)”逻辑 ---
+    user_id = config.get("sync.user_id")
+    if not user_id:
+        typer.secho("🤝 首次使用 sync 功能，正在自动配置用户身份...", fg=typer.colors.BLUE, err=True)
+        try:
+            result = subprocess.run(
+                ["git", "config", "user.email"], cwd=sync_dir, capture_output=True, text=True, check=True
+            )
+            email = result.stdout.strip()
+            if not email:
+                raise ValueError("Git user.email is empty.")
 
-    # 2. Clone for User A
-    run_git_command(base_dir, ["clone", str(remote_path), str(user_a_path)])
-    run_git_command(user_a_path, ["config", "user.name", "User A"])
-    run_git_command(user_a_path, ["config", "user.email", "user.a@example.com"])
+            user_id = get_user_id_from_email(email)
+            config.set("sync.user_id", user_id)
+            config.save()
+            typer.secho(f"✅ 已根据你的 Git 邮箱 '{email}' 生成并保存用户 ID: {user_id}", fg=typer.colors.GREEN, err=True)
 
-    # 3. Clone for User B
-    run_git_command(base_dir, ["clone", str(remote_path), str(user_b_path)])
-    run_git_command(user_b_path, ["config", "user.name", "User B"])
-    run_git_command(user_b_path, ["config", "user.email", "user.b@example.com"])
+        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
+            typer.secho("❌ 错误：无法获取你的 Git 用户邮箱。", fg=typer.colors.RED, err=True)
+            typer.secho("💡 请先运行以下命令进行设置:", fg=typer.colors.YELLOW, err=True)
+            typer.echo("  git config --global user.email \"you@example.com\"")
+            ctx.exit(1)
 
-    # Add a dummy file to avoid issues with initial empty commits
-    (user_a_path / "README.md").write_text("Initial commit")
-    run_git_command(user_a_path, ["add", "README.md"])
-    run_git_command(user_a_path, ["commit", "-m", "Initial commit"])
-    run_git_command(user_a_path, ["push", "origin", "master"])
-    run_git_command(user_b_path, ["pull"])
+    try:
+        git_db = GitDB(sync_dir)
 
-    return remote_path, user_a_path, user_b_path
+        # --- Push Flow ---
+        typer.secho(f"⬆️  正在向 '{remote}' 推送你的本地历史...", fg=typer.colors.BLUE, err=True)
+        git_db.push_quipu_refs(remote, user_id)
 
+        # --- Fetch Flow ---
+        subscriptions = config.get("sync.subscriptions", [])
+        target_ids_to_fetch = set([user_id] + subscriptions)
+        typer.secho(f"⬇️  正在从 '{remote}' 拉取 {len(target_ids_to_fetch)} 个用户的历史...", fg=typer.colors.BLUE, err=True)
 
-class TestSyncWorkflow:
-    def test_onboarding_and_first_push(self, sync_test_environment):
-        """
-        Tests the onboarding flow (user_id creation) and the first push of Quipu refs.
-        """
-        remote_path, user_a_path, _ = sync_test_environment
-        user_a_id = get_user_id_from_email("user.a@example.com")
+        for target_id in sorted(list(target_ids_to_fetch)):
+            git_db.fetch_quipu_refs(remote, target_id)
 
-        # Create a Quipu node for User A
-        (user_a_path / "plan.md").write_text("~~~~~act\necho 'hello'\n~~~~~")
-        result = runner.invoke(app, ["run", "plan.md", "--work-dir", str(user_a_path), "-y"])
-        assert result.exit_code == 0
+        typer.secho("\n✅ Quipu 引用同步完成。", fg=typer.colors.GREEN, err=True)
+        typer.secho(
+            "\n💡 提示: 运行 `quipu cache sync` 来更新本地数据库和 UI 视图。",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
 
-        # Run sync for the first time
-        sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
-        assert sync_result.exit_code == 0
-        assert "首次使用 sync 功能" in sync_result.stderr
-        assert f"生成并保存用户 ID: {user_a_id}" in sync_result.stderr
+    except RuntimeError as e:
+        # Catch errors from GitDB._run
+        typer.secho(f"\n❌ 同步操作失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
+~~~~~
+~~~~~python
+@app.command()
+def sync(
+    ctx: typer.Context,
+    work_dir: Annotated[
+        Path,
+        typer.Option(
+            "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
+        ),
+    ] = DEFAULT_WORK_DIR,
+    remote_option: Annotated[Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")] = None,
+):
+    """
+    与远程仓库同步 Quipu 历史图谱。
+    """
+    setup_logging()
+    # Sync 必须在 git 项目根目录执行
+    sync_dir = find_git_repository_root(work_dir) or work_dir
+    config = ConfigManager(sync_dir)
 
-        # Verify config file
-        config_path = user_a_path / ".quipu" / "config.yml"
-        assert config_path.exists()
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-        assert config["sync"]["user_id"] == user_a_id
+    # 修复：实现远程名称的正确解析逻辑
+    remote = remote_option or config.get("sync.remote_name", "origin")
 
-        # Verify remote refs
-        remote_refs = run_git_command(remote_path, ["for-each-ref", "--format=%(refname)"])
-        assert f"refs/quipu/users/{user_a_id}/heads/" in remote_refs
+    # --- 1.3: 首次使用的“引导 (Onboarding)”逻辑 ---
+    user_id = config.get("sync.user_id")
+    if not user_id:
+        typer.secho("🤝 首次使用 sync 功能，正在自动配置用户身份...", fg=typer.colors.BLUE, err=True)
+        try:
+            result = subprocess.run(
+                ["git", "config", "user.email"], cwd=sync_dir, capture_output=True, text=True, check=True
+            )
+            email = result.stdout.strip()
+            if not email:
+                raise ValueError("Git user.email is empty.")
 
-    def test_collaboration_subscribe_and_fetch(self, sync_test_environment):
-        """
-        Tests that User B can subscribe to and fetch User A's history.
-        This test depends on the state after the first push.
-        """
-        remote_path, user_a_path, user_b_path = sync_test_environment
-        user_a_id = get_user_id_from_email("user.a@example.com")
-        user_b_id = get_user_id_from_email("user.b@example.com")
+            user_id = get_user_id_from_email(email)
+            config.set("sync.user_id", user_id)
+            config.save()
+            typer.secho(f"✅ 已根据你的 Git 邮箱 '{email}' 生成并保存用户 ID: {user_id}", fg=typer.colors.GREEN, err=True)
 
-        # User B onboards first
-        runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
+        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
+            typer.secho("❌ 错误：无法获取你的 Git 用户邮箱。", fg=typer.colors.RED, err=True)
+            typer.secho("💡 请先运行以下命令进行设置:", fg=typer.colors.YELLOW, err=True)
+            typer.echo("  git config --global user.email \"you@example.com\"")
+            ctx.exit(1)
 
-        # User B subscribes to User A
-        config_path_b = user_b_path / ".quipu" / "config.yml"
-        with open(config_path_b, "r") as f:
-            config_b = yaml.safe_load(f)
-        config_b["sync"]["subscriptions"] = [user_a_id]
-        with open(config_path_b, "w") as f:
-            yaml.dump(config_b, f)
+    try:
+        git_db = GitDB(sync_dir)
 
-        # User B syncs again to fetch User A's data
-        sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
-        assert sync_result.exit_code == 0
-        assert f"拉取 2 个用户的历史" in sync_result.stderr  # Self + subscription
+        # --- Push Flow ---
+        typer.secho(f"⬆️  正在向 '{remote}' 推送你的本地历史...", fg=typer.colors.BLUE, err=True)
+        git_db.push_quipu_refs(remote, user_id)
 
-        # Verify local mirror ref in User B's repo
-        local_refs_b = run_git_command(user_b_path, ["for-each-ref", "--format=%(refname)"])
-        assert f"refs/quipu/remotes/origin/{user_a_id}/heads/" in local_refs_b
+        # --- Fetch Flow ---
+        subscriptions = config.get("sync.subscriptions", [])
+        target_ids_to_fetch = set([user_id] + subscriptions)
+        typer.secho(f"⬇️  正在从 '{remote}' 拉取 {len(target_ids_to_fetch)} 个用户的历史...", fg=typer.colors.BLUE, err=True)
 
-        # Verify hydration
-        cache_sync_result = runner.invoke(app, ["cache", "sync", "--work-dir", str(user_b_path)])
-        assert cache_sync_result.exit_code == 0
+        for target_id in sorted(list(target_ids_to_fetch)):
+            git_db.fetch_quipu_refs(remote, target_id)
 
-        db_path_b = user_b_path / ".quipu" / "history.sqlite"
-        assert db_path_b.exists()
-        conn = sqlite3.connect(db_path_b)
-        cursor = conn.cursor()
-        cursor.execute("SELECT owner_id FROM nodes")
-        owners = {row[0] for row in cursor.fetchall()}
-        conn.close()
+        typer.secho("\n✅ Quipu 引用同步完成。", fg=typer.colors.GREEN, err=True)
+        typer.secho(
+            "\n💡 提示: 运行 `quipu cache sync` 来更新本地数据库和 UI 视图。",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
 
-        assert user_a_id in owners
-
-    def test_sync_is_idempotent(self, sync_test_environment):
-        """
-        Tests that running sync multiple times doesn't change state or cause errors.
-        """
-        _, user_a_path, _ = sync_test_environment
-        result1 = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
-        assert result1.exit_code == 0
-        refs_after_1 = run_git_command(user_a_path, ["for-each-ref"])
-
-        result2 = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
-        assert result2.exit_code == 0
-        refs_after_2 = run_git_command(user_a_path, ["for-each-ref"])
-
-        assert refs_after_1 == refs_after_2
-
-    def test_pruning_on_push(self, sync_test_environment):
-        """
-        Tests that deleting a local head and syncing prunes the remote ref.
-        """
-        remote_path, user_a_path, _ = sync_test_environment
-        user_a_id = get_user_id_from_email("user.a@example.com")
-
-        # Create two new nodes
-        (user_a_path / "plan2.md").write_text("~~~~~act\necho 'plan2'\n~~~~~")
-        (user_a_path / "plan3.md").write_text("~~~~~act\necho 'plan3'\n~~~~~")
-        runner.invoke(app, ["run", "plan2.md", "--work-dir", str(user_a_path), "-y"])
-        runner.invoke(app, ["run", "plan3.md", "--work-dir", str(user_a_path), "-y"])
-
-        runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
-        remote_refs_before = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
-        num_refs_before = len(remote_refs_before.splitlines())
-        assert num_refs_before >= 2
-
-        # Find a ref to delete locally
-        local_quipu_refs = run_git_command(
-            user_a_path, ["for-each-ref", "--format=%(refname)", "refs/quipu/local/heads"]
-        ).splitlines()
-        ref_to_delete = local_quipu_refs[0]
-
-        # Delete it locally
-        run_git_command(user_a_path, ["update-ref", "-d", ref_to_delete])
-
-        # Sync again
-        sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
-        assert sync_result.exit_code == 0
-
-        # Verify it's gone from remote
-        remote_refs_after = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
-        num_refs_after = len(remote_refs_after.splitlines())
-
-        assert num_refs_after == num_refs_before - 1
-        assert ref_to_delete.split("/")[-1] not in remote_refs_after
-
+    except RuntimeError as e:
+        # Catch errors from GitDB._run
+        typer.secho(f"\n❌ 同步操作失败: {e}", fg=typer.colors.RED, err=True)
+        ctx.exit(1)
 ~~~~~
 
 ### 下一步建议
-测试框架已经搭建完毕。下一步，我们可以继续向 `TestSyncWorkflow` 类中添加更多的边界条件测试，例如：
--   测试在没有 `git config user.email` 时 `sync` 命令是否会优雅地失败并给出提示。
--   测试空的 `subscriptions` 列表是否能正常工作。
--   测试 `prune` 在 `fetch` 时的行为。
-
-同时，我们应该开始着手 **任务 6.2：更新用户文档**，将 `sync` 功能的用法和协作工作流的理念清晰地传达给用户。
+在应用此修复后，之前失败的集成测试应该能够全部通过。下一步，我们将继续 **任务 6.2**，更新用户文档，详细说明 `sync` 命令的用法和协作工作流。
