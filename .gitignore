@@ -14,6 +14,7 @@ tmpfile
 # Scaffoldings
 context_builder.yml
 context_builder.py
+current_prompts
 
 # Distribution / Packaging
 .Python

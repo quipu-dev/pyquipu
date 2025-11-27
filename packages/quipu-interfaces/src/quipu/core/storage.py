@@ -67,35 +67,6 @@ class HistoryReader(ABC):
         """
         pass
 
-    @abstractmethod
-    def get_node_count(self) -> int:
-        """
-        获取历史节点总数。
-        """
-        pass
-
-    @abstractmethod
-    def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:
-        """
-        按需加载一页节点数据。
-        注意：返回的节点应包含与直接父节点的关系，但不一定构建完整的全量图谱。
-        """
-        pass
-
-    @abstractmethod
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
-        """
-        获取指定节点的所有祖先节点的哈希集合 (用于可达性分析)。
-        """
-        pass
-
-    @abstractmethod
-    def get_private_data(self, commit_hash: str) -> Optional[str]:
-        """
-        获取指定节点的私有数据 (如 intent.md)。
-        """
-        pass
-
 
 class HistoryWriter(ABC):
     """
