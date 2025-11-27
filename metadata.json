@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "test: 为 ConfigManager 增加单元测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764251236.3561127, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "refactor: 使历史存储适应新的 Git 引用命名空间", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764251498.9516194, "duration_ms": 0}}

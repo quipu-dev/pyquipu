@@ -1,151 +1,63 @@
-好的。现在为 `ConfigManager` 的读写功能添加单元测试。
+好的，我们继续推进 `sync` 功能的开发。
 
-这是一个很好的步骤，可以确保配置层的健壮性，为后续依赖它的 `sync` 功能打下坚实的基础。
+现在执行任务 2.2 和 2.3，核心是重构 `quipu-engine` 的历史存储逻辑，使其与 v1.1 架构蓝图中定义的、支持分布式协作的 Git 引用命名空间保持一致。
 
-## test: 为 ConfigManager 增加单元测试
+## refactor: 使历史存储适应新的 Git 引用命名空间
 
 ### 用户需求
-为了确保 `ConfigManager` 的写入能力 (`set` 和 `save` 方法) 的正确性和可靠性，需要为其编写一套完整的单元测试。
+根据 `Quipu Sync 功能开发任务列表`，需要执行任务 2.2 和 2.3：
+1.  **调整 `HistoryWriter`**: 修改 `GitObjectHistoryWriter` 的节点创建逻辑，使其不再更新单一的 `refs/quipu/history` 引用，而是遵循 v1.1 规范，在 `refs/quipu/local/heads/` 目录下为每个新节点创建一个独立的 head 引用。
+2.  **扩展 `HistoryReader`**: 确保 `GitObjectHistoryReader` 能够从新的、包含多个子目录（如 `local/` 和 `remotes/`）的 `refs/quipu/` 命名空间中正确加载所有历史节点。
 
 ### 评论
-对 `ConfigManager` 进行单元测试是保障系统稳定性的关键步骤，尤其是在它现在负责文件 I/O 的情况下。通过使用 `pytest` 的 `tmp_path` 夹具，我们可以在一个隔离的环境中精确地验证其加载、修改和保存配置的全部逻辑，有效防止未来的代码变更引入回归错误。
+这是一项 foundational 的重构，是实现无冲突 `sync` 的基石。通过从“单历史线”模型切换到“多分支头”模型，我们为每个协作者的探索路径提供了独立的持久化锚点，从根本上解决了远程推送时的竞争问题。
+
+在分析过程中，我发现 `GitObjectHistoryReader` 当前的实现（扫描 `refs/quipu/` 根目录）已经足够健壮，可以自动发现新的子目录结构（如 `local/` 和未来的 `remotes/`），因此无需修改。核心的变更将集中在 `GitObjectHistoryWriter`。
 
 ### 目标
-1.  在 `tests/engine/test_config.py` 文件中增加针对配置读写功能的测试用例。
-2.  验证 `ConfigManager` 在配置文件不存在时能否正确返回默认值。
-3.  验证 `set` 和 `save` 方法能否成功创建并写入新的配置值。
-4.  验证嵌套键 (例如 `sync.user_id`) 的设置和保存功能。
-5.  验证配置的“往返”一致性：保存的配置可以被一个新的 `ConfigManager` 实例正确加载。
+1.  修改 `GitObjectHistoryWriter.create_node` 方法中的引用管理逻辑。
+2.  新的引用将被创建在 `refs/quipu/local/heads/{new_commit_hash}`。
+3.  移除所有更新旧 `refs/quipu/history` 和 `refs/quipu/heads/{hash}` 的代码。
+4.  移除删除父节点 head 引用的逻辑，因为它与多分支、非线性的历史模型相悖。
 
 ### 基本原理
-我们将使用 `pytest` 内置的 `tmp_path` 夹具。该夹具为每个测试函数提供一个唯一的临时目录。我们将在这个临时目录中模拟一个项目工作区，动态地创建、写入和读取 `.quipu/config.yml` 文件，从而在一个完全隔离和可控的环境中测试 `ConfigManager` 的所有文件操作和内存操作。
+Quipu Sync v1.1 架构的核心是**物理隔离，逻辑联通**。本次重构在物理层面实现了这一点：每个分支的末端节点（head）都是一个独立的 Git ref，存储在个人专属的 `local/` 命名空间下。这使得 Git 的 `push` 和 `fetch` 操作可以精确地、无冲突地对这些独立的 refs 进行操作，就像管理普通 Git 分支一样。读取器在逻辑层面，通过扫描整个 `refs/quipu/` 目录将这些分散的 refs 重新聚合成一个完整的历史图谱。
 
 ### 标签
-#intent/tooling #flow/ready #priority/high 
-#comp/engine #comp/tests 
-#concept/config 
-#scope/dx 
+#intent/refine #flow/ready #priority/high 
+#comp/engine 
+#concept/history #concept/sync #scope/core 
 #ai/instruct
-#task/domain/sync #task/object/user-identity #task/action/configuration #task/state/continue
+#task/domain/sync #task/object/ref-namespace #task/action/refactor #task-state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 编写 ConfigManager 的单元测试
+#### Acts 1: 重构 HistoryWriter 的引用更新逻辑
 
-我们将使用 `write_file` 覆盖现有的 `test_config.py` 文件，以确保测试的完整性和一致性。
+我们将精确地替换 `GitObjectHistoryWriter.create_node` 方法中负责管理 Git 引用的代码块，使其符合新的 v1.1 规范。
 
 ~~~~~act
-write_file
-tests/engine/test_config.py
+patch_file
+packages/quipu-engine/src/quipu/core/git_object_storage.py
 ~~~~~
 ~~~~~python
-import yaml
-from pathlib import Path
-import pytest
-from quipu.core.config import ConfigManager
+        # 3. 引用管理 (Multi-Head Strategy)
+        self.git_db.update_ref("refs/quipu/history", new_commit_hash)
+        self.git_db.update_ref(f"refs/quipu/heads/{new_commit_hash}", new_commit_hash)
 
-# A pytest fixture to provide a clean work directory for each test
-@pytest.fixture
-def work_dir(tmp_path: Path) -> Path:
-    """Creates a temporary directory to act as a project root."""
-    return tmp_path
-
-
-def test_config_get_defaults(work_dir: Path):
-    """Test that default values are returned when no config file exists."""
-    config = ConfigManager(work_dir)
-
-    # Test accessing a nested default value
-    assert config.get("storage.type") == "git_object"
-    # Test a non-existent key with a fallback
-    assert config.get("nonexistent.key", "fallback") == "fallback"
-    # Test a default that is None
-    assert config.get("sync.user_id") is None
-
-
-def test_config_load_from_file(work_dir: Path):
-    """Test loading configuration from an existing config.yml file."""
-    config_dir = work_dir / ".quipu"
-    config_dir.mkdir()
-    config_file = config_dir / "config.yml"
-    
-    # Create a dummy config file
-    dummy_config = {
-        "storage": {"type": "sqlite"},
-        "sync": {"user_id": "test-user-from-file"}
-    }
-    with open(config_file, "w") as f:
-        yaml.dump(dummy_config, f)
-
-    config = ConfigManager(work_dir)
-
-    # User-defined value should override default
-    assert config.get("storage.type") == "sqlite"
-    # Value defined in file should be loaded
-    assert config.get("sync.user_id") == "test-user-from-file"
-    # Default value should still be accessible if not overridden
-    assert config.get("sync.remote_name") == "origin"
-
-
-def test_config_set_and_save(work_dir: Path):
-    """Test setting a simple value and saving it to a new file."""
-    config = ConfigManager(work_dir)
-    
-    # Pre-check: value should be default (None)
-    assert config.get("sync.user_id") is None
-
-    # Set a new value in memory
-    config.set("sync.user_id", "test-user-new")
-    assert config.get("sync.user_id") == "test-user-new"
-
-    # Save the configuration to disk
-    config.save()
-
-    config_file = work_dir / ".quipu" / "config.yml"
-    assert config_file.exists()
-
-    # Verify the content of the saved file
-    with open(config_file, "r") as f:
-        saved_data = yaml.safe_load(f)
-    
-    assert saved_data == {"sync": {"user_id": "test-user-new"}}
-
-
-def test_config_nested_set_and_save(work_dir: Path):
-    """Test that setting a nested key creates the necessary dictionaries."""
-    config = ConfigManager(work_dir)
-    
-    config.set("a.b.c", 123)
-    config.save()
-
-    # Verify by loading with a new instance
-    new_config = ConfigManager(work_dir)
-    assert new_config.get("a.b.c") == 123
-
-
-def test_config_round_trip_consistency(work_dir: Path):
-    """
-    Test the full cycle: create, set, save, then create a new instance and load.
-    """
-    # --- Phase 1: Create and save ---
-    config1 = ConfigManager(work_dir)
-    config1.set("storage.type", "sqlite")
-    config1.set("sync.user_id", "round-trip-user")
-    config1.set("sync.subscriptions", ["user-a", "user-b"])
-    config1.save()
-
-    # --- Phase 2: Load in a new instance and verify ---
-    config2 = ConfigManager(work_dir)
-    assert config2.get("storage.type") == "sqlite"
-    assert config2.get("sync.user_id") == "round-trip-user"
-    assert config2.get("sync.subscriptions") == ["user-a", "user-b"]
-    # Verify a default value is still accessible
-    assert config2.get("sync.remote_name") == "origin"
+        if parent_commit:
+            self.git_db.delete_ref(f"refs/quipu/heads/{parent_commit}")
+~~~~~
+~~~~~python
+        # 3. 引用管理 (QDPS v1.1 - Local Heads Namespace)
+        # 在本地工作区命名空间中为新的 commit 创建一个持久化的 head 引用。
+        # 这是 push 操作的唯一来源，并且支持多分支图谱，因此不再删除父节点的 head。
+        self.git_db.update_ref(f"refs/quipu/local/heads/{new_commit_hash}", new_commit_hash)
 ~~~~~
 
 ### 下一步建议
-`ConfigManager` 的读写功能现已得到充分测试，我们可以放心地在此基础上继续推进 `sync` 功能的开发。
+我们已经成功地将 Quipu 的核心存储引擎与 v1.1 同步架构的命名空间对齐。现在，底层已经准备好进行真正的远程交互。
 
-下一步，我们将执行任务列表中的 **2.2** 和 **2.3**，重构 `HistoryWriter` 和 `HistoryReader`，使其适应 v1.1 架构中新的 Git 引用命名空间。
+下一步，我们将执行任务 **2.4**：在 `GitDB` 中实现封装了 `push` 和 `fetch` 核心逻辑的高层方法，为 CLI 命令的实现铺平道路。
