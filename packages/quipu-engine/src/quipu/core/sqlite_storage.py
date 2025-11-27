@@ -56,14 +56,26 @@ class SQLiteHistoryReader(HistoryReader):
         # 3. 在内存中构建图
         for row in edges_data:
             child_hash, parent_hash = row["child_hash"], row["parent_hash"]
+
+            # 关键修复：增加一个健全性检查，防止循环引用
+            if child_hash == parent_hash:
+                logger.warning(f"检测到并忽略了一个自引用边: {child_hash[:7]}")
+                continue
+
             if child_hash in temp_nodes and parent_hash in temp_nodes:
                 child_node = temp_nodes[child_hash]
                 parent_node = temp_nodes[parent_hash]
 
-                child_node.parent = parent_node
-                parent_node.children.append(child_node)
-                # 根据父节点设置 input_tree
-                child_node.input_tree = parent_node.output_tree
+                # 确保一个节点只有一个父节点（对于非合并节点）
+                if child_node.parent is None:
+                    child_node.parent = parent_node
+                    parent_node.children.append(child_node)
+                    # 根据父节点设置 input_tree
+                    child_node.input_tree = parent_node.output_tree
+                else:
+                    # 如果一个节点有多个父节点（合并提交），我们只处理第一个
+                    # 真正的合并逻辑需要更复杂的处理，但对于防止循环，此逻辑是安全的
+                    logger.debug(f"节点 {child_hash[:7]} 已有父节点，忽略额外的父节点 {parent_hash[:7]}")
 
         # 4. 填充根节点的 input_tree 并排序子节点
         genesis_hash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
