@@ -1,125 +1,259 @@
-## 解决由于目录重构导致的 `ImportError`
+按需加载，动态隔离。
 
-好的，我来分析并修复这些 `ImportError`。
+## fix: resolve TUI sqlite threading issue by isolating engine lifecycle
 
 ### 错误分析
-你遇到的 `ImportError: attempted relative import with no known parent package` 错误是由于 `pytest` 在执行测试时，Python 解释器无法将 `tests` 目录下的子目录（如 `cli` 和 `engine`）识别为可以进行相对导入的 "包 (package)"。
-
-在我们重构目录结构后，像 `tests/cli/test_tui_logic.py` 这样的文件使用了相对导入 (`from .test_view_model import ...`) 来引用同一目录下的其他模块。为了让这种导入生效，Python 需要知道 `tests/cli` 是一个包。
-
-此外，在 `tests/engine/test_engine_memory.py` 中，`from .helpers import ...` 尝试从当前目录 (`engine/`) 导入 `helpers.py`，但实际上 `helpers.py` 位于父目录 `tests/` 中。
+当前架构中，`Engine` 和 `ViewModel` 在 `main.py` 的 CLI 主线程中被初始化，这建立了一个绑定到该线程的 SQLite 连接。随后，这些对象被注入到 `QuipuUiApp` 中。当 `QuipuUiApp` 启动（可能接管主线程或在异步循环中运行）并在其生命周期方法（如 `on_mount` 或后续的事件回调）中尝试使用该连接时，可能会触发 SQLite 的线程安全检查（`ProgrammingError`）或导致 GIL/锁竞争，表现为界面卡死且无法响应中断。
 
 ### 用户需求
-1.  解决由于目录重构导致的 `ImportError`。
-2.  让 `pytest` 能够正确识别 `tests` 目录及其子目录为 Python 包，以便相对导入和绝对导入都能正常工作。
-3.  修正错误的导入路径。
+用户需要 `quipu ui` 命令能够稳定启动和运行，避免因数据库资源竞争导致的崩溃或无响应。
 
 ### 评论
-这个问题是在 Python 项目中重构测试目录时的一个典型问题。通过添加 `__init__.py` 文件将目录标记为包，是标准且正确的解决方案。同时，将跨目录的相对导入修正为更清晰的绝对导入，可以增强代码的可读性和健壮性。
+这是一个典型的资源生命周期管理问题。UI 组件应当拥有其所需的数据库连接的所有权，而不是依赖外部注入的、可能跨越了线程/协程边界的连接。将 `Engine` 的创建推迟到 TUI 的 `on_mount` 阶段可以确保连接是在实际使用它的上下文中创建的。
 
 ### 目标
-1.  在 `tests` 目录及其所有子目录中创建空的 `__init__.py` 文件，将它们正式声明为 Python 包。
-2.  修正 `tests/engine/test_engine_memory.py` 中的导入语句，使其能够正确地找到位于 `tests/` 根目录下的 `helpers.py` 文件。
-3.  确保修复后，`pytest` 测试集合能够无错误地完成。
+1.  **资源隔离**：修改 `tui.py`，使其在内部管理 `Engine` 和 `ViewModel` 的生命周期，确保 SQLite 连接在 UI 线程中创建。
+2.  **生命周期管理**：在 UI 退出时正确关闭数据库连接。
+3.  **启动流程优化**：修改 `main.py`，仅在启动 UI 前使用一个临时的 `Engine` 进行“空历史”检查，然后彻底释放资源，再启动 UI。
 
 ### 基本原理
-1.  **`__init__.py` 的作用**：在 Python 中，一个包含 `__init__.py` 文件的目录被视为一个“常规包 (regular package)”。这使得该目录下的模块可以使用相对 (`from . import ...`) 或绝对 (`from my_package.my_module import ...`) 的方式相互导入。
-2.  **Python 路径 (`pythonpath`)**：我们的 `pyproject.toml` 文件已经将 `tests` 目录的父目录添加到了 `pythonpath` 中，这意味着我们可以使用 `from tests.helpers import ...` 这样的绝对路径进行导入。这是比复杂的相对路径 (`from .. import ...`) 更推荐的方式。
+**Thread-Local Storage / Resource Ownership**: SQLite 连接通常不是线程安全的（或者在跨线程使用时需要非常小心）。最佳实践是遵循“谁使用，谁创建”的原则。通过在 Textual 的 `on_mount` 钩子中初始化数据库连接，我们保证了该连接与处理 UI 事件的循环处于同一上下文，消除了并发访问的隐患。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/import-resolution #task/action/bug-fix #task/state/continue
+#intent/fix #flow/ready #priority/critical
+#comp/cli #concept/ui #concept/config
+#scope/ux
+#task/domain/ui #task/object/tui #task/action/stabilize #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 将测试目录转换为 Python 包
+#### Acts 1: TUI 内部接管 Engine 生命周期
 
-我将通过创建空的 `__init__.py` 文件，把 `tests` 及其所有子目录标记为 Python 包。这将解决 `pytest` 无法识别包结构的问题。
+在 `tui.py` 中，修改 `QuipuUiApp` 的构造函数，不再接收 `view_model`，而是接收 `work_dir`。在 `on_mount` 中执行初始化，并添加 `on_unmount` 进行清理。同时补充缺失的导入。
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/__init__.py
+packages/quipu-cli/src/quipu/cli/tui.py
 ~~~~~
-~~~~~content
-
+~~~~~old_string
+import sys
+from datetime import datetime
+from typing import List, Optional, Set, Dict, Callable, Tuple
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, DataTable, Markdown, Static
+from textual.containers import Horizontal, Vertical
+~~~~~
+~~~~~new_string
+import sys
+from pathlib import Path
+from datetime import datetime
+from typing import List, Optional, Set, Dict, Callable, Tuple
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, DataTable, Markdown, Static
+from textual.containers import Horizontal, Vertical
 ~~~~~
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/cli/__init__.py
+packages/quipu-cli/src/quipu/cli/tui.py
 ~~~~~
-~~~~~content
+~~~~~old_string
+from textual.coordinate import Coordinate
+from textual import on
 
+from quipu.core.models import QuipuNode
+from .view_model import GraphViewModel
+
+# 定义 UI 返回类型: (动作类型, 数据)
+~~~~~
+~~~~~new_string
+from textual.coordinate import Coordinate
+from textual import on
+
+from quipu.core.models import QuipuNode
+from quipu.core.state_machine import Engine
+from .view_model import GraphViewModel
+from .factory import create_engine
+
+# 定义 UI 返回类型: (动作类型, 数据)
 ~~~~~
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/engine/__init__.py
+packages/quipu-cli/src/quipu/cli/tui.py
 ~~~~~
-~~~~~content
-
+~~~~~old_string
+    BINDINGS = [
+        Binding("q", "quit", "退出"),
+        Binding("c", "checkout_node", "检出节点"),
+~~~~~
+~~~~~new_string
+    BINDINGS = [
+        Binding("q", "quit", "退出"),
+        Binding("c", "checkout_node", "检出节点"),
 ~~~~~
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/engine/sqlite/__init__.py
+packages/quipu-cli/src/quipu/cli/tui.py
 ~~~~~
-~~~~~content
+~~~~~old_string
+    def __init__(self, view_model: GraphViewModel):
+        super().__init__()
+        self.view_model = view_model
 
+        # 状态
+        self.show_unreachable = True
+        self.is_split_mode = False
+        self.current_selected_node: Optional[QuipuNode] = None
+
+    def compose(self) -> ComposeResult:
+~~~~~
+~~~~~new_string
+    def __init__(self, work_dir: Path):
+        super().__init__()
+        self.work_dir = work_dir
+        self.engine: Optional[Engine] = None
+        self.view_model: Optional[GraphViewModel] = None
+
+        # 状态
+        self.show_unreachable = True
+        self.is_split_mode = False
+        self.current_selected_node: Optional[QuipuNode] = None
+
+    def compose(self) -> ComposeResult:
 ~~~~~
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/runtime/__init__.py
+packages/quipu-cli/src/quipu/cli/tui.py
 ~~~~~
-~~~~~content
+~~~~~old_string
+    def on_mount(self) -> None:
+        """Loads the first page of data."""
+        # The ViewModel is now initialized in main.py before the app is run.
+        self._load_page(1)
 
+    def _load_page(self, page_number: int) -> None:
 ~~~~~
+~~~~~new_string
+    def on_mount(self) -> None:
+        """Loads the first page of data."""
+        self.engine = create_engine(self.work_dir, lazy=True)
+        current_hash = self.engine.git_db.get_tree_hash()
+        self.view_model = GraphViewModel(reader=self.engine.reader, current_hash=current_hash)
+        self.view_model.initialize()
+        self._load_page(1)
+
+    def on_unmount(self) -> None:
+        if self.engine:
+            self.engine.close()
+
+    def _load_page(self, page_number: int) -> None:
+~~~~~
+
+#### Acts 2: 修正 Main 入口逻辑
+
+修改 `main.py` 中的 `ui` 命令，使用临时 Engine 检查状态后即关闭，然后启动拥有独立 Engine 的 `QuipuUiApp`。
 
 ~~~~~act
-write_file
+patch_file
 ~~~~~
 ~~~~~path
-tests/runtime/acts/__init__.py
+packages/quipu-cli/src/quipu/cli/main.py
 ~~~~~
-~~~~~content
+~~~~~old_string
+    setup_logging()
 
-~~~~~
+    # 使用懒加载模式创建 Engine，避免启动时加载全量数据
+    engine = create_engine(work_dir, lazy=True)
+    current_hash = engine.git_db.get_tree_hash()
 
-~~~~~act
-write_file
-~~~~~
-~~~~~path
-tests/integration/__init__.py
-~~~~~
-~~~~~content
+    # 实例化 ViewModel
+    view_model = GraphViewModel(reader=engine.reader, current_hash=current_hash)
 
-~~~~~
+    # ViewModel 初始化时会快速检查节点总数
+    # view_model.initialize() # <--- 移除此处的预初始化，让 TUI 自己在其线程中完成
+    
+    engine_closed = False
+    try:
+        # ViewModel 初始化时会快速检查节点总数
+        view_model.initialize()
+        if view_model.total_nodes == 0:
+            typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
 
-#### Acts 2: 修正不正确的相对导入路径
+        # 注入 ViewModel 到 UI
+        app_instance = QuipuUiApp(view_model=view_model)
+        result = app_instance.run()
 
-`tests/engine/test_engine_memory.py` 文件中的相对导入 `from .helpers import ...` 是不正确的，因为它试图在 `engine` 目录内部查找 `helpers.py`。我将把它修正为一个从 `tests` 包根目录开始的绝对导入。
+        # 处理 UI 返回结果
+        if result:
+            action, data = result
 
-~~~~~act
-patch_file tests/engine/test_engine_memory.py
+            if action == "checkout":
+                target_hash = data
+                # 我们相信从 UI 返回的 hash 是有效的
+                typer.secho(f"\n> TUI 请求检出到: {target_hash[:7]}", err=True)
+                _execute_visit(ctx, engine, target_hash, f"正在导航到 TUI 选定节点: {target_hash[:7]}")
+
+            elif action == "dump":
+                # 直接将内容打印到 stdout，方便用户通过管道处理 (e.g. quipu ui | less)
+                print(data)
+                ctx.exit(0)
+                
+    finally:
+        if engine and not engine_closed:
+            engine.close()
+            engine_closed = True
 ~~~~~
-~~~~~python
-from .helpers import InMemoryDB, InMemoryHistoryManager, EMPTY_TREE_HASH
-~~~~~
-~~~~~python
-from tests.helpers import InMemoryDB, InMemoryHistoryManager, EMPTY_TREE_HASH
+~~~~~new_string
+    setup_logging()
+
+    # 1. 预检查阶段：使用临时 Engine 快速检查历史是否为空
+    temp_engine = create_engine(work_dir, lazy=True)
+    try:
+        if temp_engine.reader.get_node_count() == 0:
+            typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
+    finally:
+        temp_engine.close()
+
+    # 2. 启动 UI 阶段：资源由 UI 内部独立管理
+    app_instance = QuipuUiApp(work_dir=work_dir)
+    result = app_instance.run()
+
+    # 3. 处理结果阶段：此时 UI 已关闭，我们需要重新获取 Engine 来执行业务操作
+    if result:
+        action, data = result
+
+        if action == "checkout":
+            target_hash = data
+            # 重新创建 Engine 执行导航操作
+            action_engine = create_engine(work_dir, lazy=True)
+            try:
+                typer.secho(f"\n> TUI 请求检出到: {target_hash[:7]}", err=True)
+                _execute_visit(ctx, action_engine, target_hash, f"正在导航到 TUI 选定节点: {target_hash[:7]}")
+            finally:
+                action_engine.close()
+
+        elif action == "dump":
+            # 直接将内容打印到 stdout
+            print(data)
+            ctx.exit(0)
 ~~~~~
 
 ### 下一步建议
-现在，所有的导入问题都已解决。请再次运行 `pytest` 或 `qtest`，测试集合应该能够无错误地完成，并开始执行具体的测试用例。
+运行 `quipu ui` 验证启动速度和稳定性。此时应该不会再出现闪烁卡死现象。如果一切正常，可以继续完善 UI 的细节功能。
