@@ -5,11 +5,12 @@ import click  # 导入 click 库
 from pathlib import Path
 from typing import Annotated, Optional, Dict
 
-from .logger_config import setup_logging
+from .logger_config import setup_logging, configure_file_logging
 from .controller import run_quipu
 from .config import DEFAULT_WORK_DIR, DEFAULT_ENTRY_FILE, PROJECT_ROOT
 from .factory import create_engine
 from .utils import find_git_repository_root
+from .view_model import GraphViewModel
 from quipu.core.plugin_loader import load_plugins
 from quipu.core.executor import Executor
 from quipu.core.state_machine import Engine
@@ -99,41 +100,46 @@ def ui(
         typer.secho("💡 请运行: pip install 'textual>=0.58.0'", err=True)
         ctx.exit(1)
 
-    setup_logging()
+    # 在 TUI 模式下，强制将日志重定向到文件，防止 stderr 干扰 UI 渲染
+    log_file = work_dir / ".quipu" / "tui.debug.log"
+    configure_file_logging(log_file)
+    logging.info("Starting Quipu UI command...")
 
-    engine = create_engine(work_dir)
-    all_nodes = engine.reader.load_all_nodes()
+    # 1. 预检查阶段：使用临时 Engine 快速检查历史是否为空
+    logging.debug("Creating temporary engine for pre-check...")
+    temp_engine = create_engine(work_dir, lazy=True)
+    try:
+        count = temp_engine.reader.get_node_count()
+        logging.debug(f"Pre-check complete. Node count: {count}")
+        if count == 0:
+            typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
+    finally:
+        logging.debug("Closing temporary engine.")
+        temp_engine.close()
 
-    if not all_nodes:
-        typer.secho("📜 历史记录为空，无需启动 UI。", fg=typer.colors.YELLOW, err=True)
-        ctx.exit(0)
-
-    graph = engine.history_graph
-    current_hash = engine.git_db.get_tree_hash()
-
-    # 定义内容加载器闭包，供 UI 按需调用
-    def content_loader(node: QuipuNode) -> str:
-        return engine.reader.get_node_content(node)
-
-    # 注入 loader
-    app_instance = QuipuUiApp(all_nodes, content_loader=content_loader, current_hash=current_hash)
+    # 2. 启动 UI 阶段：资源由 UI 内部独立管理
+    logging.info("Launching QuipuUiApp...")
+    app_instance = QuipuUiApp(work_dir=work_dir)
     result = app_instance.run()
+    logging.info(f"QuipuUiApp finished with result: {result}")
 
-    # 处理 UI 返回结果
+    # 3. 处理结果阶段：此时 UI 已关闭，我们需要重新获取 Engine 来执行业务操作
     if result:
         action, data = result
 
         if action == "checkout":
             target_hash = data
-            if target_hash in graph:
+            # 重新创建 Engine 执行导航操作
+            action_engine = create_engine(work_dir, lazy=True)
+            try:
                 typer.secho(f"\n> TUI 请求检出到: {target_hash[:7]}", err=True)
-                _execute_visit(ctx, engine, target_hash, f"正在导航到 TUI 选定节点: {target_hash[:7]}")
-            else:
-                typer.secho(f"❌ 错误: 无法在历史图谱中找到目标哈希 {target_hash[:7]}", fg=typer.colors.RED, err=True)
-                ctx.exit(1)
+                _execute_visit(ctx, action_engine, target_hash, f"正在导航到 TUI 选定节点: {target_hash[:7]}")
+            finally:
+                action_engine.close()
 
         elif action == "dump":
-            # 直接将内容打印到 stdout，方便用户通过管道处理 (e.g. quipu ui | less)
+            # 直接将内容打印到 stdout
             print(data)
             ctx.exit(0)
 

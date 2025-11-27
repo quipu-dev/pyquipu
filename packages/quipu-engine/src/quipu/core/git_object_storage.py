@@ -444,11 +444,11 @@ class GitObjectHistoryWriter(HistoryWriter):
             # 这里的 filename 实际上存储的是 commit hash
             node.parent = QuipuNode(
                 input_tree="",  # Placeholder
-                output_tree="", # Placeholder
-                timestamp=datetime.fromtimestamp(0), # Placeholder
+                output_tree="",  # Placeholder
+                timestamp=datetime.fromtimestamp(0),  # Placeholder
                 filename=Path(f".quipu/git_objects/{parent_commit}"),
                 node_type="unknown",
-                content=""
+                content="",
             )
 
         return node

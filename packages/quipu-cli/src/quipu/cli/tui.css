@@ -1,0 +1,50 @@
+Header {
+    dock: top;
+}
+
+Footer {
+    dock: bottom;
+}
+
+#main-container {
+    /* The main container will now automatically fill the space
+       between the docked header and footer. */
+    width: 100%;
+}
+
+DataTable {
+    height: 100%;
+    background: $surface;
+    border: none;
+}
+
+/* Split Mode Styles */
+.split-mode #history-table {
+    width: 50%;
+}
+
+#content-view {
+    display: none; /* 默认隐藏右侧内容区 */
+    width: 50%;
+    height: 100%;
+    border-left: solid $primary;
+    background: $surface;
+}
+
+.split-mode #content-view {
+    display: block;
+}
+
+#content-header {
+    height: 1;
+    background: $primary;
+    color: $text;
+    text-align: center;
+    text-style: bold;
+}
+
+#content-body {
+    height: 1fr;
+    padding: 1;
+    overflow-y: auto;
+}
