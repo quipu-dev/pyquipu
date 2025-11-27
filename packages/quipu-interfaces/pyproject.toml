@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "quipu-interfaces"
 version = "0.1.0"
 authors = [
-  { name="doux", email="douxldh@gmail.com" },
+  { name="doucx", email="doucxldh@gmail.com" },
 ]
 description = "Core interfaces and data models for the Quipu ecosystem."
 readme = "README.md"

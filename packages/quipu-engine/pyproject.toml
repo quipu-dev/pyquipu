@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "quipu-engine"
 version = "0.1.0"
 authors = [
-  { name="doux", email="douxldh@gmail.com" },
+  { name="doucx", email="doucxldh@gmail.com" },
 ]
 description = "The state and history engine for Quipu, powered by Git plumbing."
 requires-python = ">=3.8"

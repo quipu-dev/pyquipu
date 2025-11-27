@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "quipu-runtime"
 version = "0.1.0"
 authors = [
-  { name="doux", email="douxldh@gmail.com" },
+  { name="doucx", email="doucxldh@gmail.com" },
 ]
 description = "The stateless execution runtime for Quipu, responsible for parsing and executing instructions."
 requires-python = ">=3.8"
