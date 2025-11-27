@@ -8,7 +8,7 @@ from datetime import datetime
 @dataclasses.dataclass
 class QuipuNode:
     """
-    表示 Axon 历史图谱中的一个节点。
+    表示 Quipu 历史图谱中的一个节点。
 
     这个数据类封装了从文件名和文件内容中解析出的所有元数据和状态信息。
     """

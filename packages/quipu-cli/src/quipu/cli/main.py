@@ -91,7 +91,7 @@ def ui(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    以交互式 TUI 模式显示 Axon 历史图谱。
+    以交互式 TUI 模式显示 Quipu 历史图谱。
     """
     try:
         from .tui import QuipuUiApp
@@ -234,7 +234,7 @@ def sync(
     remote: Annotated[Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")] = None,
 ):
     """
-    与远程仓库同步 Axon 历史图谱。
+    与远程仓库同步 Quipu 历史图谱。
     """
     setup_logging()
     # Sync 必须在 git 项目根目录执行
@@ -260,18 +260,18 @@ def sync(
             typer.secho("❌ 错误: 未找到 'git' 命令。", fg=typer.colors.RED, err=True)
             ctx.exit(1)
 
-    typer.secho(f"⬇️  正在从 '{remote}' 拉取 Axon 历史...", fg=typer.colors.BLUE, err=True)
+    typer.secho(f"⬇️  正在从 '{remote}' 拉取 Quipu 历史...", fg=typer.colors.BLUE, err=True)
     run_git_command(["fetch", remote, refspec])
-    typer.secho(f"⬆️  正在向 '{remote}' 推送 Axon 历史...", fg=typer.colors.BLUE, err=True)
+    typer.secho(f"⬆️  正在向 '{remote}' 推送 Quipu 历史...", fg=typer.colors.BLUE, err=True)
     run_git_command(["push", remote, refspec])
-    typer.secho("\n✅ Axon 历史同步完成。", fg=typer.colors.GREEN, err=True)
+    typer.secho("\n✅ Quipu 历史同步完成。", fg=typer.colors.GREEN, err=True)
 
     config_get_res = subprocess.run(
         ["git", "config", "--get", f"remote.{remote}.fetch"], cwd=sync_dir, capture_output=True, text=True
     )
     if refspec not in config_get_res.stdout:
         typer.secho(
-            "\n💡 提示: 为了让 `git pull` 自动同步 Axon 历史，请执行以下命令:", fg=typer.colors.YELLOW, err=True
+            "\n💡 提示: 为了让 `git pull` 自动同步 Quipu 历史，请执行以下命令:", fg=typer.colors.YELLOW, err=True
         )
         typer.echo(f'  git config --add remote.{remote}.fetch "{refspec}"')
 
@@ -571,7 +571,7 @@ def log(
     ] = DEFAULT_WORK_DIR,
 ):
     """
-    显示 Axon 历史图谱日志。
+    显示 Quipu 历史图谱日志。
     """
     setup_logging()
     engine = create_engine(work_dir)
@@ -581,7 +581,7 @@ def log(
         typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
         raise typer.Exit(0)
     nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
-    typer.secho("--- Axon History Log ---", bold=True, err=True)
+    typer.secho("--- Quipu History Log ---", bold=True, err=True)
     for node in nodes:
         ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
         color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
@@ -608,7 +608,7 @@ def run_command(
     list_acts: Annotated[bool, typer.Option("--list-acts", "-l", help="列出所有可用的操作指令及其说明。")] = False,
 ):
     """
-    Axon: 执行 Markdown 文件中的操作指令。
+    Quipu: 执行 Markdown 文件中的操作指令。
     """
     setup_logging()
     if list_acts:
@@ -616,7 +616,7 @@ def run_command(
         from quipu.acts import register_core_acts
 
         register_core_acts(executor)
-        typer.secho("\n📋 可用的 Axon 指令列表:\n", fg=typer.colors.GREEN, bold=True, err=True)
+        typer.secho("\n📋 可用的 Quipu 指令列表:\n", fg=typer.colors.GREEN, bold=True, err=True)
         acts = executor.get_registered_acts()
         for name in sorted(acts.keys()):
             doc = acts[name]

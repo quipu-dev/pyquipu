@@ -1,4 +1,4 @@
-# 🔌 Axon 插件安装演示
+# 🔌 Quipu 插件安装演示
 
 此脚本将在当前工作区的 `.axon/acts` 目录下安装一个演示插件，并生成一个测试脚本。
 
@@ -17,7 +17,7 @@ README.md
 ~~~~~~~content
 # 本地插件目录
 
-此目录下的 `.py` 文件会被 Axon 自动加载。
+此目录下的 `.py` 文件会被 Quipu 自动加载。
 你可以在这里编写项目专用的指令。
 
 ## 编写规范
@@ -73,7 +73,7 @@ def _greet(executor: Executor, args: List[str]):
     if args:
         name = " ".join(args)
     
-    logger.info(f"👋 [DemoPlugin] Hello, {name}! Welcome to Axon.")
+    logger.info(f"👋 [DemoPlugin] Hello, {name}! Welcome to Quipu.")
 
 def _stamp_file(executor: Executor, args: List[str]):
     """
@@ -91,7 +91,7 @@ def _stamp_file(executor: Executor, args: List[str]):
         raise ExecutionError(f"文件不存在: {raw_path}")
         
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    append_content = f"\n\n# Stamped by Axon at {timestamp}\n"
+    append_content = f"\n\n# Stamped by Quipu at {timestamp}\n"
     
     # 这里演示如何复用 executor 的确认机制
     # 模拟读取旧内容
@@ -129,7 +129,7 @@ run_demo.md
 ## 测试 1: Greet 指令
 
 ~~~act
-greet Axon Developer
+greet Quipu Developer
 ~~~
 
 ## 测试 2: Stamp File 指令

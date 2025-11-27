@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 class Engine:
     """
-    Axon 状态引擎。
-    负责协调 Git 物理状态和 Axon 逻辑图谱。
+    Quipu 状态引擎。
+    负责协调 Git 物理状态和 Quipu 逻辑图谱。
     """
 
     def _sync_persistent_ignores(self):

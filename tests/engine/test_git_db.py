@@ -13,7 +13,7 @@ def git_repo(tmp_path):
 
     # 配置 User，防止 Commit 报错
     subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=root, check=True)
-    subprocess.run(["git", "config", "user.name", "Axon Test"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=root, check=True)
 
     return root
 
@@ -50,7 +50,7 @@ class TestGitDBPlumbing:
     def test_shadow_index_isolation(self, git_repo, db):
         """
         测试关键特性：零污染 (Zero Pollution)
-        Axon 计算 Hash 的过程绝对不能把文件加入到用户的暂存区。
+        Quipu 计算 Hash 的过程绝对不能把文件加入到用户的暂存区。
         """
         f = git_repo / "wip.txt"
         f.write_text("working in progress", encoding="utf-8")
@@ -60,7 +60,7 @@ class TestGitDBPlumbing:
         assert "??" in status_before  # Untracked
         assert "A" not in status_before  # Not staged
 
-        # 2. Axon 执行计算
+        # 2. Quipu 执行计算
         _ = db.get_tree_hash()
 
         # 3. 验证用户暂存区依然是空的
@@ -90,7 +90,7 @@ class TestGitDBPlumbing:
         tree_hash = db.get_tree_hash()
 
         # 创建锚点
-        commit_hash = db.commit_tree(tree_hash, parent_hashes=None, message="Axon Shadow Commit")
+        commit_hash = db.commit_tree(tree_hash, parent_hashes=None, message="Quipu Shadow Commit")
 
         # 更新引用
         ref_name = "refs/quipu/history"

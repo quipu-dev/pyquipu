@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class GitDB:
     """
-    Axon 的 Git 底层接口 (Plumbing Interface)。
+    Quipu 的 Git 底层接口 (Plumbing Interface)。
     负责与 Git 对象数据库交互，维护 Shadow Index 和 Refs。
     """
 
@@ -88,7 +88,7 @@ class GitDB:
         """
         with self.shadow_index() as env:
             # 1. 将当前工作区全量加载到影子索引
-            # 使用 ':(exclude).quipu' 确保 Axon 自身数据不影响状态计算
+            # 使用 ':(exclude).quipu' 确保 Quipu 自身数据不影响状态计算
             # -A: 自动处理添加、修改、删除
             # --ignore-errors: 即使某些文件无法读取也继续（尽力而为）
             self._run(["add", "-A", "--ignore-errors", ".", ":(exclude).quipu"], env=env)

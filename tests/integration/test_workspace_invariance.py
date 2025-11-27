@@ -41,13 +41,13 @@ Success from subdir
 
 class TestRootInvariance:
     """
-    测试 Axon 的核心特性：根目录不变性。
-    无论用户从项目的哪个子目录运行命令，Axon 的行为都应该与在项目根目录运行时完全一致。
+    测试 Quipu 的核心特性：根目录不变性。
+    无论用户从项目的哪个子目录运行命令，Quipu 的行为都应该与在项目根目录运行时完全一致。
     """
 
     def test_run_from_subdir_maintains_root_context(self, project_with_subdir):
         """
-        验证：当从子目录 (`src/`) 启动 Axon 时，
+        验证：当从子目录 (`src/`) 启动 Quipu 时，
         它应该能自动发现项目根，并在根目录下正确执行操作和记录历史。
         """
         project_root, subdir = project_with_subdir

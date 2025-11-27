@@ -36,7 +36,7 @@ def workspace(tmp_path):
     subprocess.run(["git", "init"], cwd=ws, check=True, capture_output=True)
     # 设置 user 避免 commit 报错
     subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=ws, check=True)
-    subprocess.run(["git", "config", "user.name", "Axon Test"], cwd=ws, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=ws, check=True)
 
     return ws
 
@@ -115,7 +115,7 @@ class TestCLIWrapper:
         """测试 --help"""
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "Axon" in result.stdout
+        assert "Quipu" in result.stdout
 
     def test_cli_file_input(self, tmp_path):
         """测试从文件读取输入"""
