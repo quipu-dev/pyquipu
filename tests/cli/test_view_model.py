@@ -27,11 +27,11 @@ class MockHistoryReader(HistoryReader):
     def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:
         return self._nodes[offset : offset + limit]
 
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
+    def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         return self._ancestors
 
-    def get_private_data(self, commit_hash: str) -> Optional[str]:
-        return self._private_data.get(commit_hash)
+    def get_private_data(self, node_commit_hash: str) -> Optional[str]:
+        return self._private_data.get(node_commit_hash)
 
     def get_node_content(self, node: QuipuNode) -> str:
         # For simplicity, mock content is stored in the node's summary
@@ -54,7 +54,7 @@ class MockHistoryReader(HistoryReader):
 def sample_nodes():
     """生成一组用于测试的节点。"""
     return [
-        QuipuNode("h0", f"h{i}", datetime(2023, 1, i + 1), Path(f"f{i}"), "plan", summary=f"Public {i}")
+        QuipuNode(f"c{i}", f"h{i}", "h0", datetime(2023, 1, i + 1), Path(f"f{i}"), "plan", summary=f"Public {i}")
         for i in range(10)
     ]
 
@@ -64,7 +64,7 @@ class TestGraphViewModel:
         """测试 ViewModel 初始化是否正确获取总数和可达性集合。"""
         ancestors = {"h3", "h2", "h1"}
         reader = MockHistoryReader(sample_nodes, ancestors=ancestors)
-        vm = GraphViewModel(reader, current_hash="h3")
+        vm = GraphViewModel(reader, current_output_tree_hash="h3")
 
         vm.initialize()
 
@@ -76,7 +76,7 @@ class TestGraphViewModel:
         """测试分页加载逻辑是否正确。"""
         reader = MockHistoryReader(sample_nodes)
         # 10 nodes, page_size=4 -> 3 pages
-        vm = GraphViewModel(reader, current_hash=None, page_size=4)
+        vm = GraphViewModel(reader, current_output_tree_hash=None, page_size=4)
         vm.initialize()
 
         assert vm.total_pages == 3
@@ -107,7 +107,7 @@ class TestGraphViewModel:
         """测试可达性检查逻辑。"""
         ancestors = {"h9", "h8"}  # current is h9, parent is h8
         reader = MockHistoryReader(sample_nodes, ancestors=ancestors)
-        vm = GraphViewModel(reader, current_hash="h9")
+        vm = GraphViewModel(reader, current_output_tree_hash="h9")
         vm.initialize()
 
         assert vm.is_reachable("h9") is True  # Self
@@ -117,7 +117,7 @@ class TestGraphViewModel:
     def test_is_reachable_no_current_hash(self, sample_nodes):
         """测试在没有当前哈希时，所有节点都应被视为可达。"""
         reader = MockHistoryReader(sample_nodes, ancestors=set())
-        vm = GraphViewModel(reader, current_hash=None)
+        vm = GraphViewModel(reader, current_output_tree_hash=None)
         vm.initialize()
 
         assert vm.is_reachable("h9") is True
@@ -125,17 +125,20 @@ class TestGraphViewModel:
 
     def test_get_content_bundle(self):
         """测试公共和私有内容的格式化逻辑。"""
-        # The key change is constructing a realistic filename where .name is the hash.
-        node_both = QuipuNode("a", "h_both", datetime.now(), Path("mock/h_both"), "plan", summary="Public Content")
-        node_public = QuipuNode("b", "h_public", datetime.now(), Path("mock/h_public"), "plan", summary="Public Only")
+        node_both = QuipuNode(
+            "c_both", "h_both", "a", datetime.now(), Path("mock/h_both"), "plan", summary="Public Content"
+        )
+        node_public = QuipuNode(
+            "c_public", "h_public", "b", datetime.now(), Path("mock/h_public"), "plan", summary="Public Only"
+        )
         node_private = QuipuNode(
-            "c", "h_private", datetime.now(), Path("mock/h_private"), "plan", summary=""
+            "c_private", "h_private", "c", datetime.now(), Path("mock/h_private"), "plan", summary=""
         )  # No public
-        node_none = QuipuNode("d", "h_none", datetime.now(), Path("mock/h_none"), "plan", summary="")
+        node_none = QuipuNode("c_none", "h_none", "d", datetime.now(), Path("mock/h_none"), "plan", summary="")
 
-        private_data = {"h_both": "Private Intent", "h_private": "Private Only"}
+        private_data = {"c_both": "Private Intent", "c_private": "Private Only"}
         reader = MockHistoryReader([], private_data=private_data)
-        vm = GraphViewModel(reader, current_hash=None)
+        vm = GraphViewModel(reader, current_output_tree_hash=None)
 
         # Case 1: Both public and private
         bundle1 = vm.get_content_bundle(node_both)

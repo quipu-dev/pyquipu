@@ -122,14 +122,23 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
         all_nodes = sorted(self.db.nodes.values(), key=lambda n: n.timestamp, reverse=True)
         return all_nodes[offset : offset + limit]
 
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
-        # In memory DB uses output_tree as key
+    def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
+        """
+        符合新接口的内存实现。
+        从指定的 output_tree 哈希开始，向上遍历父节点，收集所有祖先的 output_tree 哈希。
+        """
         ancestors = set()
-        if commit_hash in self.db.nodes:
-            curr = self.db.nodes[commit_hash]
+        # 内存数据库使用 output_tree 作为节点的键
+        if start_output_tree_hash in self.db.nodes:
+            curr = self.db.nodes[start_output_tree_hash]
             while curr.parent:
                 ancestors.add(curr.parent.output_tree)
-                curr = curr.parent
+                # 向上移动到父节点
+                if curr.parent.output_tree in self.db.nodes:
+                    curr = self.db.nodes[curr.parent.output_tree]
+                else:
+                    # 如果父节点由于某种原因不在图中（在内存测试中不应该发生），则停止
+                    break
         return ancestors
 
     def get_private_data(self, commit_hash: str) -> Optional[str]:
@@ -146,7 +155,11 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
         content: str,
         **kwargs: Any,
     ) -> QuipuNode:
+        # Generate a fake commit hash for memory backend
+        fake_commit_hash = hashlib.sha1(f"{output_tree}{datetime.now().timestamp()}".encode()).hexdigest()
+
         node = QuipuNode(
+            commit_hash=fake_commit_hash,
             input_tree=input_tree,
             output_tree=output_tree,
             timestamp=datetime.now(),

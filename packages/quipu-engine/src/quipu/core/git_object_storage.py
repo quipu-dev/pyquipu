@@ -144,6 +144,7 @@ class GitObjectHistoryReader(HistoryReader):
                 content = ""
 
                 node = QuipuNode(
+                    commit_hash=commit_hash,
                     # Placeholder, will be filled in the linking phase
                     input_tree="",
                     output_tree=output_tree,
@@ -191,7 +192,7 @@ class GitObjectHistoryReader(HistoryReader):
         # load_all_nodes 通常按时间倒序返回
         return all_nodes[offset : offset + limit]
 
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
+    def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         """Git后端: 在内存中遍历图谱"""
         all_nodes = self.load_all_nodes()
         node_map = {n.output_tree: n for n in all_nodes}
@@ -199,16 +200,8 @@ class GitObjectHistoryReader(HistoryReader):
         ancestors = set()
         queue = []
 
-        # 查找起始节点 (commit_hash 在这里对应 output_tree)
-        # 注意: load_all_nodes 返回的 node.output_tree 是 key
-        # 但传入的可能是 commit_hash (对于 GitObject 后端，output_tree 和 commit_hash 不一样)
-        # 这里假设 commit_hash 参数实际上是指 output_tree (因为 HistoryGraph key 是 output_tree)
-        # 或者我们需要建立 commit -> node 的映射。
-        # 鉴于 GitObjectHistoryReader.load_all_nodes 返回的 nodes filename 实际上包含了 commit hash
-
-        # 为了简化兼容性实现，我们假设这里的 commit_hash 指的是 output_tree (与 UI 行为一致)
-        if commit_hash in node_map:
-            queue.append(node_map[commit_hash])
+        if start_output_tree_hash in node_map:
+            queue.append(node_map[start_output_tree_hash])
 
         while queue:
             current_node = queue.pop(0)
@@ -220,7 +213,7 @@ class GitObjectHistoryReader(HistoryReader):
 
         return ancestors
 
-    def get_private_data(self, commit_hash: str) -> Optional[str]:
+    def get_private_data(self, node_commit_hash: str) -> Optional[str]:
         """Git后端: 不支持私有数据"""
         return None
 
@@ -233,8 +226,7 @@ class GitObjectHistoryReader(HistoryReader):
             return node.content
 
         try:
-            # Extract commit hash from the virtual filename
-            commit_hash = node.filename.name
+            commit_hash = node.commit_hash
 
             # 1. Get Tree Hash from Commit
             commit_bytes = self.git_db.cat_file(commit_hash, "commit")
@@ -430,25 +422,28 @@ class GitObjectHistoryWriter(HistoryWriter):
 
         # 返回一个 QuipuNode 实例，content 此时已在内存中，无需 Lazy Load
         node = QuipuNode(
+            commit_hash=new_commit_hash,
             input_tree=input_tree,
             output_tree=output_tree,
             timestamp=datetime.fromtimestamp(start_time),
             filename=Path(f".quipu/git_objects/{new_commit_hash}"),
             node_type=node_type,
             content=content,
+            summary=summary,  # Populate summary for immediate use
         )
 
         # 关键修改：显式填充 parent 信息，以便上层 Writer (如 SQLite) 可以直接获取确切的父节点 Hash
         # 而无需通过容易出错的 Tree 反查。我们使用一个最小化的占位节点。
         if parent_commit:
-            # 这里的 filename 实际上存储的是 commit hash
             node.parent = QuipuNode(
+                commit_hash=parent_commit,
                 input_tree="",  # Placeholder
-                output_tree="",  # Placeholder
-                timestamp=datetime.fromtimestamp(0),  # Placeholder
+                output_tree=input_tree,  # Use parent's output_tree which is our input_tree
+                timestamp=datetime.fromtimestamp(0),  # Placeholder, not critical here
                 filename=Path(f".quipu/git_objects/{parent_commit}"),
                 node_type="unknown",
                 content="",
+                summary="",  # Placeholder
             )
 
         return node

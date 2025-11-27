@@ -335,7 +335,7 @@ def discard(
 @app.command()
 def checkout(
     ctx: typer.Context,
-    hash_prefix: Annotated[str, typer.Argument(help="目标状态节点的哈希前缀。")],
+    hash_prefix: Annotated[str, typer.Argument(help="目标状态节点 output_tree 的哈希前缀。")],
     work_dir: Annotated[
         Path,
         typer.Option(
@@ -351,9 +351,11 @@ def checkout(
     engine = create_engine(work_dir)
     graph = engine.history_graph
 
-    matches = [node for sha, node in graph.items() if sha.startswith(hash_prefix)]
+    matches = [node for output_tree, node in graph.items() if output_tree.startswith(hash_prefix)]
     if not matches:
-        typer.secho(f"❌ 错误: 未找到哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"❌ 错误: 未找到 output_tree 哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True
+        )
         ctx.exit(1)
     if len(matches) > 1:
         typer.secho(
@@ -361,10 +363,10 @@ def checkout(
         )
         ctx.exit(1)
     target_node = matches[0]
-    target_tree_hash = target_node.output_tree
+    target_output_tree_hash = target_node.output_tree
 
     current_hash = engine.git_db.get_tree_hash()
-    if current_hash == target_tree_hash:
+    if current_hash == target_output_tree_hash:
         typer.secho(f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
         ctx.exit(0)
 
@@ -375,7 +377,7 @@ def checkout(
         typer.secho("✅ 变更已捕获。", fg=typer.colors.GREEN, err=True)
         current_hash = engine.git_db.get_tree_hash()
 
-    diff_stat = engine.git_db.get_diff_stat(current_hash, target_tree_hash)
+    diff_stat = engine.git_db.get_diff_stat(current_hash, target_output_tree_hash)
     if diff_stat:
         typer.secho("\n以下是将要发生的变更:", fg=typer.colors.YELLOW, err=True)
         typer.secho("-" * 20, err=True)
@@ -388,7 +390,7 @@ def checkout(
             typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
             raise typer.Abort()
 
-    _execute_visit(ctx, engine, target_tree_hash, f"正在导航到节点: {target_node.short_hash}")
+    _execute_visit(ctx, engine, target_output_tree_hash, f"正在导航到节点: {target_node.short_hash}")
 
 
 # --- 结构化导航命令 ---

@@ -36,18 +36,20 @@ class SQLiteHistoryReader(HistoryReader):
 
         temp_nodes: Dict[str, QuipuNode] = {}
         for row in nodes_data:
+            commit_hash = row["commit_hash"]
             node = QuipuNode(
+                commit_hash=commit_hash,
                 # input_tree 将在第二阶段链接
                 input_tree="",
                 output_tree=row["output_tree"],
                 timestamp=datetime.fromtimestamp(row["timestamp"]),
-                filename=Path(f".quipu/git_objects/{row['commit_hash']}"),
+                filename=Path(f".quipu/git_objects/{commit_hash}"),
                 node_type=row["node_type"],
                 summary=row["summary"],
                 # 内容是懒加载的
                 content=row["plan_md_cache"] if row["plan_md_cache"] is not None else "",
             )
-            temp_nodes[row["commit_hash"]] = node
+            temp_nodes[commit_hash] = node
 
         # 2. 一次性获取所有边关系
         edges_cursor = conn.execute("SELECT child_hash, parent_hash FROM edges;")
@@ -119,6 +121,7 @@ class SQLiteHistoryReader(HistoryReader):
                 commit_hash = row["commit_hash"]
                 node_hashes.append(commit_hash)
                 nodes_map[commit_hash] = QuipuNode(
+                    commit_hash=commit_hash,
                     input_tree="",  # Placeholder
                     output_tree=row["output_tree"],
                     timestamp=datetime.fromtimestamp(row["timestamp"]),
@@ -179,38 +182,59 @@ class SQLiteHistoryReader(HistoryReader):
             logger.error(f"Failed to load paginated nodes: {e}")
             return []
 
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
+    def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         """
-        获取指定节点的所有祖先节点的哈希集合 (用于可达性分析)。
-        使用 Recursive CTE 在数据库层面高效完成。
+        获取指定状态节点的所有祖先节点的 output_tree 哈希集合 (用于可达性分析)。
+        使用三步策略：
+        1. 将 output_tree 哈希翻译为 commit_hash。
+        2. 使用递归 CTE 查找所有祖先的 commit_hash。
+        3. 将祖先 commit_hash 集合翻译回 output_tree 哈希集合。
         """
         conn = self.db_manager._get_conn()
         try:
+            # 1. 查找起点的 commit_hash
+            cursor = conn.execute("SELECT commit_hash FROM nodes WHERE output_tree = ?", (start_output_tree_hash,))
+            row = cursor.fetchone()
+            if not row:
+                return set()
+            start_commit_hash = row[0]
+
+            # 2. 使用递归 CTE 查找所有祖先 commit_hash
             sql = """
-            WITH RECURSIVE ancestors(parent_hash) AS (
+            WITH RECURSIVE ancestors(h) AS (
                 SELECT parent_hash FROM edges WHERE child_hash = ?
                 UNION ALL
-                SELECT e.parent_hash FROM edges e, ancestors a WHERE e.child_hash = a.parent_hash
+                SELECT e.parent_hash FROM edges e, ancestors a WHERE e.child_hash = a.h AND e.parent_hash IS NOT NULL
             )
-            SELECT parent_hash FROM ancestors;
+            SELECT h FROM ancestors WHERE h IS NOT NULL;
             """
-            cursor = conn.execute(sql, (commit_hash,))
+            cursor = conn.execute(sql, (start_commit_hash,))
+            ancestor_commit_hashes = {row[0] for row in cursor.fetchall()}
+
+            if not ancestor_commit_hashes:
+                return set()
+
+            # 3. 将 commit_hash 集合转换为 output_tree 集合
+            placeholders = ",".join("?" * len(ancestor_commit_hashes))
+            sql_out = f"SELECT output_tree FROM nodes WHERE commit_hash IN ({placeholders})"
+            cursor = conn.execute(sql_out, tuple(ancestor_commit_hashes))
             return {row[0] for row in cursor.fetchall()}
+
         except sqlite3.Error as e:
-            logger.error(f"Failed to get ancestors for {commit_hash[:7]}: {e}")
+            logger.error(f"Failed to get ancestors for {start_output_tree_hash[:7]}: {e}")
             return set()
 
-    def get_private_data(self, commit_hash: str) -> Optional[str]:
+    def get_private_data(self, node_commit_hash: str) -> Optional[str]:
         """
         获取指定节点的私有数据 (如 intent.md)。
         """
         conn = self.db_manager._get_conn()
         try:
-            cursor = conn.execute("SELECT intent_md FROM private_data WHERE node_hash = ?", (commit_hash,))
+            cursor = conn.execute("SELECT intent_md FROM private_data WHERE node_hash = ?", (node_commit_hash,))
             row = cursor.fetchone()
             return row[0] if row else None
         except sqlite3.Error as e:
-            logger.error(f"Failed to get private data for {commit_hash[:7]}: {e}")
+            logger.error(f"Failed to get private data for {node_commit_hash[:7]}: {e}")
             return None
 
     def get_node_content(self, node: QuipuNode) -> str:
@@ -220,7 +244,7 @@ class SQLiteHistoryReader(HistoryReader):
         if node.content:
             return node.content
 
-        commit_hash = node.filename.name
+        commit_hash = node.commit_hash
 
         # 尝试从 Git 加载内容
         content = self._git_reader.get_node_content(node)
@@ -350,10 +374,10 @@ class SQLiteHistoryWriter(HistoryWriter):
             # 2.3 写入 'edges' 表
             # 关键修改：直接使用 GitWriter 传递回来的确切父节点信息，不再进行 Tree 反查
             if git_node.parent:
-                parent_hash = git_node.parent.filename.name
+                parent_commit_hash = git_node.parent.commit_hash
                 self.db_manager.execute_write(
                     "INSERT OR IGNORE INTO edges (child_hash, parent_hash) VALUES (?, ?)",
-                    (commit_hash, parent_hash),
+                    (commit_hash, parent_commit_hash),
                 )
 
             # 2.4 (未来) 写入 'private_data' 表

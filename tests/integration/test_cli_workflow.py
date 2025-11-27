@@ -266,7 +266,7 @@ class TestCheckoutCLI:
         result = runner.invoke(app, ["checkout", "deadbeef", "--work-dir", str(workspace), "--force"])
 
         assert result.exit_code == 1
-        assert "❌ 错误: 未找到哈希前缀" in result.stderr
+        assert "❌ 错误: 未找到 output_tree 哈希前缀为" in result.stderr
 
     def test_cli_checkout_already_on_state(self, populated_workspace):
         """Test checking out to the current state does nothing."""

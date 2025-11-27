@@ -68,8 +68,8 @@ class QuipuUiApp(App[Optional[UiResult]]):
         self.query_one(Header).tall = False
 
         self.engine = create_engine(self.work_dir, lazy=True)
-        current_hash = self.engine.git_db.get_tree_hash()
-        self.view_model = GraphViewModel(reader=self.engine.reader, current_hash=current_hash)
+        current_output_tree_hash = self.engine.git_db.get_tree_hash()
+        self.view_model = GraphViewModel(reader=self.engine.reader, current_output_tree_hash=current_output_tree_hash)
         self.view_model.initialize()
 
         table = self.query_one(DataTable)
@@ -157,6 +157,10 @@ class QuipuUiApp(App[Optional[UiResult]]):
             else [node for node in nodes if self.view_model.is_reachable(node.output_tree)]
         )
         tracks: list[Optional[str]] = []
+        # Add the current node's full ancestry to the initial tracks to ensure the main line is drawn
+        if self.view_model.current_output_tree_hash:
+            tracks.append(self.view_model.current_output_tree_hash)
+
         for node in nodes_to_render:
             is_reachable = self.view_model.is_reachable(node.output_tree)
             dim_tag = "[dim]" if not is_reachable else ""
@@ -204,8 +208,10 @@ class QuipuUiApp(App[Optional[UiResult]]):
         return node.summary or "No description"
 
     def _focus_current_node(self, table: DataTable):
-        current_hash = self.view_model.current_hash
-        target_node = next((n for n in self.node_by_filename.values() if n.output_tree == current_hash), None)
+        current_output_tree_hash = self.view_model.current_output_tree_hash
+        target_node = next(
+            (n for n in self.node_by_filename.values() if n.output_tree == current_output_tree_hash), None
+        )
         if not target_node:
             return
         try:

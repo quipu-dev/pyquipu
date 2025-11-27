@@ -13,12 +13,13 @@ class QuipuNode:
     这个数据类封装了从文件名和文件内容中解析出的所有元数据和状态信息。
     """
 
-    # 从文件名解析
-    input_tree: str
-    output_tree: str
+    # 核心标识符
+    commit_hash: str  # Git Commit 哈希，代表历史图谱中的一个事件
+    output_tree: str  # Git Tree 哈希，代表此次事件产生的文件系统状态快照
+    input_tree: str  # Git Tree 哈希，代表此次事件的输入状态
     timestamp: datetime
 
-    # 从文件物理路径
+    # 物理存储指针
     filename: Path
 
     # 从 Frontmatter 解析

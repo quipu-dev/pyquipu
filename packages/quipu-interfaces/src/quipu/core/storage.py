@@ -54,14 +54,14 @@ class HistoryReader(ABC):
         pass
 
     @abstractmethod
-    def get_ancestor_hashes(self, commit_hash: str) -> Set[str]:
+    def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         """
-        获取指定节点的所有祖先节点的哈希集合 (用于可达性分析)。
+        获取指定状态节点的所有祖先节点的 output_tree 哈希集合 (用于可达性分析)。
         """
         pass
 
     @abstractmethod
-    def get_private_data(self, commit_hash: str) -> Optional[str]:
+    def get_private_data(self, node_commit_hash: str) -> Optional[str]:
         """
         获取指定节点的私有数据 (如 intent.md)。
         """

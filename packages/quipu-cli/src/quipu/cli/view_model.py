@@ -7,14 +7,14 @@ from quipu.core.storage import HistoryReader
 
 class GraphViewModel:
     """
-    一个 ViewModel，用于解耦 TUI (View) 和 HistoryReader (Model)。
+    一个 ViewModel, 用于解耦 TUI (View) 和 HistoryReader (Model)。
 
     它负责管理分页状态、缓存可达性数据，并为 UI 提供简洁的数据接口。
     """
 
-    def __init__(self, reader: HistoryReader, current_hash: Optional[str], page_size: int = 50):
+    def __init__(self, reader: HistoryReader, current_output_tree_hash: Optional[str], page_size: int = 50):
         self.reader = reader
-        self.current_hash = current_hash
+        self.current_output_tree_hash = current_output_tree_hash
         self.page_size = page_size
 
         # 状态属性
@@ -25,7 +25,7 @@ class GraphViewModel:
 
     def initialize(self):
         """
-        初始化 ViewModel，获取总数并计算可达性缓存。
+        初始化 ViewModel, 获取总数并计算可达性缓存。
         这是一个快速操作，因为它不加载任何节点内容。
         """
         self.total_nodes = self.reader.get_node_count()
@@ -34,19 +34,19 @@ class GraphViewModel:
         else:
             self.total_pages = 1
 
-        if self.current_hash:
+        if self.current_output_tree_hash:
             # 后端直接计算祖先，避免在前端加载整个图谱
-            self.ancestor_set = self.reader.get_ancestor_hashes(self.current_hash)
+            self.ancestor_set = self.reader.get_ancestor_output_trees(self.current_output_tree_hash)
             # 当前节点本身也是可达的
-            self.ancestor_set.add(self.current_hash)
+            self.ancestor_set.add(self.current_output_tree_hash)
 
-    def is_reachable(self, node_hash: str) -> bool:
+    def is_reachable(self, output_tree_hash: str) -> bool:
         """检查一个节点哈希是否在可达性集合中。"""
-        if not self.current_hash:
+        if not self.current_output_tree_hash:
             # 如果没有当前状态 (例如，在创世之前)，将所有内容视为可达，
             # 以避免 UI 显示全灰色。
             return True
-        return node_hash in self.ancestor_set
+        return output_tree_hash in self.ancestor_set
 
     def load_page(self, page_number: int) -> List[QuipuNode]:
         """
@@ -74,7 +74,7 @@ class GraphViewModel:
         获取节点的公共内容和私有内容，并将它们格式化成一个单一的字符串用于展示。
         """
         public_content = self.reader.get_node_content(node) or ""
-        private_content = self.reader.get_private_data(node.filename.name)
+        private_content = self.reader.get_private_data(node.commit_hash)
 
         if not public_content and not private_content:
             return "*此节点无详细内容*"

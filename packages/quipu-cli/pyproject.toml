@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "quipu-cli"
 version = "0.1.0"
 authors = [
-  { name="doux", email="douxldh@gmail.com" },
+  { name="doucx", email="doucxldh@gmail.com" },
 ]
 description = "The command-line interface for Quipu, coordinating the engine and runtime."
 requires-python = ">=3.8"
@@ -35,3 +35,6 @@ quipu = "quipu.cli.main:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
+
+[tool.setuptools.package-data]
+"quipu.cli" = ["*.css"]
