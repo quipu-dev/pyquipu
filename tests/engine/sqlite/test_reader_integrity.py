@@ -93,16 +93,7 @@ def test_load_all_nodes_handles_self_referencing_edge(repo_with_sqlite_db):
             INSERT INTO nodes (commit_hash, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (
-                commit_hash,
-                output_tree,
-                "capture",
-                time.time(),
-                "Corrupted Self-Loop Node",
-                "manual",
-                "{}",
-                None
-            ),
+            (commit_hash, output_tree, "capture", time.time(), "Corrupted Self-Loop Node", "manual", "{}", None),
         )
 
         # 2. Inject the self-referencing edge that would cause an infinite loop

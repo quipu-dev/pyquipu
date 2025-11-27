@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 
 from quipu.core.state_machine import Engine
-from .helpers import InMemoryDB, InMemoryHistoryManager, EMPTY_TREE_HASH
+from tests.helpers import InMemoryDB, InMemoryHistoryManager, EMPTY_TREE_HASH
 
 
 @pytest.fixture

@@ -128,7 +128,9 @@ class TestGraphViewModel:
         # The key change is constructing a realistic filename where .name is the hash.
         node_both = QuipuNode("a", "h_both", datetime.now(), Path("mock/h_both"), "plan", summary="Public Content")
         node_public = QuipuNode("b", "h_public", datetime.now(), Path("mock/h_public"), "plan", summary="Public Only")
-        node_private = QuipuNode("c", "h_private", datetime.now(), Path("mock/h_private"), "plan", summary="") # No public
+        node_private = QuipuNode(
+            "c", "h_private", datetime.now(), Path("mock/h_private"), "plan", summary=""
+        )  # No public
         node_none = QuipuNode("d", "h_none", datetime.now(), Path("mock/h_none"), "plan", summary="")
 
         private_data = {"h_both": "Private Intent", "h_private": "Private Only"}
