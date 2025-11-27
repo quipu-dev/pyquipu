@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "feat: 在数据读取层中加载并填充节点所有者信息", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764252178.1327312, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "feat: 在 TUI 历史视图中显示节点所有者信息", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764252230.4171646, "duration_ms": 0}}
