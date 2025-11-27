@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: resolve TUI sqlite threading issue by isolating engine lifecycle", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764226422.2357, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: enable file-based debug logging for TUI troubleshooting", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764226569.5948293, "duration_ms": 0}}
