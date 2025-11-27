@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix+refactor 修复 TUI 分页边界及可达性高亮问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764228311.3864095, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix+refactor TUI Footer Visibility and Reachability Logic", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764228803.395631, "duration_ms": 0}}
