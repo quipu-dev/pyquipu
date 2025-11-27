@@ -14,6 +14,7 @@ from quipu.core.sqlite_storage import SQLiteHistoryReader
 def sqlite_reader_setup(tmp_path: Path):
     """
     创建一个包含 Git 仓库、DB 管理器、Writer 和 Reader 的测试环境。
+    此 Fixture 保持 function 作用域，为需要隔离的测试提供服务。
     """
     repo_path = tmp_path / "sql_read_repo"
     repo_path.mkdir()
@@ -43,7 +44,7 @@ class TestSQLiteHistoryReader:
         # 1. 在 Git 中创建两个节点
         (repo / "a.txt").touch()
         hash_a = git_db.get_tree_hash()
-        node_a_git = git_writer.create_node("plan", "genesis", hash_a, "Content A")
+        node_a_git = git_writer.create_node("plan", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", hash_a, "Content A")
 
         (repo / "b.txt").touch()
         hash_b = git_db.get_tree_hash()
@@ -57,10 +58,12 @@ class TestSQLiteHistoryReader:
 
         # 4. 验证
         assert len(nodes) == 2
-        nodes_by_summary = {n.summary: n for n in nodes}
-        node_a = nodes_by_summary["Content A"]
-        node_b = nodes_by_summary["Content B"]
+        # 按时间戳排序，确保顺序稳定
+        nodes.sort(key=lambda n: n.timestamp)
+        node_a, node_b = nodes[0], nodes[1]
 
+        assert node_a.summary == "Content A"
+        assert node_b.summary == "Content B"
         assert node_b.parent == node_a
         assert node_a.children == [node_b]
         assert node_b.input_tree == node_a.output_tree
@@ -72,8 +75,10 @@ class TestSQLiteHistoryReader:
         # 1. 在 Git 中创建节点
         (repo / "c.txt").touch()
         hash_c = git_db.get_tree_hash()
-        node_c_git = git_writer.create_node("plan", "genesis", hash_c, "Cache Test Content")
-        commit_hash_c = node_c_git.filename.name
+        node_c_git = git_writer.create_node(
+            "plan", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", hash_c, "Cache Test Content"
+        )
+        commit_hash_c = node_c_git.commit_hash
 
         # 2. 补水 (这将创建一个 plan_md_cache 为 NULL 的记录)
         hydrator.sync()
@@ -86,10 +91,10 @@ class TestSQLiteHistoryReader:
 
         # 4. 使用 Reader 加载节点并触发 get_node_content
         nodes = reader.load_all_nodes()
-        node_c = [n for n in nodes if n.filename.name == commit_hash_c][0]
+        node_c = [n for n in nodes if n.commit_hash == commit_hash_c][0]
 
         # 首次读取前，内存中的 content 应该是空的
-        assert node_c.content == ""
+        assert not node_c.content
 
         # 触发读取
         content = reader.get_node_content(node_c)
@@ -101,17 +106,35 @@ class TestSQLiteHistoryReader:
         assert row_after["plan_md_cache"] == "Cache Test Content", "Cache was not written back to DB."
 
 
-@pytest.fixture
-def populated_db(sqlite_reader_setup):
-    """一个预填充了15个节点和一些私有数据的数据库环境。"""
-    reader, git_writer, hydrator, db_manager, repo, git_db = sqlite_reader_setup
+@pytest.fixture(scope="class")
+def populated_db(tmp_path_factory):
+    """
+    一个预填充了15个节点和一些私有数据的数据库环境。
+    此 Fixture 具有 class 作用域，仅为 TestSQLiteReaderPaginated 类设置一次。
+    """
+    # --- Class-scoped setup logic (from sqlite_reader_setup) ---
+    class_tmp_path = tmp_path_factory.mktemp("populated_db_class_scope")
+    repo_path = class_tmp_path / "sql_read_repo"
+    repo_path.mkdir()
+    subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=repo_path, check=True)
 
+    git_db = GitDB(repo_path)
+    db_manager = DatabaseManager(repo_path)
+    db_manager.init_schema()
+    git_writer = GitObjectHistoryWriter(git_db)
+    reader = SQLiteHistoryReader(db_manager, git_db)
+    hydrator = Hydrator(git_db, db_manager)
+    # --- End of setup logic ---
+
+    # --- Data population logic ---
     parent_hash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
     commit_hashes = []
     output_tree_hashes = []
 
     for i in range(15):
-        (repo / f"file_{i}.txt").write_text(f"v{i}")
+        (repo_path / f"file_{i}.txt").write_text(f"v{i}")
         time.sleep(0.01)  # Ensure unique timestamps
         output_hash = git_db.get_tree_hash()
         node = git_writer.create_node("plan", parent_hash, output_hash, f"Node {i}")
