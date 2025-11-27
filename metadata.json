@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: TUI 光标定位添加调试日志", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764238733.074861, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复 TUI 光标定位方法调用错误", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764238808.1848357, "duration_ms": 0}}
