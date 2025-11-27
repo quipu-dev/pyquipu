@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: M .gitignore, M storage.py", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764210750.6528924, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "refactor: 重构 ViewModel 以支持传统分页", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764210761.018988, "duration_ms": 0}}
