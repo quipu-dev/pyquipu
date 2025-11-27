@@ -40,44 +40,74 @@ def create_venv(path: Path):
 
 def create_setup_scripts():
     """自动生成 dev_setup.sh 和 dev_setup.fish 文件"""
-    sh_content = """#!/bin/bash
-# shellcheck disable=SC2034
+    sh_content = """#!/bin/sh
+set -e
 
-# Fhrsk (AyeL's private stack)
-# Quipu Development Environment Setup for bash/zsh
+# 检查当前目录是否为 Git 仓库
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    echo "错误: 当前目录不是一个 Git 仓库。"
+    exit 1
+fi
 
-# Get the absolute path of the script's directory
-# This ensures that the script can be sourced from anywhere
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+echo "🔍 正在查找所有 Quipu Git 引用 (refs/quipu/*)..."
 
-# Define aliases
-alias qs="$DIR/.envs/stable/bin/quipu"
-alias qd="$DIR/.envs/dev/bin/quipu"
-alias ruff="$DIR/.envs/dev/bin/ruff"
+# 查找所有在 refs/quipu/ 命名空间下的引用
+QUIPU_REFS=$(git for-each-ref --format='%(refname)' refs/quipu/)
 
-echo "✅ Quipu & Ruff aliases activated for the current session:"
-echo "   qs   -> Stable Quipu (.envs/stable)"
-echo "   qd   -> Dev Quipu    (.envs/dev)"
-echo "   ruff -> Dev Ruff     (.envs/dev)"
+if [ -z "$QUIPU_REFS" ]; then
+    echo "✅ 未找到任何 Quipu 引用，无需清理。"
+    exit 0
+fi
+
+echo "🗑️  即将删除以下 Quipu 引用:"
+echo "$QUIPU_REFS"
+echo ""
+
+# 使用 xargs 安全地删除所有找到的引用
+# -r: 如果输入为空，则不执行命令
+# -n 1: 每次处理一个参数
+echo "$QUIPU_REFS" | xargs -r -n 1 git update-ref -d
+
+echo "\n✅ 所有 Quipu Git 引用已成功删除。"
+echo "💡 你现在可以重新运行 'quipu history migrate'。 Git 的垃圾回收 (gc) 将在未来自动清理无用的对象。"
 """
 
-    fish_content = """# Fhrsk (AyeL's private stack)
-# Quipu Development Environment Setup for Fish Shell
+    fish_content = """#!/usr/bin/env fish
 
-# Get the absolute path of the script's directory
-# This ensures that the script can be sourced from anywhere
-set SCRIPT_PATH (status --current-filename)
-set DIR (dirname "$SCRIPT_PATH")
+# 获取脚本所在目录的绝对路径
+set SCRIPT_DIR (dirname (status --current-filename))
 
-# Define aliases
-alias qs="$DIR/.envs/stable/bin/quipu"
-alias qd="$DIR/.envs/dev/bin/quipu"
-alias ruff="$DIR/.envs/dev/bin/ruff"
+# 定义 Python 解释器路径
+set STABLE_PYTHON "$SCRIPT_DIR/.envs/stable/bin/python"
+set DEV_PYTHON "$SCRIPT_DIR/.envs/dev/bin/python"
+set STABLE_BIN "$SCRIPT_DIR/.envs/stable/bin/quipu"
+set DEV_BIN "$SCRIPT_DIR/.envs/dev/bin/quipu"
 
-echo "✅ Quipu & Ruff aliases activated for the current session:"
-echo "   qs   -> Stable Quipu (.envs/stable)"
-echo "   qd   -> Dev Quipu    (.envs/dev)"
-echo "   ruff -> Dev Ruff     (.envs/dev)"
+# 别名定义
+
+# qs: Quipu Execute (Stable)
+# 用于执行 Act，修改源码
+alias qs "$STABLE_BIN"
+
+# qd: Quipu Dev (Development)
+# 用于手动测试，调试
+alias qd "$DEV_BIN"
+
+# qtest: 运行测试
+alias qtest "$SCRIPT_DIR/.envs/dev/bin/pytest"
+
+# ruff: 代码格式化与检查
+alias ruff "$SCRIPT_DIR/.envs/dev/bin/ruff"
+
+# qpromote: 晋升代码
+alias qpromote "$STABLE_PYTHON $SCRIPT_DIR/bootstrap.py promote"
+
+echo "✅ Quipu 开发环境已激活"
+echo "  🔹 qs [...]  -> 稳定版 (用于干活)"
+echo "  🔸 qd [...]  -> 开发版 (用于调试)"
+echo "  🧪 qtest     -> 运行测试"
+echo "  💅 ruff      -> 代码格式化与检查"
+echo "  🚀 qpromote  -> 将当前代码快照更新到 qs"
 """
 
     (ROOT_DIR / "dev_setup.sh").write_text(sh_content)
@@ -91,7 +121,7 @@ def install_packages(env_path: Path, editable: bool):
     # 1.如果是 Dev 环境：使用 -e 链接模式安装
     if editable:
         print(f"📦 [Dev] 正在以可编辑模式(-e)安装到 {env_path.name}...")
-        pip_cmd = ["uv", "pip", "install", "-p", str(env_path), "pytest", "pytest-cov", "ruff"]
+        pip_cmd = ["uv", "pip", "install", "-p", str(env_path), "pytest", "pytest-cov", "ruff", "pytest-timeout"]
 
         pkg_args = []
         for pkg in PACKAGES:
