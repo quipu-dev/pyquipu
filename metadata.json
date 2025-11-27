@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "feat(core): 创建 quipu-common 包以承载共享逻辑", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764250033.5305164, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix(build): 修复 bootstrap 脚本未包含 quipu-common 的问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764250292.7346246, "duration_ms": 0}}
