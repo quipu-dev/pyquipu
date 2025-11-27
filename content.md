@@ -1,28 +1,24 @@
-你说得对，这个便捷方法在之前的重构中被遗漏了。
+好的，所有测试都已通过。`ViewModel` 的重构工作已经完成并经过验证。现在我将创建一个 Git 提交来固化这些变更。
 
-这是一个很好的补充，它遵循了 MVVM 的最佳实践：将分页状态管理的逻辑（如页码的增减和边界检查）完全保留在 ViewModel 中，而不是让 View (UI) 层来处理。
-
-我现在就添加它们，以完全遵循设计方案，并简化后续 UI 层的调用。
-
-## feat(cli): 为 ViewModel 添加 next/previous_page 便捷方法
+## feat(cli): 重构 ViewModel 以支持分页并修复测试
 
 ### 用户需求
-根据 `99_CURRENT_当前任务.md` 的设计方案，`GraphViewModel` 类应包含 `next_page()` 和 `previous_page()` 两个便捷方法，用于封装分页逻辑。当前实现中缺少这两个方法。
+为了实现 UI 的秒级启动和分页浏览功能，需要将 `GraphViewModel` 从无限滚动模型重构为传统的分页模型。同时，相关的测试用例也需要更新以匹配新的 API。
 
 ### 评论
-这是一个小的功能增强，但它将使 `tui.py` 中的调用代码从 `self._load_page(self.view_model.current_page + 1)` 简化为 `self.view_model.next_page()`，提高了代码的可读性和内聚性。
+本次重构是 UI 性能优化方案的关键一步。通过将分页逻辑完全封装在 `ViewModel` 中，我们成功地将数据层与表现层解耦，为后续 `tui.py` 的改造奠定了坚实的基础。测试的同步修复确保了代码的健壮性。
 
 ### 目标
-1.  在 `GraphViewModel` 类中添加 `next_page()` 方法。
-2.  在 `GraphViewModel` 类中添加 `previous_page()` 方法。
-3.  确保这两个方法能正确调用 `load_page()` 并返回节点列表。
+-   将 `GraphViewModel` 的分页模型从 `load_next_page` (无限滚动) 更改为 `load_page(page_number)` (传统分页)。
+-   添加 `next_page()` 和 `previous_page()` 便捷方法，简化 UI 调用。
+-   更新 `tests/test_view_model.py` 中的测试用例，以验证新的分页 API 的正确性。
 
 ### 基本原理
-将分页导航的逻辑（“下一页是多少”、“上一页是多少”）封装在 ViewModel 内部，是 MVVM 模式的标准实践。这使得 View 层只负责触发动作和渲染结果，而不关心状态管理的具体实现。
+遵循 MVVM 设计模式，将分页的状态管理（如当前页、总页数）和数据获取逻辑（计算 offset、调用 reader）封装在 `ViewModel` 中。`View` (TUI) 层仅负责触发动作（如“下一页”）和渲染返回的数据，从而实现逻辑和视图的清晰分离。
 
 ### 标签
-#intent/build #flow/ready #priority/high
-#comp/cli #concept/ui #scope/api
+#intent/refine #intent/tooling #flow/done #priority/high
+#comp/cli #comp/tests #concept/ui #scope/core
 #ai/instruct
 #task/state/continue #task-status/active
 
@@ -30,36 +26,30 @@
 
 ### Script
 
-#### Acts 1: 向 ViewModel 添加便捷方法
+#### Acts 1: 提交代码
 
-我将使用 `patch_file` 在 `get_content_bundle` 方法之前，为 `GraphViewModel` 类添加 `next_page` 和 `previous_page` 方法。
+将所有已修改的文件（`view_model.py` 和 `test_view_model.py`）添加到暂存区并创建一个提交。
 
 ~~~~~act
-patch_file
+git_add .
 ~~~~~
-~~~~~path
-packages/quipu-cli/src/quipu/cli/view_model.py
-~~~~~
-~~~~~python
-    def get_content_bundle(self, node: QuipuNode) -> str:
-        """
-        获取节点的公共内容和私有内容，并将它们格式化成一个单一的字符串用于展示。
-        """
-~~~~~
-~~~~~python
-    def previous_page(self) -> List[QuipuNode]:
-        """加载上一页的数据。"""
-        return self.load_page(self.current_page - 1)
 
-    def next_page(self) -> List[QuipuNode]:
-        """加载下一页的数据。"""
-        return self.load_page(self.current_page + 1)
+~~~~~act
+git_commit
+~~~~~
+~~~~~
+feat(cli): 重构 ViewModel 以支持分页并修复测试
 
-    def get_content_bundle(self, node: QuipuNode) -> str:
-        """
-        获取节点的公共内容和私有内容，并将它们格式化成一个单一的字符串用于展示。
-        """
+本次提交完成了 UI 性能优化方案中的 ViewModel 重构。
+
+主要变更：
+- 将 `GraphViewModel` 的数据加载模型从无限滚动的 `load_next_page` 更改为支持“上一页/下一页”的传统分页模型 `load_page(page_number)`。
+- 引入了 `total_pages`, `current_page` 等状态属性，将分页逻辑完全封装在 ViewModel 内部。
+- 添加了 `next_page()` 和 `previous_page()` 便捷方法，以简化 UI 层的调用。
+- 同步更新了 `tests/test_view_model.py` 中的测试用例，以确保新 API 的行为符合预期。
+
+这项重构为下一阶段的 TUI 适配工作奠定了坚实的基础。
 ~~~~~
 
 ### 下一步建议
-现在，`GraphViewModel` 的 API 已经完全符合设计方案。我们可以正式开始**阶段三：前端 UI 适配**，修改 `tui.py`。
+`ViewModel` 的准备工作已全部完成并提交。现在，我们可以安全地进入**阶段三：前端 UI 适配**，开始对 `packages/quipu-cli/src/quipu/cli/tui.py` 进行改造，使其对接新的 `GraphViewModel`。

@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "feat(cli): 为 ViewModel 添加 next/previous_page 便捷方法", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764211934.2850113, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "feat(cli): 重构 ViewModel 以支持分页并修复测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764211976.7877636, "duration_ms": 0}}
