@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: 更新集成测试以适应新的多头 Git 引用模型 (阶段 2.4)", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764292637.9753177, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复因引用模型变更导致的下游测试失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764293356.5153224, "duration_ms": 0}}
