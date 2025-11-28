@@ -260,9 +260,9 @@ class TestGitDBPlumbing:
 
         # 5. Verify Tree reading
         read_tree = db.cat_file(tree_hash, "tree")
-        # cat-file -p tree_hash output format: "100644 blob <hash>\ttest_file"
+        # The raw tree object contains the binary hash, not the hex representation.
         assert b"test_file" in read_tree
-        assert blob_hash.encode() in read_tree
+        assert bytes.fromhex(blob_hash) in read_tree
 
     def test_batch_cat_file(self, git_repo, db):
         """测试 batch_cat_file 的批量读取能力"""

@@ -1,6 +1,6 @@
 import logging
 import typer
-from .commands import axon, cache, navigation, query, remote, run, ui, workspace
+from .commands import axon, cache, navigation, query, remote, run, ui, workspace, show
 
 # 初始化日志记录器，但不配置 handler
 # handler 的配置（stderr 或 file）由具体命令在执行时决定
@@ -25,6 +25,7 @@ query.register(app)
 remote.register(app)
 run.register(app)
 ui.register(app)
+show.register(app)
 
 
 # --- Entry Point ---

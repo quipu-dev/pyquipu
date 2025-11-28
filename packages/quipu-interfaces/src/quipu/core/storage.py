@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Any, Optional, Set
+from typing import List, Any, Optional, Set, Dict
 import re
 from .models import QuipuNode
 
@@ -24,6 +24,11 @@ class HistoryReader(ABC):
         获取指定节点的完整内容 (Lazy Loading)。
         如果节点内容已加载，直接返回；否则从存储后端读取。
         """
+        pass
+
+    @abstractmethod
+    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
+        """获取一个节点内所有文件的原始二进制内容，以字典形式返回 {filename: content_bytes}。"""
         pass
 
     @abstractmethod

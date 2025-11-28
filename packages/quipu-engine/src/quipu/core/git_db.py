@@ -36,9 +36,10 @@ class GitDB:
         env: Optional[Dict] = None,
         check: bool = True,
         log_error: bool = True,
-        input_data: Optional[str] = None,
+        input_data: Optional[Union[str, bytes]] = None,
+        capture_as_text: bool = True,
     ) -> subprocess.CompletedProcess:
-        """执行 git 命令的底层封装，返回完整的 CompletedProcess 对象"""
+        """执行 git 命令的底层封装，支持文本和二进制输出。"""
         full_env = os.environ.copy()
         if env:
             full_env.update(env)
@@ -49,15 +50,19 @@ class GitDB:
                 cwd=self.root,
                 env=full_env,
                 capture_output=True,
-                text=True,
+                text=capture_as_text,
                 check=check,
                 input=input_data,
             )
             return result
         except subprocess.CalledProcessError as e:
+            stderr_str = e.stderr
+            if isinstance(stderr_str, bytes):
+                stderr_str = stderr_str.decode("utf-8", "ignore")
+
             if log_error:
-                logger.error(f"Git plumbing error: {e.stderr}")
-            raise RuntimeError(f"Git command failed: {' '.join(args)}\n{e.stderr}") from e
+                logger.error(f"Git plumbing error: {stderr_str}")
+            raise RuntimeError(f"Git command failed: {' '.join(args)}\n{stderr_str}") from e
 
     @contextmanager
     def shadow_index(self):
@@ -239,18 +244,35 @@ class GitDB:
 
         logger.info("✅ Workspace reset to target state.")
 
-    def cat_file(self, object_hash: str, object_type: str = "blob") -> bytes:
-        """读取 Git 对象的内容，返回字节流。"""
-        # 使用 -p (pretty print) for commits/trees, and no flag for blobs
-        cmd = ["cat-file"]
-        if object_type in ["commit", "tree"]:
-            cmd.append("-p")
-        else:
-            cmd.append(object_type)
-        cmd.append(object_hash)
+    def cat_file(self, object_hash: str, object_type: str) -> bytes:
+        """
+        读取 Git 对象的原始内容，返回字节流。
+        此方法现在以二进制模式运行，以避免数据损坏。
+        """
+        cmd = ["cat-file", object_type, object_hash]
+        result = self._run(cmd, capture_as_text=False)
+        return result.stdout
 
-        result = self._run(cmd)
-        return result.stdout.encode("utf-8")
+    def get_blobs_from_tree(self, tree_hash: str) -> Dict[str, bytes]:
+        """解析一个 Tree 对象，并返回其包含的所有 blob 文件的 {filename: content_bytes} 字典。"""
+        # 1. 获取 Tree 的内容
+        tree_content_bytes = self.cat_file(tree_hash, "tree")
+        tree_content = tree_content_bytes.decode("utf-8", "ignore")
+
+        # 2. 解析 Tree 内容以获取 blob 哈希
+        # 格式: <mode> <type> <hash>\t<filename>
+        blob_info = {}
+        for line in tree_content.strip().splitlines():
+            parts = line.split()
+            if len(parts) == 4 and parts[1] == "blob":
+                blob_hash, filename = parts[2], parts[3]
+                blob_info[filename] = blob_hash
+
+        if not blob_info:
+            return {}
+
+        # 3. 批量获取所有 blob 的内容
+        return self.batch_cat_file(list(blob_info.values()))
 
     def batch_cat_file(self, object_hashes: List[str]) -> Dict[str, bytes]:
         """

@@ -299,6 +299,13 @@ class SQLiteHistoryReader(HistoryReader):
             logger.error(f"Failed to get private data for {node_commit_hash[:7]}: {e}")
             return None
 
+    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
+        """
+        从 Git 回源获取节点的所有文件内容。
+        SQLite 缓存不存储所有 blob，因此此操作总是委托给底层的 git_reader。
+        """
+        return self._git_reader.get_node_blobs(commit_hash)
+
     def get_node_content(self, node: QuipuNode) -> str:
         """
         实现通读缓存策略来获取节点内容。

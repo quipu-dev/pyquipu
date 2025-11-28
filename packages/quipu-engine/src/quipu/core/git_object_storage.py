@@ -251,6 +251,35 @@ class GitObjectHistoryReader(HistoryReader):
 
         return descendants
 
+    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
+        """从 Git 对象中读取节点的所有文件内容。"""
+        try:
+            # 1. Get Tree Hash from Commit
+            commit_content = self.git_db.cat_file(commit_hash, "commit").decode("utf-8", "ignore")
+            tree_line = commit_content.split("\n", 1)[0]
+            if not tree_line.startswith("tree "):
+                raise ValueError("Invalid commit object format")
+            tree_hash = tree_line.split()[1]
+
+            # 2. 解析 Tree 并批量获取所有 blobs
+            # We need to map blob hashes back to filenames.
+            tree_content_bytes = self.git_db.cat_file(tree_hash, "tree")
+            entries = self._parse_tree_binary(tree_content_bytes)
+
+            blob_hashes = list(entries.values())
+            blob_contents = self.git_db.batch_cat_file(blob_hashes)
+
+            # Reconstruct the {filename: content} map
+            result = {}
+            for filename, blob_hash in entries.items():
+                if blob_hash in blob_contents:
+                    result[filename] = blob_contents[blob_hash]
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to load blobs for commit {commit_hash[:7]}: {e}")
+            return {}
+
     def get_node_content(self, node: QuipuNode) -> str:
         """
         从 Git Commit 中按需读取 content.md。
@@ -285,7 +314,7 @@ class GitObjectHistoryReader(HistoryReader):
                 return ""  # No content found
 
             # 3. Read Blob (also raw binary)
-            content_bytes = self.git_db.cat_file(blob_hash)
+            content_bytes = self.git_db.cat_file(blob_hash, "blob")
             content = content_bytes.decode("utf-8", errors="ignore")
 
             # Cache it

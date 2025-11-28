@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Set, Any
+from typing import List, Optional, Set, Any, Dict
 
 from quipu.core.models import QuipuNode
 from quipu.core.storage import HistoryReader
@@ -47,6 +47,9 @@ class MockHistoryReader(HistoryReader):
     def get_node_content(self, node: QuipuNode) -> str:
         # For simplicity, mock content is stored in the node's summary
         return node.summary
+
+    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
+        return {}
 
     # --- Unused abstract methods ---
     def load_all_nodes(self) -> List[QuipuNode]:

@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any, Set
 
+from typing import Dict
 from quipu.core.models import QuipuNode
 from quipu.core.storage import HistoryReader, HistoryWriter
 
@@ -114,6 +115,11 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
 
     def load_all_nodes(self) -> List[QuipuNode]:
         return list(self.db.nodes.values())
+
+    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
+        # Mock implementation, not needed for most tests.
+        return {}
+
 
     def get_node_count(self) -> int:
         return len(self.db.nodes)
