@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: TUI 启动时 Header 未能正确初始化", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764325740.883476, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] fix(cli): 解决 TUI 滚动卡顿和视觉伪影问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764325894.7484026, "duration_ms": 0}}
