@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "错误分析", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764319834.023225, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 修复因输出流重构而失败的集成测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764319934.7959027, "duration_ms": 0}}
