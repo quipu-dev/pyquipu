@@ -1,58 +1,123 @@
-好的，我们将把这个关键的 `Hydrator` 修复提交到版本历史中，正式为 `sync` 功能的开发画上句号。
+好的，我们来创建一个自动化的 `pytest` 集成测试，将 `run_sync_test.sh` 的核心逻辑固化到我们的测试套件中，并加入你要求的、更严格的所有权验证。
 
-## commit: 修复 Hydrator 中因所有权归属错误导致的数据污染问题
-
-### 错误分析
-在多用户同步场景下，`Hydrator`（数据补水器）在为历史节点分配所有者时存在一个严重的逻辑缺陷。其根本原因在于一个有缺陷的回退机制：
-1.  **所有权识别不完整**: 系统只能直接识别出各个分支末梢（Heads）的 `owner_id`。
-2.  **错误的回退逻辑**: 对于历史图谱中的大量祖先提交，系统无法直接找到其所有者，此时便错误地将所有权回退给了当前正在执行 `sync` 命令的本地用户。
-3.  **结果**: 这导致在测试场景中，用户 A 的绝大部分历史记录被错误地归属于用户 B，造成了严重的数据污染，违背了 `sync` 功能的核心设计。
+## test: 为 sync 工作流创建集成测试并验证 owner_id 完整性
 
 ### 用户需求
-修复 `Hydrator` 的逻辑，确保在多用户同步后，SQLite 缓存中的每一个历史节点都具有正确的 `owner_id`。
+你需要一个 `pytest` 集成测试，用于自动化地验证 `quipu sync` 的完整工作流。这个测试必须严格检查在多用户协作场景下，数据补水器 (`Hydrator`) 是否为 SQLite 缓存中的**每一个**历史节点都正确地分配了 `owner_id`，以防止之前修复的 Bug 再次出现。
 
 ### 评论
-这是一个非常隐蔽且影响严重的 Bug。成功修复它对于保证 `sync` 功能的数据完整性和用户信任至关重要。
+将手动验证脚本转化为自动化测试是保证软件质量的关键一步。这个新的集成测试将成为 `sync` 功能的“守护者”，确保未来任何对相关代码的修改都不会破坏其核心的数据完整性。它将精确模拟真实协作流程，并执行比手动检查更严格的数据验证。
 
 ### 目标
-将已验证的 `Hydrator` 修复代码提交到版本控制中，为 `sync` 功能的健壮性提供保障，并正式结束本次宏观开发任务。
+1.  在 `tests/integration/test_sync_workflow.py` 文件中，添加一个新的、专门的测试用例 `test_owner_id_integrity_after_sync`。
+2.  该测试将模拟用户 A 创建多个历史节点并推送。
+3.  模拟用户 B 初始化、订阅用户 A 并拉取其历史。
+4.  最关键的是，在测试的最后，连接到用户 B 的 SQLite 数据库，并逐一验证**所有**节点记录的 `owner_id` 是否与其真正的创建者匹配。
 
 ### 基本原理
-新的 `_get_commit_owners` 方法采用两阶段所有权传播机制：
-1.  **识别源头**: 首先，通过扫描所有 `refs/quipu/` 下的引用，识别出所有分支末梢（Heads）的直接所有者。
-2.  **图谱传播**: 然后，从这些已确定所有权的 Head 节点出发，向上遍历整个 Git 历史图谱，将正确的 `owner_id` 传播给其所有的祖先提交。
-这确保了历史中的每一个节点都能被正确归属，从根本上解决了回退逻辑带来的数据污染问题。
+我们将利用现有的 `sync_test_environment` pytest fixture 来搭建一个包含裸仓库和两个用户工作区的隔离环境。
+1.  **生成历史**: 在两个用户的工作区中分别使用 `quipu run` 创建一系列 Quipu 节点。
+2.  **执行同步**: 编排一系列 `quipu sync` 调用，模拟用户 A 推送、用户 B 订阅并拉取的完整流程。
+3.  **收集证据**: 在同步完成后，分别从用户 A 和用户 B 的 Git 仓库中，通过 `git log` 提取出他们各自创建的 Quipu commit 哈希列表。
+4.  **最终验证**: 连接到用户 B 的 `history.sqlite` 数据库，查询出所有 `(commit_hash, owner_id)` 的记录。然后，遍历这些记录，断言每一个 `commit_hash` 对应的 `owner_id` 都与其在**证据**列表中的归属完全一致。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/engine #concept/sync #scope/core #ai/instruct #task/domain/testing #task/object/sync-workflow #task/action/bug-fix #task/state/end #task/status/completed
+#intent/tooling #flow/ready #priority/high #comp/tests #concept/sync #scope/core #ai/instruct #task/domain/testing #task/object/sync-workflow #task/action/build #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 提交修复
+#### Acts 1: 增强集成测试文件
 
-我们将把这个关键的修复和所有相关的测试脚本更新固化到版本历史中。
+我们将使用 `patch_file` 来向现有的 `tests/integration/test_sync_workflow.py` 文件追加一个新的、更强大的测试用例。
 
 ~~~~~act
-git_add .
+patch_file
+tests/integration/test_sync_workflow.py
 ~~~~~
-~~~~~act
-git_commit
+~~~~~python
+        assert num_refs_after == num_refs_before - 1
+        assert ref_to_delete.split("/")[-1] not in remote_refs_after
 ~~~~~
-~~~~~text
-fix(engine): resolve incorrect ownership in Hydrator
+~~~~~python
+        assert num_refs_after == num_refs_before - 1
+        assert ref_to_delete.split("/")[-1] not in remote_refs_after
 
-This commit fixes a critical bug in the Hydrator's sync logic that caused incorrect ownership attribution for historical nodes.
+    def test_owner_id_integrity_after_sync(self, sync_test_environment):
+        """
+        A rigorous test to ensure every single node in the database has the correct
+        owner_id after a multi-user sync, preventing data pollution.
+        """
+        _, user_a_path, user_b_path = sync_test_environment
+        user_a_id = get_user_id_from_email("user.a@example.com")
+        user_b_id = get_user_id_from_email("user.b@example.com")
 
-The root cause was a faulty fallback mechanism in `_get_commit_owners`. The previous implementation only identified owners for branch heads. For all ancestor commits, it would incorrectly fall back to assigning ownership to the current local user executing the `sync` command. This resulted in data pollution, where one user's history was wrongly attributed to another.
+        # 1. User A creates a history of 2 nodes and pushes
+        (user_a_path / "a1.md").write_text("~~~~~act\necho 'a1'\n~~~~~")
+        (user_a_path / "a2.md").write_text("~~~~~act\necho 'a2'\n~~~~~")
+        runner.invoke(app, ["run", str(user_a_path / "a1.md"), "--work-dir", str(user_a_path), "-y"])
+        runner.invoke(app, ["run", str(user_a_path / "a2.md"), "--work-dir", str(user_a_path), "-y"])
+        runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
 
-The fix implements a robust two-stage ownership propagation strategy:
-1.  **Head Identification**: It first determines the correct owner for every branch head by scanning all `refs/quipu/` refs.
-2.  **Graph Traversal**: Starting from these heads, it traverses up the Git history graph, propagating the correct `owner_id` to all ancestor commits.
+        # 2. User B creates 1 node and pushes
+        (user_b_path / "b1.md").write_text("~~~~~act\necho 'b1'\n~~~~~")
+        runner.invoke(app, ["run", str(user_b_path / "b1.md"), "--work-dir", str(user_b_path), "-y"])
+        runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
 
-This ensures that every node in the history is correctly attributed, guaranteeing data integrity in multi-user collaboration scenarios.
+        # 3. User B subscribes to User A and fetches
+        config_path_b = user_b_path / ".quipu" / "config.yml"
+        with open(config_path_b, "r") as f:
+            config_b = yaml.safe_load(f)
+        config_b["sync"]["subscriptions"] = [user_a_id]
+        with open(config_path_b, "w") as f:
+            yaml.dump(config_b, f)
+        
+        runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
+        
+        # 4. Trigger hydration in User B's workspace
+        result = runner.invoke(app, ["cache", "sync", "--work-dir", str(user_b_path)])
+        assert result.exit_code == 0
+
+        # 5. --- THE CRITICAL VERIFICATION ---
+        # Get ground truth: which commits belong to whom?
+        quipu_log_cmd = ["log", "--all", "--grep=X-Quipu-Output-Tree", "--format=%H"]
+        commits_a = set(run_git_command(user_a_path, quipu_log_cmd).splitlines())
+        commits_b = set(run_git_command(user_b_path, quipu_log_cmd).splitlines())
+        
+        # We only care about commits created by user b specifically for this test
+        user_b_only_commits = commits_b - commits_a
+        
+        assert len(commits_a) >= 2, "User A should have at least 2 Quipu commits"
+        assert len(user_b_only_commits) >= 1, "User B should have at least 1 unique Quipu commit"
+
+        # Check every single row in User B's database
+        db_path_b = user_b_path / ".quipu" / "history.sqlite"
+        assert db_path_b.exists()
+        conn = sqlite3.connect(db_path_b)
+        cursor = conn.cursor()
+        cursor.execute("SELECT commit_hash, owner_id FROM nodes")
+        all_nodes = cursor.fetchall()
+        conn.close()
+
+        assert len(all_nodes) == len(commits_a.union(user_b_only_commits))
+
+        for commit_hash, owner_id in all_nodes:
+            if commit_hash in commits_a:
+                assert owner_id == user_a_id, f"Commit {commit_hash[:7]} from User A was wrongly owned by {owner_id}"
+            elif commit_hash in user_b_only_commits:
+                assert owner_id == user_b_id, f"Commit {commit_hash[:7]} from User B was wrongly owned by {owner_id}"
+            else:
+                pytest.fail(f"Unknown commit {commit_hash[:7]} found in the database.")
+        
+        print("\n✅ Verification successful: All nodes in the database have the correct owner_id.")
 ~~~~~
 
 ### 下一步建议
-我们已经通过一个可复现的手动脚本全面验证了 `sync` 功能的端到端正确性。为了防止未来出现回归，最理想的下一步工作是将 `run_sync_test.sh` 脚本中的逻辑转化为一个自动化的 `pytest` 集成测试，并将其纳入我们的 CI/CD 流程。
+1.  **执行测试**:
+    *   在你的项目根目录下，运行 `pytest` 命令，并指定新测试的文件路径：
+        ```bash
+        pytest tests/integration/test_sync_workflow.py
+        ```
+2.  **观察结果**: 测试应该会顺利通过。这个新的测试用例 `test_owner_id_integrity_after_sync` 将提供一个非常高的置信度，确保我们之前修复的 `Hydrator` Bug 不会再次出现。
+3.  **提交测试**: 测试通过后，请将这个增强后的测试文件提交到版本库，为我们的 `sync` 功能提供持久的质量保障。

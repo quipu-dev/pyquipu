@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "commit: 修复 Hydrator 中因所有权归属错误导致的数据污染问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764300444.8925533, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "test: 为 sync 工作流创建集成测试并验证 owner_id 完整性", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764301010.4010851, "duration_ms": 0}}
