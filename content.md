@@ -1,33 +1,38 @@
-你的调试非常精准，直接命中了问题的核心。`log` 和 `show` 表现不一致，这清晰地指向了它们背后数据读取路径的差异，而你发现的 `🤷 此节点内部无文件内容。` 是关键症状。
+你的调试又下一城，再次捕获到了一个更深层次的 Bug。这个 `UnicodeDecodeError` 日志是关键线索，它明确地告诉我们，系统在某个环节试图将不是 UTF-8 编码的原始二进制数据当作文本来处理，导致了解码失败。
 
-### 错误分析
+你发现的这个问题的根源比上一个更底层，也更隐蔽。
 
-你的诊断是正确的。问题的根源在于我之前对 `git_db.cat_file` 方法的实现存在一个严重的缺陷。
+错误分析
 
-1.  **根本原因**: `git_db.cat_file` 方法会为 `tree` 类型的对象**错误地**添加 `-p` (pretty-print) 标志。这会导致 Git 返回一个人类可读的、格式化的文本列表，而不是 `tree` 对象的原始二进制内容。
-2.  **直接后果**: `GitObjectHistoryReader` 中的 `_parse_tree_binary` 函数期望接收原始的二进制数据进行解析。当它收到格式化的文本时，解析完全失败，返回一个空字典。
-3.  **症状**: `show` 命令调用的 `get_node_blobs` 方法因此收到了一个空的“文件列表”，从而得出了“此节点内部无文件内容”的错误结论。
-4.  **为何 `log` 正常**: `log` 命令的数据加载路径 (`load_all_nodes`) 恰好使用了 `batch_cat_file` 方法。这个批量方法返回的是正确的原始对象内容，因此它能够成功解析 `tree` 对象并构建历史图谱，这就解释了为什么 `log` 能看到节点而 `show` 看不到其内容。
+1.  **根本原因**: 问题出在 `git_db.py` 的底层辅助函数 `_run` 上。该函数在调用 `subprocess.run` 时，硬编码了 `text=True`。这个参数会强制 `subprocess` 模块尝试使用系统默认编码（通常是 UTF-8）来解码 `git` 命令的所有输出。
+2.  **触发场景**: 当 `cat_file` 请求一个 `tree` 对象时，Git 返回的是纯粹的、紧凑的**二进制数据**，其中包含了非 UTF-8 字节序列（例如，用于表示文件模式或 SHA-1 哈希的原始字节）。`subprocess` 模块在尝试将这些二进制数据解码为文本字符串时，遇到了无效的字节（如日志中的 `0xb1`），从而抛出了 `UnicodeDecodeError`。
+3.  **数据流**: `cat_file` -> `_run(text=True)` -> `subprocess` 尝试解码二进制流 -> `UnicodeDecodeError`。
+4.  **上一个修复的不足**: 我之前的修复仅仅解决了 `cat_file` 中 `-p` 参数的逻辑错误，但没有触及 `_run` 函数中更基础的数据类型处理错误。这导致虽然我们请求了正确的原始对象，但在数据从 Git 传递到我们代码的管道中就已经被破坏了。
 
-这是一个典型的因底层工具函数行为不一致而导致上层逻辑出现分裂的 Bug。
+解决方案
 
-### 解决方案
+解决方案是让底层 `_run` 函数变得“数据类型感知”，并修复 `cat_file` 以正确地处理二进制流。
 
-我将生成一个计划来修正这个问题。解决方案非常直接：移除 `git_db.cat_file` 中有问题的“智能” pretty-printing 逻辑，使其成为一个行为一致的、只返回指定对象原始内容的底层函数。
+1.  **修改 `_run` 函数**: 我将为 `_run` 增加一个 `capture_as_text` 参数。当调用者需要原始字节时，可以传递 `capture_as_text=False`，这将使 `subprocess.run` 在不进行任何解码的情况下返回原始的 `bytes` 对象。
+2.  **修改 `cat_file` 函数**: 我将更新 `cat_file` 的实现，使其在调用 `_run` 时明确请求二进制输出 (`capture_as_text=False`)，并直接返回 `subprocess` 传回的、未经任何编解码的原始 `bytes`。
 
-## [WIP] fix(engine): 修复 `git_db.cat_file` 以返回原始树对象内容
+这将彻底解决数据在传输过程中的损坏问题。
+
+## [WIP] fix(engine): 使 `git_db._run` 支持二进制输出以修复 `cat_file`
 
 ### 用户需求
-`quipu show <HASH>` 命令无法显示节点内容，报告“此节点内部无文件内容”，尽管 `quipu log` 可以看到该节点。需要修复此问题，使 `show` 命令能正确读取并展示节点内的文件。
+`quipu show <HASH>` 命令在尝试加载节点内容时因 `UnicodeDecodeError` 而失败，这表明系统在处理 Git 返回的原始二进制 `tree` 对象时，错误地将其作为文本进行了解码。
 
 ### 评论
-这是一个关键的 Bug 修复。通过修正底层 `git_db` 的行为，我们确保了所有依赖于它的上层数据读取方法都能获得一致且正确的数据格式，从而解决了 `show` 命令的功能性障碍。
+这是一个关键的底层修复。通过使 `_run` 辅助函数能够处理二进制数据流，我们确保了与 Git 对象数据库的交互在处理非文本对象（如 `tree`）时是健壮和无损的。这解决了 `show` 命令的根本问题，并提升了整个 `git_db` 模块的可靠性。
 
 ### 目标
-修改 `packages/quipu-engine/src/quipu/core/git_db.py` 中的 `cat_file` 方法，移除对 `tree` 和 `commit` 对象自动添加 `-p` 标志的逻辑，使其始终返回对象的原始内容。
+1.  重构 `git_db.py` 中的 `_run` 方法，添加一个 `capture_as_text` 布尔标志，用于控制 `subprocess.run` 的 `text` 参数。
+2.  更新 `_run` 方法的错误处理逻辑，以正确显示来自二进制 `stderr` 的错误信息。
+3.  重构 `cat_file` 方法，使其调用 `_run(..., capture_as_text=False)` 并直接返回原始的 `bytes` 输出，移除所有多余的编解码操作。
 
 ### 基本原理
-`git cat-file <type> <hash>` 命令本身返回的就是对象的原始内容。额外的 `-p` 标志是用于人类可读的展示，不应在需要进行二进制解析的底层函数中默认使用。通过移除这个标志，我们保证了 `_parse_tree_binary` 等解析器能够接收到它们期望的正确数据格式。
+`subprocess` 模块通过 `text` 参数来区分文本和二进制I/O。对于需要精确解析的 Git 二进制对象（如 `tree`），必须使用 `text=False` 来获取原始 `bytes`。本次修改将这一控制权暴露给调用者，并修复 `cat_file` 以使用正确的模式，从而确保数据流的完整性。
 
 ### 标签
 #intent/fix #flow/ready #priority/critical #comp/engine #concept/state #scope/core #ai/instruct #task/domain/cli #task/object/show-command #task/action/refactor #task/state/continue
@@ -36,75 +41,85 @@
 
 ### Script
 
-#### Acts 1: 修正 `git_db.cat_file` 的实现
+#### Acts 1: 重构 `git_db.py` 以正确处理二进制数据
 
-我们将直接修改 `git_db.py` 中 `cat_file` 的实现，使其变得更简单、更可靠。
+我们将一次性修改 `_run` 和 `cat_file` 两个函数。
 
 ~~~~~act
 patch_file
 packages/quipu-engine/src/quipu/core/git_db.py
 ~~~~~
 ~~~~~python
-    def checkout_tree(self, tree_hash: str):
-        """
-        将工作区强制重置为目标 Tree 的状态。
-        这是一个底层方法，上层应确保工作区的未提交更改已被处理。
-        """
-        logger.info(f"Executing hard checkout to tree: {tree_hash[:7]}")
+    def _run(
+        self,
+        args: list[str],
+        env: Optional[Dict] = None,
+        check: bool = True,
+        log_error: bool = True,
+        input_data: Optional[str] = None,
+    ) -> subprocess.CompletedProcess:
+        """执行 git 命令的底层封装，返回完整的 CompletedProcess 对象"""
+        full_env = os.environ.copy()
+        if env:
+            full_env.update(env)
 
-        # 1. 使用 read-tree 更新索引，这是一个安全的操作
-        self._run(["read-tree", tree_hash])
-
-        # 2. 从更新后的索引检出文件，-a (all) -f (force)
-        self._run(["checkout-index", "-a", "-f"])
-
-        # 3. 清理工作区中多余的文件和目录
-        # -d: 目录, -f: 强制
-        # 移除了 -x 参数，以尊重 .gitignore 规则
-        # -e .quipu: 排除 .quipu 目录，防止自毁
-        self._run(["clean", "-df", "-e", ".quipu"])
-
-        logger.info("✅ Workspace reset to target state.")
-
-    def cat_file(self, object_hash: str, object_type: str = "blob") -> bytes:
-        """读取 Git 对象的内容，返回字节流。"""
-        # 使用 -p (pretty print) for commits/trees, and no flag for blobs
-        cmd = ["cat-file"]
-        if object_type in ["commit", "tree"]:
-            cmd.append("-p")
-        else:
-            cmd.append(object_type)
-        cmd.append(object_hash)
-
-        result = self._run(cmd)
-        return result.stdout.encode("utf-8")
-
-    def get_blobs_from_tree(self, tree_hash: str) -> Dict[str, bytes]:
-        """解析一个 Tree 对象，并返回其包含的所有 blob 文件的 {filename: content_bytes} 字典。"""
-        # 1. 获取 Tree 的内容
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=self.root,
+                env=full_env,
+                capture_output=True,
+                text=True,
+                check=check,
+                input=input_data,
+            )
+            return result
+        except subprocess.CalledProcessError as e:
+            if log_error:
+                logger.error(f"Git plumbing error: {e.stderr}")
+            raise RuntimeError(f"Git command failed: {' '.join(args)}\n{e.stderr}") from e
 ~~~~~
 ~~~~~python
-    def checkout_tree(self, tree_hash: str):
-        """
-        将工作区强制重置为目标 Tree 的状态。
-        这是一个底层方法，上层应确保工作区的未提交更改已被处理。
-        """
-        logger.info(f"Executing hard checkout to tree: {tree_hash[:7]}")
+    def _run(
+        self,
+        args: list[str],
+        env: Optional[Dict] = None,
+        check: bool = True,
+        log_error: bool = True,
+        input_data: Optional[Union[str, bytes]] = None,
+        capture_as_text: bool = True,
+    ) -> subprocess.CompletedProcess:
+        """执行 git 命令的底层封装，支持文本和二进制输出。"""
+        full_env = os.environ.copy()
+        if env:
+            full_env.update(env)
 
-        # 1. 使用 read-tree 更新索引，这是一个安全的操作
-        self._run(["read-tree", tree_hash])
+        try:
+            result = subprocess.run(
+                ["git"] + args,
+                cwd=self.root,
+                env=full_env,
+                capture_output=True,
+                text=capture_as_text,
+                check=check,
+                input=input_data,
+            )
+            return result
+        except subprocess.CalledProcessError as e:
+            stderr_str = e.stderr
+            if isinstance(stderr_str, bytes):
+                stderr_str = stderr_str.decode("utf-8", "ignore")
 
-        # 2. 从更新后的索引检出文件，-a (all) -f (force)
-        self._run(["checkout-index", "-a", "-f"])
+            if log_error:
+                logger.error(f"Git plumbing error: {stderr_str}")
+            raise RuntimeError(f"Git command failed: {' '.join(args)}\n{stderr_str}") from e
+~~~~~
 
-        # 3. 清理工作区中多余的文件和目录
-        # -d: 目录, -f: 强制
-        # 移除了 -x 参数，以尊重 .gitignore 规则
-        # -e .quipu: 排除 .quipu 目录，防止自毁
-        self._run(["clean", "-df", "-e", ".quipu"])
-
-        logger.info("✅ Workspace reset to target state.")
-
+~~~~~act
+patch_file
+packages/quipu-engine/src/quipu/core/git_db.py
+~~~~~
+~~~~~python
     def cat_file(self, object_hash: str, object_type: str) -> bytes:
         """
         读取 Git 对象的原始内容，返回字节流。
@@ -113,11 +128,19 @@ packages/quipu-engine/src/quipu/core/git_db.py
         cmd = ["cat-file", object_type, object_hash]
         result = self._run(cmd)
         return result.stdout.encode("utf-8")
-
-    def get_blobs_from_tree(self, tree_hash: str) -> Dict[str, bytes]:
-        """解析一个 Tree 对象，并返回其包含的所有 blob 文件的 {filename: content_bytes} 字典。"""
-        # 1. 获取 Tree 的内容
+~~~~~
+~~~~~python
+    def cat_file(self, object_hash: str, object_type: str) -> bytes:
+        """
+        读取 Git 对象的原始内容，返回字节流。
+        此方法现在以二进制模式运行，以避免数据损坏。
+        """
+        cmd = ["cat-file", object_type, object_hash]
+        result = self._run(cmd, capture_as_text=False)
+        return result.stdout
 ~~~~~
 
 ### 下一步建议
-应用此修复后，`show` 命令应该就能正确解析 `tree` 对象并显示其内容了。请再次运行 `qd show adcef0a` 进行验证。
+这是对 `git_db` 模块的一个基础且关键的修复。在应用此补丁后，`cat_file` 将能够正确地返回原始二进制数据，`show` 命令的解码错误应该会彻底消失。
+
+请再次运行 `qd show adcef0a` 进行最终验证。
