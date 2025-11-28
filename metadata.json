@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: 修复 Hydrator 中因乱序插入导致的边关系建立失败问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764295682.7524073, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 完善数据迁移以包含所有旧版引用，防止历史丢失", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764295833.5848908, "duration_ms": 0}}
