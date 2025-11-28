@@ -1,58 +1,62 @@
-你发现了重构过程中一个非常隐蔽但致命的错误。你的报告完全正确。
+你再一次精准地指出了问题的核心。是的，状态机虽然让逻辑变得清晰，但我们当前的实现方式引入了一个新的性能瓶颈。
 
-**问题分析：**
+### 深入分析：为何比之前更卡？
 
-这是一个典型的复制-粘贴错误，由我之前的重构计划引入。请看这两行：
+你感觉更卡顿是完全正确的。原因在于**我们将“进入一个状态”的设置成本，在“停留在该状态”的每次更新中都支付了一遍**。
 
-```python
-@on(DataTable.RowHighlighted)
-def _set_state(self, new_state: ContentViewSate):
-    ...
+让我们分析一下快速滚动时发生了什么：
+1.  光标从 A 移动到 B。`on_row_highlighted` 被调用。假设当前状态是 `SHOWING_CONTENT`。
+2.  `on_row_highlighted` 调用 `_set_state(ContentViewSate.LOADING)`。
+3.  `_set_state` 执行了**一系列昂贵操作**：
+    *   `container.set_class(...)`  (可能触发 Textual 的布局重算)
+    *   `self.query_one(...).update(...)` (更新 Header)
+    *   `placeholder_widget.update(...)` (更新 Placeholder)
+    *   `placeholder_widget.display = True` (DOM-like 操作)
+    *   `markdown_widget.display = False` (DOM-like 操作)
+    *   `markdown_widget.update("")`
+    *   重启定时器
+4.  光标从 B 移动到 C。`on_row_highlighted` 再次被调用。**此时状态已经是 `LOADING`**。
+5.  `on_row_highlighted` **再次**调用 `_set_state(ContentViewSate.LOADING)`。
+6.  `_set_state` **再次重复了上面第 3 步的所有昂贵操作**，尽管其中大部分（如 `set_class`, `display`）都是不必要的，因为 UI 已经处于正确的视觉状态了。
 
-@on(DataTable.RowHighlighted)
-def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-    ...
-```
+**结论**：我们在每次滚动时，都在执行大量的、冗余的 UI 设置代码。之前的版本虽然逻辑混乱，但它至少不会在滚动时反复设置 `display` 属性。
 
-我不小心为 `_set_state` 方法也添加了 `@on(DataTable.RowHighlighted)` 装饰器。
+### 优化方案：区分“状态进入”与“状态内更新”
 
-这意味着，每当你滚动时，`textual` 的事件系统会**同时调用** `on_row_highlighted` 和 `_set_state` 两个方法。
+我们需要优化状态机的逻辑，使其能够区分两种情况：
+1.  **进入状态 (State Entry)**: 当从一个**不同**的状态转换而来时（如 `SHOWING_CONTENT` -> `LOADING`），执行所有必要的、一次性的设置工作（设置 CSS 类、切换组件可见性）。
+2.  **状态内更新 (Intra-State Update)**: 当我们请求转换到**相同**的状态时（如 `LOADING` -> `LOADING`），只执行绝对必要的、轻量级的更新（更新 Header 和 Placeholder 的文本内容，重启定时器）。
 
-*   `on_row_highlighted` 的逻辑是正确的：它检查 `if self.content_view_state != ContentViewSate.HIDDEN`，在面板关闭时什么也不做。
-*   但是，被错误调用的 `_set_state` 却没有这个检查。它被事件系统调用时，接收到的 `event` 对象被错误地传递给了 `new_state` 参数。虽然这不会匹配任何 `case`，但这个意外的调用流程破坏了状态机的确定性，导致了你观察到的“界面被自动打开”的非预期行为。
+这将使我们的状态机既有逻辑上的清晰性，又有操作上的高性能。
 
-`_set_state` 应该是一个**内部工具方法**，由其他逻辑（如事件处理器）调用，而**绝不应该**直接作为事件处理器本身。
-
-## [WIP] fix: 移除错误的状态机方法装饰器，修复滚动时视图意外打开的 Bug
-
-### 错误分析
-在之前的状态机重构中，一个多余的 `@on(DataTable.RowHighlighted)` 装饰器被错误地应用到了 `_set_state` 方法上。这导致每次滚动 (`RowHighlighted` 事件触发) 时，`_set_state` 方法都会被事件系统非预期地直接调用，绕过了 `on_row_highlighted` 方法中正确的状态检查逻辑，从而导致即使内容视图处于 `HIDDEN` 状态，滚动也会错误地触发UI状态变更，使视图意外打开。
+## [WIP] refactor: 优化状态机以区分状态进入和状态内更新，解决性能瓶颈
 
 ### 用户需求
-修复此 Bug，确保只有在内容视图已经打开的情况下，滚动才会在该视图内部触发状态更新。当视图关闭时，滚动不应产生任何副作用。
+重构 TUI 状态机，使其在处理连续的、同状态的更新请求（如快速滚动时）时，仅执行必要的轻量级操作，避免冗余的、昂贵的 UI 设置，从而恢复并超越之前的滚动流畅度。
 
 ### 评论
-这是一个非常微妙的 Bug，源于重构过程中的疏忽。你的精确描述帮助我们快速定位了这个问题的根源。移除这个错误的装饰器将使状态机的行为恢复确定性和可预测性。
+这是一个对状态机实现进行精炼的关键步骤。通过区分“进入”和“更新”这两种不同的操作模式，我们可以构建一个既健壮又高效的 UI 系统，这是从“能用”到“好用”的飞跃。
 
 ### 目标
-从 `_set_state` 方法定义中移除 `@on(DataTable.RowHighlighted)` 这一行装饰器代码。
-
-### 基本原理
-恢复正确的职责分离：`on_row_highlighted` 是事件与状态机之间的唯一接口。`_set_state` 则是状态机内部的实现细节，不应暴露给事件系统。
+1.  创建一个新的、轻量级的 `_update_loading_preview()` 方法，它只负责更新 Header 和 Placeholder 的文本。
+2.  重构 `on_row_highlighted`，使其能够判断当前状态，并根据情况选择是调用重量级的 `_set_state` (用于状态切换) 还是调用轻量级的 `_update_loading_preview` (用于状态内更新)。
+3.  简化 `_set_state`，使其专注于状态**进入**时的一次性设置。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical
-#comp/cli #concept/ui #scope/core
+#intent/refine #flow/ready #priority/high
+#comp/cli #concept/ui #scope/core #dx
 #ai/instruct
-#task/domain/ui #task/object/tui-refactor #task.action/bug-fix #task/state/continue
+#task/domain/ui #task/object/tui-refactor #task.action/performance-tuning #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 从 `_set_state` 中移除错误的装饰器
+#### Acts 1: 重构 `tui.py` 以实现高性能状态机
 
-我们将对 `packages/quipu-cli/src/quipu/cli/tui.py` 进行修正。
+我们将再次对 `packages/quipu-cli/src/quipu/cli/tui.py` 进行重构。
+
+##### 步骤 1: 创建轻量级更新方法
 
 ~~~~~act
 patch_file
@@ -62,7 +66,6 @@ packages/quipu-cli/src/quipu/cli/tui.py
         except Exception as e:
             logger.error(f"DEBUG: Failed to focus current node: {e}", exc_info=True)
 
-    @on(DataTable.RowHighlighted)
     def _set_state(self, new_state: ContentViewSate):
         if self.content_view_state == new_state:
             return # Avoid redundant operations
@@ -71,12 +74,108 @@ packages/quipu-cli/src/quipu/cli/tui.py
         except Exception as e:
             logger.error(f"DEBUG: Failed to focus current node: {e}", exc_info=True)
 
+    def _update_loading_preview(self):
+        """A lightweight method to only update header/placeholder text."""
+        node = self.view_model.get_selected_node()
+        if not node:
+            return
+
+        # Update header and placeholder text
+        self.query_one("#content-header", Static).update(f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}")
+        placeholder_widget = self.query_one("#content-placeholder", Static)
+        if node.summary:
+            placeholder_widget.update(f"### {node.summary}\n\n---\n*Loading full content...*")
+        else:
+            placeholder_widget.update("*Loading...*")
+
     def _set_state(self, new_state: ContentViewSate):
         if self.content_view_state == new_state:
-            return # Avoid redundant operations
+            return
+~~~~~
+
+##### 步骤 2: 重构 `on_row_highlighted` 以调用正确的更新逻辑
+
+~~~~~act
+patch_file
+packages/quipu-cli/src/quipu/cli/tui.py
+~~~~~
+~~~~~python
+    @on(DataTable.RowHighlighted)
+    def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        # 1. Update the data model immediately
+        if event.row_key.value:
+            self.view_model.select_node_by_key(event.row_key.value)
+        
+        # 2. Request a state transition if the view is not hidden
+        if self.content_view_state != ContentViewSate.HIDDEN:
+            self._set_state(ContentViewSate.LOADING)
+~~~~~
+~~~~~python
+    @on(DataTable.RowHighlighted)
+    def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
+        # 1. Update data model
+        if event.row_key.value:
+            self.view_model.select_node_by_key(event.row_key.value)
+        
+        # 2. Handle UI updates based on current state
+        if self.update_timer:
+            self.update_timer.stop()
+
+        if self.content_view_state == ContentViewSate.HIDDEN:
+            return # Do nothing if panel is closed
+        
+        elif self.content_view_state == ContentViewSate.SHOWING_CONTENT:
+            # Transition from showing content to loading
+            self._set_state(ContentViewSate.LOADING)
+        
+        elif self.content_view_state == ContentViewSate.LOADING:
+            # Already loading, just do a lightweight update and restart timer
+            self._update_loading_preview()
+            self.update_timer = self.set_timer(self.debounce_delay_seconds, self._on_timer_finished)
+~~~~~
+
+##### 步骤 3: 简化 `_set_state` 的 `LOADING` 分支
+
+现在 `_set_state` 的 `LOADING` 分支只在**第一次**进入时被调用，我们可以简化它。
+
+~~~~~act
+patch_file
+packages/quipu-cli/src/quipu/cli/tui.py
+~~~~~
+~~~~~python
+            case ContentViewSate.LOADING:
+                container.set_class(True, "split-mode")
+                node = self.view_model.get_selected_node()
+                
+                # Update header and placeholder text
+                if node:
+                    self.query_one("#content-header", Static).update(f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}")
+                    if node.summary:
+                        placeholder_widget.update(f"### {node.summary}\n\n---\n*Loading full content...*")
+                    else:
+                        placeholder_widget.update("*Loading...*")
+                
+                # Set widget visibility
+                placeholder_widget.display = True
+~~~~~
+~~~~~python
+            case ContentViewSate.LOADING:
+                container.set_class(True, "split-mode")
+                
+                # Perform lightweight text updates
+                self._update_loading_preview()
+                
+                # Perform heavy, one-time visibility setup
+                placeholder_widget.display = True
 ~~~~~
 
 ### 下一步建议
-这是本次重构的最后一个已知问题。在移除了这个错误的装饰器后，状态机应该能完全按预期工作了。
+这是对状态机核心逻辑的一次重要手术。请仔细测试以下场景：
 
-请进行最终测试。如果一切正常，我将为你生成一个包含从“性能优化”到“状态机重构”所有工作的最终 `[COMMIT]` 计划。
+1.  **流畅度测试 (核心)**: 快速滚动列表。确认 UI 响应流畅，没有任何卡顿。
+2.  **状态切换测试**:
+    *   在内容完全显示时 (`SHOWING_CONTENT`)，开始滚动，确认视图能正确切换到加载预览 (`LOADING`)。
+    *   在视图关闭时 (`HIDDEN`)，滚动列表，确认右侧面板**不会**有任何变化。
+    *   按 `v` 打开/关闭视图，确认状态切换正常。
+
+如果测试通过，我们的 TUI 应该已经达到了一个既健壮又高性能的理想状态。这时就可以进行最终的提交了。

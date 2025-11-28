@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 移除错误的状态机方法装饰器，修复滚动时视图意外打开的 Bug", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764326186.4098177, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "深入分析：为何比之前更卡？", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764326290.33031, "duration_ms": 0}}
