@@ -1,47 +1,180 @@
-好的，测试已经通过，现在我们将把这个健壮的自动化集成测试固化到版本历史中。
+好的，我将解决这个问题。
 
-## commit(test(integration)): 为 sync 工作流添加自动化测试
+问题在于 `SQLiteHistoryWriter` 在双写过程中没有获取并存入 `owner_id`。当一个新节点被创建时，它的所有者应该是当前的本地用户。
+
+解决方案分为两部分：
+1.  **`Engine` (状态机)**: 在创建节点 (`capture_drift`, `create_plan_node`) 时，它将负责从 `.quipu/config.yml` 中读取 `user_id`。
+2.  **`SQLiteHistoryWriter` (存储层)**: `Engine` 会将获取到的 `user_id` 作为 `owner_id` 传递给 `create_node` 方法，该方法会将其写入 SQLite 数据库。
+
+这样可以确保每次创建新节点时，所有权信息都会被实时、准确地记录在数据库缓存中，无需等待下一次数据补水。
+
+## fix: 在双写时实时写入 owner_id 至数据库
+
+### 错误分析
+当前的 `SQLiteHistoryWriter` 在执行“双写”操作时，虽然会将节点元数据写入 SQLite，但其 `INSERT` 语句遗漏了 `owner_id` 字段。这导致新创建的本地节点的 `owner_id` 在数据库中为空，直到下一次 `sync` 或 `align` 触发数据补水 (`Hydrator`) 时才被填充。这种延迟破坏了数据的一致性，并可能导致 UI 在补水前显示不正确的或缺失的所有者信息。
 
 ### 用户需求
-在 `sync` 功能的核心逻辑（包括 `Hydrator` 修复）通过手动脚本验证后，需要将该验证流程转化为一个自动化的 `pytest` 集成测试，并将其提交到版本库。
+确保当 `quipu save` 或 `quipu run` 创建一个新节点时，该节点的 `owner_id` (即当前用户的 ID) 能够被立即写入 `.quipu/history.sqlite` 数据库的 `nodes` 表中。
 
 ### 评论
-这是确保 `sync` 功能长期稳定性的关键一步。通过将复杂的手动验证流程自动化，我们建立了一道强大的安全屏障，可以有效防止未来对相关代码的修改引入回归性错误。这个测试尤其重要，因为它覆盖了从用户引导到多用户数据正确同步的全过程。
+这是一个关键的数据完整性修复。通过在写入路径上直接注入所有者信息，我们确保了 SQLite 缓存始终是 Git 底层状态的准确反映，简化了系统逻辑并提升了 UI 的即时正确性。
 
 ### 目标
-创建一个 Git 提交，将新添加的、已通过验证的 `tests/integration/test_sync_workflow.py` 文件及其所有修复正式纳入项目。
+1.  修改 `Engine` 模块，使其在调用 `HistoryWriter.create_node` 时，能够从配置中读取 `user_id` 并将其作为 `owner_id` 参数传递。
+2.  修改 `SQLiteHistoryWriter.create_node` 方法，使其能够接收 `owner_id` 参数，并更新 SQL `INSERT` 语句以包含该字段。
 
 ### 基本原理
-该测试使用 `pytest` 框架和 `typer.testing.CliRunner` 来实现。它通过 `pytest` 的 `fixture` 在临时目录中动态创建了一个完整的协作环境，包括一个裸 Git 仓库（作为远程服务器）和两个独立的用户工作区。测试流程编排了用户 A 创建历史、用户 B 订阅并拉取历史的完整交互，并最终通过直接查询 SQLite 数据库来断言数据补水的正确性，特别是验证了所有权 (`owner_id`) 的无误传播。
+在系统的写入流程中，`Engine` 是唯一能够访问工作区上下文 (用于读取配置) 并协调存储写入的角色。因此，由 `Engine` 负责提供 `owner_id` 是最符合架构职责分离原则的做法。`SQLiteHistoryWriter` 则专注于执行数据库写入的原子操作。
 
 ### 标签
-#intent/tooling #flow/ready #priority/high #comp/tests #concept/sync #scope/core #ai/instruct #task/domain/testing #task/object/sync-workflow #task/action/build #task/state/end #task/status/completed
+#intent/fix #flow/ready #priority/high #comp/engine #concept/history #scope/core #ai/instruct #task/domain/storage #task/object/sqlite-backend #task/action/bug-fix #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 提交测试
+#### Acts 1: 修改 `Engine` 以传递 `owner_id`
 
-现在，我们将把这个最终的、健壮的集成测试提交到版本库。
+我们将修改 `state_machine.py` 中的 `capture_drift` 和 `create_plan_node` 方法，让它们在调用 `writer.create_node` 时注入 `owner_id`。
 
 ~~~~~act
-git_add tests/integration/test_sync_workflow.py
+patch_file
+packages/quipu-engine/src/quipu/core/state_machine.py
 ~~~~~
+~~~~~python
+        body = (
+            f"# 📸 Snapshot Capture\n\n"
+            f"{user_message_section}"
+            f"检测到工作区发生变更。\n\n"
+            f"### 📝 变更文件摘要:\n```\n{diff_summary}\n```"
+        )
+
+        new_node = self.writer.create_node(
+            node_type="capture", input_tree=input_hash, output_tree=current_hash, content=body, message=message
+        )
+
+        self.history_graph[current_hash] = new_node
+~~~~~
+~~~~~python
+        body = (
+            f"# 📸 Snapshot Capture\n\n"
+            f"{user_message_section}"
+            f"检测到工作区发生变更。\n\n"
+            f"### 📝 变更文件摘要:\n```\n{diff_summary}\n```"
+        )
+
+        config = ConfigManager(self.root_dir)
+        user_id = config.get("sync.user_id", "unknown-local-user")
+
+        new_node = self.writer.create_node(
+            node_type="capture",
+            input_tree=input_hash,
+            output_tree=current_hash,
+            content=body,
+            message=message,
+            owner_id=user_id,
+        )
+
+        self.history_graph[current_hash] = new_node
+~~~~~
+
 ~~~~~act
-git_commit
+patch_file
+packages/quipu-engine/src/quipu/core/state_machine.py
 ~~~~~
-~~~~~text
-test(integration): add automated test for sync workflow
+~~~~~python
+    def create_plan_node(
+        self, input_tree: str, output_tree: str, plan_content: str, summary_override: Optional[str] = None
+    ) -> QuipuNode:
+        if input_tree == output_tree:
+            logger.info(f"📝 记录幂等操作节点 (Idempotent Node): {output_tree[:7]}")
+        else:
+            logger.info(f"📝 正在记录 Plan 节点: {input_tree[:7]} -> {output_tree[:7]}")
 
-This commit introduces a comprehensive, automated integration test for the Quipu Sync feature, replacing the previous manual test script.
+        new_node = self.writer.create_node(
+            node_type="plan",
+            input_tree=input_tree,
+            output_tree=output_tree,
+            content=plan_content,
+            summary_override=summary_override,
+        )
 
-The test suite, located in `tests/integration/test_sync_workflow.py`, validates the entire end-to-end user workflow using a pytest fixture that sets up a realistic multi-user environment with a bare remote repository.
-
-Key Scenarios Covered:
-- **User Onboarding**: Verifies that the first `quipu sync` run correctly generates and saves a user_id.
-- **Collaboration**: Simulates User B subscribing to User A and successfully fetching their history.
-- **Ownership Integrity**: Critically, it asserts that the Hydrator correctly propagates `owner_id` to ALL historical nodes (including non-head ancestors), preventing data pollution. This directly tests the fix for the previously identified Hydrator bug.
-- **Idempotency**: Ensures that running `sync` multiple times produces no side effects.
-- **Remote Pruning**: Confirms that deleting a local Quipu head and syncing correctly prunes the corresponding ref on the remote.
+        self.history_graph[output_tree] = new_node
 ~~~~~
+~~~~~python
+    def create_plan_node(
+        self, input_tree: str, output_tree: str, plan_content: str, summary_override: Optional[str] = None
+    ) -> QuipuNode:
+        if input_tree == output_tree:
+            logger.info(f"📝 记录幂等操作节点 (Idempotent Node): {output_tree[:7]}")
+        else:
+            logger.info(f"📝 正在记录 Plan 节点: {input_tree[:7]} -> {output_tree[:7]}")
+
+        config = ConfigManager(self.root_dir)
+        user_id = config.get("sync.user_id", "unknown-local-user")
+
+        new_node = self.writer.create_node(
+            node_type="plan",
+            input_tree=input_tree,
+            output_tree=output_tree,
+            content=plan_content,
+            summary_override=summary_override,
+            owner_id=user_id,
+        )
+
+        self.history_graph[output_tree] = new_node
+~~~~~
+
+#### Acts 2: 更新 `SQLiteHistoryWriter` 以存入 `owner_id`
+
+现在，我们修改 `sqlite_storage.py` 中的 `SQLiteHistoryWriter.create_node` 方法，使其能够处理 `owner_id` 并将其存入数据库。
+
+~~~~~act
+patch_file
+packages/quipu-engine/src/quipu/core/sqlite_storage.py
+~~~~~
+~~~~~python
+            # 2.2 写入 'nodes' 表
+            self.db_manager.execute_write(
+                """
+                INSERT OR REPLACE INTO nodes 
+                (commit_hash, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    commit_hash,
+                    output_tree,
+                    node_type,
+                    start_time,
+                    summary,
+                    metadata["generator"]["id"],
+                    meta_json_str,
+                    content,  # 热缓存: 新创建的节点内容直接写入缓存
+                ),
+            )
+~~~~~
+~~~~~python
+            # 2.2 写入 'nodes' 表
+            owner_id = kwargs.get("owner_id", "unknown-local-user")
+            self.db_manager.execute_write(
+                """
+                INSERT OR REPLACE INTO nodes 
+                (commit_hash, owner_id, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    commit_hash,
+                    owner_id,
+                    output_tree,
+                    node_type,
+                    start_time,
+                    summary,
+                    metadata["generator"]["id"],
+                    meta_json_str,
+                    content,  # 热缓存: 新创建的节点内容直接写入缓存
+                ),
+            )
+~~~~~
+
+### 下一步建议
+修复完成后，建议运行完整的测试套件，特别是与 `quipu save` 和 `quipu ui` 相关的集成测试，以验证 `owner_id` 是否被正确写入和显示。

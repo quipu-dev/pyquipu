@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "commit(test(integration)): 为 sync 工作流添加自动化测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764301616.0662658, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 在双写时实时写入 owner_id 至数据库", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764301783.9709985, "duration_ms": 0}}
