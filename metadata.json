@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: 修复 Hydrator 接口变更导致的测试失败 (阶段 1.1)", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764291809.2958012, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复 Hydrator 接口变更导致的测试失败 (阶段 1.2)", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764291930.338632, "duration_ms": 0}}
