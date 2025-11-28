@@ -57,7 +57,7 @@ class Hydrator:
         # 3. 从 Heads 开始，通过图遍历传播所有权
         final_commit_owners: Dict[str, str] = {}
         queue = list(head_owners.keys())
-        
+
         # 将 head 节点预先填入，作为遍历的起点
         for commit_hash in queue:
             final_commit_owners[commit_hash] = head_owners[commit_hash]
@@ -150,12 +150,15 @@ class Hydrator:
                 meta_data = json.loads(meta_bytes)
                 nodes_to_insert.append(
                     (
-                        commit_hash, owner_id, output_tree,
+                        commit_hash,
+                        owner_id,
+                        output_tree,
                         meta_data.get("type", "unknown"),
                         float(meta_data.get("exec", {}).get("start") or log_entry["timestamp"]),
                         meta_data.get("summary", "No summary"),
                         meta_data.get("generator", {}).get("id"),
-                        meta_bytes.decode("utf-8"), None
+                        meta_bytes.decode("utf-8"),
+                        None,
                     )
                 )
                 for p_hash in log_entry["parent"].split():

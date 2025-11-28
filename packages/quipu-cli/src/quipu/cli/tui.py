@@ -57,7 +57,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
         self.work_dir = work_dir
         self.engine: Optional[Engine] = None
         self.view_model: Optional[GraphViewModel] = None
-        
+
         # --- State Machine ---
         self.content_view_state = ContentViewSate.HIDDEN
         self.update_timer: Optional[Timer] = None
@@ -142,7 +142,6 @@ class QuipuUiApp(App[Optional[UiResult]]):
             # If it's loading, let the timer finish and it will naturally pick up the new mode.
             pass
 
-
     def action_checkout_node(self) -> None:
         selected_node = self.view_model.get_selected_node()
         if selected_node:
@@ -195,7 +194,9 @@ class QuipuUiApp(App[Optional[UiResult]]):
                 owner_display = node.owner_id[:12]
                 owner_info = f"[yellow]({owner_display}) [/yellow]"
 
-            info_text = f"{owner_info}[{base_color}][{node.node_type.upper()}] {node.short_hash}[/{base_color}] - {summary}"
+            info_text = (
+                f"{owner_info}[{base_color}][{node.node_type.upper()}] {node.short_hash}[/{base_color}] - {summary}"
+            )
             info_str = f"{dim_tag}{info_text}{end_dim_tag}"
             table.add_row(ts_str, "".join(graph_chars), info_str, key=str(node.filename))
 
@@ -240,9 +241,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
             return
 
         # 查找当前页面中匹配 HEAD 的所有节点
-        matching = [
-            n for n in self.view_model.current_page_nodes if n.output_tree == current_output_tree_hash
-        ]
+        matching = [n for n in self.view_model.current_page_nodes if n.output_tree == current_output_tree_hash]
         logger.debug(f"DEBUG: Found {len(matching)} matching nodes in current page map.")
 
         target_node = matching[0] if matching else None
@@ -265,7 +264,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
 
                 # 2. Sync data model state
                 self.view_model.select_node_by_key(row_key)
-                
+
                 # 3. Force-update the header on initial load, regardless of view mode.
                 # The state machine will handle the rest of the UI.
                 header = self.query_one("#content-header", Static)
@@ -285,13 +284,14 @@ class QuipuUiApp(App[Optional[UiResult]]):
             return
 
         # Update header and placeholder text
-        self.query_one("#content-header", Static).update(f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}")
-        
+        self.query_one("#content-header", Static).update(
+            f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
+        )
+
         # Always get the full content bundle for consistent information display.
         # The Static widget is in markup=False mode, so it's fast and safe.
         content_bundle = self.view_model.get_content_bundle(node)
         self.query_one("#content-placeholder", Static).update(content_bundle)
-        
 
     def _set_state(self, new_state: ContentViewSate):
         # Allow re-entering SHOWING_CONTENT to force a re-render after toggling markdown
@@ -299,11 +299,11 @@ class QuipuUiApp(App[Optional[UiResult]]):
             return
 
         self.content_view_state = new_state
-        
+
         container = self.query_one("#main-container")
         placeholder_widget = self.query_one("#content-placeholder", Static)
         markdown_widget = self.query_one("#content-body", Markdown)
-        
+
         if self.update_timer:
             self.update_timer.stop()
 
@@ -313,14 +313,14 @@ class QuipuUiApp(App[Optional[UiResult]]):
 
             case ContentViewSate.LOADING:
                 container.set_class(True, "split-mode")
-                
+
                 # Perform lightweight text updates
                 self._update_loading_preview()
-                
+
                 # Perform heavy, one-time visibility setup
                 placeholder_widget.display = True
                 markdown_widget.display = False
-                markdown_widget.update("") # Prevent ghosting
+                markdown_widget.update("")  # Prevent ghosting
 
                 # Start timer for next state transition
                 self.update_timer = self.set_timer(self.debounce_delay_seconds, self._on_timer_finished)
@@ -328,11 +328,13 @@ class QuipuUiApp(App[Optional[UiResult]]):
             case ContentViewSate.SHOWING_CONTENT:
                 container.set_class(True, "split-mode")
                 node = self.view_model.get_selected_node()
-                
+
                 if node:
                     content = self.view_model.get_content_bundle(node)
                     # Update header
-                    self.query_one("#content-header", Static).update(f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}")
+                    self.query_one("#content-header", Static).update(
+                        f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
+                    )
 
                     if self.markdown_enabled:
                         markdown_widget.update(content)
@@ -342,24 +344,24 @@ class QuipuUiApp(App[Optional[UiResult]]):
                         placeholder_widget.update(content)
                         placeholder_widget.display = True
                         markdown_widget.display = False
-                
+
     @on(DataTable.RowHighlighted)
     def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         # 1. Update data model
         if event.row_key.value:
             self.view_model.select_node_by_key(event.row_key.value)
-        
+
         # 2. Handle UI updates based on current state
         if self.update_timer:
             self.update_timer.stop()
 
         if self.content_view_state == ContentViewSate.HIDDEN:
-            return # Do nothing if panel is closed
-        
+            return  # Do nothing if panel is closed
+
         elif self.content_view_state == ContentViewSate.SHOWING_CONTENT:
             # Transition from showing content to loading
             self._set_state(ContentViewSate.LOADING)
-        
+
         elif self.content_view_state == ContentViewSate.LOADING:
             # Already loading, just do a lightweight update and restart timer
             self._update_loading_preview()
@@ -369,7 +371,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
         """Callback for the debounce timer."""
         # The timer finished, so we are ready to show content
         self._set_state(ContentViewSate.SHOWING_CONTENT)
-    
+
     def action_toggle_view(self) -> None:
         """Handles the 'v' key press to toggle the content view."""
         if self.content_view_state == ContentViewSate.HIDDEN:

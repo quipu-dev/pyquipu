@@ -21,7 +21,9 @@ def register(app: typer.Typer):
     @app.command(name="axon")
     def axon_command(
         ctx: typer.Context,
-        file: Annotated[Optional[Path], typer.Argument(help="包含 Markdown 指令的文件路径。", resolve_path=True)] = None,
+        file: Annotated[
+            Optional[Path], typer.Argument(help="包含 Markdown 指令的文件路径。", resolve_path=True)
+        ] = None,
         work_dir: Annotated[
             Path,
             typer.Option(
@@ -67,7 +69,7 @@ def register(app: typer.Typer):
             confirmation_handler=typer_confirmation_handler,
         )
         register_core_acts(executor)
-        
+
         # 3. 加载插件
         # PluginManager 会尝试查找 Git 根目录加载项目级插件，如果找不到 Git 根目录则跳过，符合无状态设计
         PluginManager().load_from_sources(executor, work_dir)
@@ -101,15 +103,15 @@ def register(app: typer.Typer):
                     source_desc = "STDIN (管道流)"
             except Exception:
                 pass
-        
+
         # 如果没有指定文件且没有 STDIN，尝试读取当前目录下的默认入口文件 (如 o.md)
         if not content and not file and DEFAULT_ENTRY_FILE.exists():
-             content = DEFAULT_ENTRY_FILE.read_text(encoding="utf-8")
-             source_desc = f"默认文件 ({DEFAULT_ENTRY_FILE.name})"
+            content = DEFAULT_ENTRY_FILE.read_text(encoding="utf-8")
+            source_desc = f"默认文件 ({DEFAULT_ENTRY_FILE.name})"
 
         if not content.strip():
-             typer.secho("⚠️  提示: 未提供输入 (文件或管道)，且未找到默认文件。", fg=typer.colors.YELLOW, err=True)
-             ctx.exit(0)
+            typer.secho("⚠️  提示: 未提供输入 (文件或管道)，且未找到默认文件。", fg=typer.colors.YELLOW, err=True)
+            ctx.exit(0)
 
         logger.info(f"Axon 启动 | 源: {source_desc} | 工作区: {work_dir}")
 
@@ -117,13 +119,15 @@ def register(app: typer.Typer):
         final_parser_name = parser_name
         if parser_name == "auto":
             final_parser_name = detect_best_parser(content)
-        
+
         try:
             parser = get_parser(final_parser_name)
             statements = parser.parse(content)
-            
+
             if not statements:
-                typer.secho(f"⚠️  未解析到任何有效指令 (Parser: {final_parser_name})。", fg=typer.colors.YELLOW, err=True)
+                typer.secho(
+                    f"⚠️  未解析到任何有效指令 (Parser: {final_parser_name})。", fg=typer.colors.YELLOW, err=True
+                )
                 ctx.exit(0)
 
             # 7. 执行

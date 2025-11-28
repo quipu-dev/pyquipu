@@ -18,7 +18,9 @@ def register(app: typer.Typer):
     @app.command(name="run")
     def run_command(
         ctx: typer.Context,
-        file: Annotated[Optional[Path], typer.Argument(help=f"包含 Markdown 指令的文件路径。", resolve_path=True)] = None,
+        file: Annotated[
+            Optional[Path], typer.Argument(help=f"包含 Markdown 指令的文件路径。", resolve_path=True)
+        ] = None,
         work_dir: Annotated[
             Path,
             typer.Option(

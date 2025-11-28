@@ -89,15 +89,14 @@ class TestSyncWorkflow:
         """
         remote_path, user_a_path, user_b_path = sync_test_environment
         user_a_id = get_user_id_from_email("user.a@example.com")
-        
+
         # --- Step 1: User A creates more history (Node 2) ---
         (user_a_path / "plan2.md").write_text("~~~~~act\necho 'world'\n~~~~~")
         runner.invoke(app, ["run", str(user_a_path / "plan2.md"), "--work-dir", str(user_a_path), "-y"])
-        
+
         # Capture User A's commit hashes for verification later
         user_a_commits = run_git_command(
-            user_a_path,
-            ["log", "--all", "--format=%H", "--grep=X-Quipu-Output-Tree"]
+            user_a_path, ["log", "--all", "--format=%H", "--grep=X-Quipu-Output-Tree"]
         ).splitlines()
         assert len(user_a_commits) >= 2, "User A should have at least 2 Quipu nodes"
 
@@ -136,18 +135,19 @@ class TestSyncWorkflow:
 
         db_path_b = user_b_path / ".quipu" / "history.sqlite"
         assert db_path_b.exists()
-        
+
         conn = sqlite3.connect(db_path_b)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         for commit_hash in user_a_commits:
             cursor.execute("SELECT owner_id FROM nodes WHERE commit_hash = ?", (commit_hash,))
             row = cursor.fetchone()
             assert row is not None, f"Commit {commit_hash} not found in DB"
-            assert row["owner_id"] == user_a_id, \
+            assert row["owner_id"] == user_a_id, (
                 f"Incorrect owner for commit {commit_hash}. Expected {user_a_id}, got {row['owner_id']}"
-        
+            )
+
         conn.close()
 
     def test_sync_is_idempotent(self, sync_test_environment):
@@ -176,12 +176,12 @@ class TestSyncWorkflow:
         # Create two new nodes
         (user_a_path / "plan3.md").write_text("~~~~~act\necho 'plan3'\n~~~~~")
         runner.invoke(app, ["run", str(user_a_path / "plan3.md"), "--work-dir", str(user_a_path), "-y"])
-        
+
         # Sync to ensure remote has it
         runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
         remote_refs_before = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
-        assert "plan3" in str(run_git_command(user_a_path, ["log", "--all"])) # Verify creation
-        
+        assert "plan3" in str(run_git_command(user_a_path, ["log", "--all"]))  # Verify creation
+
         # Identify a ref to delete locally
         local_quipu_refs = run_git_command(
             user_a_path, ["for-each-ref", "--format=%(refname)", "refs/quipu/local/heads"]
@@ -198,7 +198,7 @@ class TestSyncWorkflow:
 
         # Verify it is STILL present on remote (Safety Check)
         remote_refs_after = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
-        
+
         # With prune enabled, this assertion would fail.
         # With prune disabled, this must pass.
         assert ref_hash in remote_refs_after
@@ -211,7 +211,7 @@ class TestSyncWorkflow:
         Device 1 syncs -> Should fetch Node X and promote it to local head.
         """
         remote_path, user_a_path, _ = sync_test_environment
-        
+
         # 1. Setup Device 2 for User A
         base_dir = user_a_path.parent
         user_a_device2_path = base_dir / "user_a_device2"
@@ -224,10 +224,14 @@ class TestSyncWorkflow:
 
         # 2. Device 2 creates a unique node
         (user_a_device2_path / "device2.md").write_text("~~~~~act\necho 'from device 2'\n~~~~~")
-        runner.invoke(app, ["run", str(user_a_device2_path / "device2.md"), "--work-dir", str(user_a_device2_path), "-y"])
-        
+        runner.invoke(
+            app, ["run", str(user_a_device2_path / "device2.md"), "--work-dir", str(user_a_device2_path), "-y"]
+        )
+
         # Get the hash
-        d2_commits = run_git_command(user_a_device2_path, ["log", "--all", "--format=%H", "--grep=X-Quipu-Output-Tree"]).splitlines()
+        d2_commits = run_git_command(
+            user_a_device2_path, ["log", "--all", "--format=%H", "--grep=X-Quipu-Output-Tree"]
+        ).splitlines()
         d2_new_hash = d2_commits[0]
 
         # Device 2 Pushes
@@ -237,7 +241,7 @@ class TestSyncWorkflow:
         # Expectation: Device 1 should pull Device 2's work and show it in local heads
         sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
         assert sync_result.exit_code == 0
-        
+
         # Verify Device 1 has the commit in LOCAL heads
         d1_local_refs = run_git_command(user_a_path, ["for-each-ref", "refs/quipu/local/heads"])
         assert d2_new_hash in d1_local_refs

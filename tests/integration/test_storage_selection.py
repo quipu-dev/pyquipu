@@ -84,7 +84,9 @@ class TestStorageSelection:
 
         # Setup: Run one command to establish the new format
         runner.invoke(app, ["run", "-y", "-w", str(git_workspace)], input=PLAN_A)
-        heads_after_a = set(subprocess.check_output(get_all_heads_cmd, cwd=git_workspace, text=True).strip().splitlines())
+        heads_after_a = set(
+            subprocess.check_output(get_all_heads_cmd, cwd=git_workspace, text=True).strip().splitlines()
+        )
         assert len(heads_after_a) == 1
         commit_hash_a = heads_after_a.pop()
 
@@ -93,9 +95,11 @@ class TestStorageSelection:
         assert result.exit_code == 0, result.stderr
 
         # Verification
-        heads_after_b = set(subprocess.check_output(get_all_heads_cmd, cwd=git_workspace, text=True).strip().splitlines())
+        heads_after_b = set(
+            subprocess.check_output(get_all_heads_cmd, cwd=git_workspace, text=True).strip().splitlines()
+        )
         new_heads = heads_after_b - {commit_hash_a}
-        
+
         # 1. A new head should be created
         assert len(new_heads) == 1, "A new history head was not created after the second run"
         commit_hash_b = new_heads.pop()

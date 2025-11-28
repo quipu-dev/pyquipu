@@ -22,7 +22,9 @@ def register(app: typer.Typer):
                 "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
             ),
         ] = DEFAULT_WORK_DIR,
-        remote_option: Annotated[Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")] = None,
+        remote_option: Annotated[
+            Optional[str], typer.Option("--remote", "-r", help="Git 远程仓库的名称 (覆盖配置文件)。")
+        ] = None,
     ):
         """
         与远程仓库同步 Quipu 历史图谱。
@@ -47,13 +49,15 @@ def register(app: typer.Typer):
                 config.set("sync.user_id", final_user_id)
                 config.save()
                 typer.secho(
-                    f"✅ 已根据你的 Git 邮箱 '{email}' 生成并保存用户 ID: {final_user_id}", fg=typer.colors.GREEN, err=True
+                    f"✅ 已根据你的 Git 邮箱 '{email}' 生成并保存用户 ID: {final_user_id}",
+                    fg=typer.colors.GREEN,
+                    err=True,
                 )
 
             except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
                 typer.secho("❌ 错误：无法获取你的 Git 用户邮箱。", fg=typer.colors.RED, err=True)
                 typer.secho("💡 请先运行以下命令进行设置:", fg=typer.colors.YELLOW, err=True)
-                typer.echo("  git config --global user.email \"you@example.com\"")
+                typer.echo('  git config --global user.email "you@example.com"')
                 ctx.exit(1)
 
         try:
@@ -66,7 +70,9 @@ def register(app: typer.Typer):
 
             if target_ids_to_fetch:
                 typer.secho(
-                    f"⬇️  正在从 '{remote}' 拉取 {len(target_ids_to_fetch)} 个用户的历史...", fg=typer.colors.BLUE, err=True
+                    f"⬇️  正在从 '{remote}' 拉取 {len(target_ids_to_fetch)} 个用户的历史...",
+                    fg=typer.colors.BLUE,
+                    err=True,
                 )
                 for target_id in sorted(list(target_ids_to_fetch)):
                     git_db.fetch_quipu_refs(remote, target_id)
@@ -79,9 +85,10 @@ def register(app: typer.Typer):
             typer.secho(f"⬆️  正在向 '{remote}' 推送合并后的本地历史...", fg=typer.colors.BLUE, err=True)
             git_db.push_quipu_refs(remote, final_user_id)
 
-
             typer.secho("\n✅ Quipu 双向同步完成。", fg=typer.colors.GREEN, err=True)
-            typer.secho("\n💡 提示: 运行 `quipu cache sync` 来更新本地数据库和 UI 视图。", fg=typer.colors.YELLOW, err=True)
+            typer.secho(
+                "\n💡 提示: 运行 `quipu cache sync` 来更新本地数据库和 UI 视图。", fg=typer.colors.YELLOW, err=True
+            )
 
         except RuntimeError as e:
             typer.secho(f"\n❌ 同步操作失败: {e}", fg=typer.colors.RED, err=True)

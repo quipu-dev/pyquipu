@@ -148,7 +148,7 @@ class TestGraphViewModel:
         reader = MockHistoryReader(sample_nodes)
         vm = GraphViewModel(reader, current_output_tree_hash="unknown_hash")
         vm.initialize()
-        
+
         # MockReader 在找不到 output_tree 时 get_node_position 返回 -1
         assert vm.calculate_initial_page() == 1
 
@@ -157,7 +157,7 @@ class TestGraphViewModel:
         reader = MockHistoryReader(sample_nodes)
         vm = GraphViewModel(reader, current_output_tree_hash=None)
         vm.load_page(1)
-        
+
         selected = vm.select_node_by_key("non_existent_path")
         assert selected is None
         assert vm.get_selected_node() is None

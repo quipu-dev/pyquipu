@@ -153,7 +153,7 @@ class TestGitObjectHistoryReader:
         reader, writer, git_db, _ = reader_setup
 
         h0 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-        
+
         # 1. Create a valid node A
         node_a = writer.create_node("plan", h0, "a" * 40, "A", start_time=1000)
 
@@ -179,7 +179,7 @@ class TestGitObjectHistoryReader:
 
         found_node_a = valid_nodes["A"]
         found_node_c = valid_nodes["C"]
-        
+
         # C should be correctly parented to A, effectively ignoring the bad commit.
         assert found_node_c.parent == found_node_a
         assert found_node_a.children == [found_node_c]

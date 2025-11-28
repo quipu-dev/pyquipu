@@ -56,7 +56,9 @@ class TestSQLiteWriterIntegration:
         assert result_a.success, f"run_quipu failed on Plan A: {result_a.message}"
 
         # Get the state after the first run
-        heads_after_a = set(subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines())
+        heads_after_a = set(
+            subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines()
+        )
         assert len(heads_after_a) == 1
         commit_hash_a = heads_after_a.pop()
 
@@ -65,9 +67,11 @@ class TestSQLiteWriterIntegration:
         assert result_b.success, f"run_quipu failed on Plan B: {result_b.message}"
 
         # Get the state after the second run and find the new commit
-        heads_before_b = {commit_hash_a} # The set of heads before this action
-        heads_after_b = set(subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines())
-        
+        heads_before_b = {commit_hash_a}  # The set of heads before this action
+        heads_after_b = set(
+            subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines()
+        )
+
         new_heads = heads_after_b - heads_before_b
         assert len(new_heads) == 1, "Expected exactly one new head to be created"
         commit_hash_b = new_heads.pop()

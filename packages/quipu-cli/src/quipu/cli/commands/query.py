@@ -28,11 +28,11 @@ def _nodes_to_json_str(nodes: List[QuipuNode]) -> str:
                 node_dict[field.name] = value.isoformat()
             else:
                 node_dict[field.name] = value
-        
+
         # Explicitly add properties
         node_dict["short_hash"] = node.short_hash
         node_list.append(node_dict)
-        
+
     return json.dumps(node_list, indent=2)
 
 
@@ -59,7 +59,7 @@ def register(app: typer.Typer):
                 else:
                     typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
                 raise typer.Exit(0)
-            
+
             nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
 
             if json_output:
@@ -81,7 +81,9 @@ def register(app: typer.Typer):
         summary_regex: Annotated[
             Optional[str], typer.Option("--summary", "-s", help="用于匹配节点摘要的正则表达式 (不区分大小写)。")
         ] = None,
-        node_type: Annotated[Optional[str], typer.Option("--type", "-t", help="节点类型 ('plan' 或 'capture')。")] = None,
+        node_type: Annotated[
+            Optional[str], typer.Option("--type", "-t", help="节点类型 ('plan' 或 'capture')。")
+        ] = None,
         limit: Annotated[int, typer.Option("--limit", "-n", help="返回的最大结果数量。")] = 10,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
         json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,

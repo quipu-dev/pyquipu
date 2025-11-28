@@ -29,12 +29,16 @@ def register(app: typer.Typer):
             matches = [node for output_tree, node in graph.items() if output_tree.startswith(hash_prefix)]
             if not matches:
                 typer.secho(
-                    f"❌ 错误: 未找到 output_tree 哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True
+                    f"❌ 错误: 未找到 output_tree 哈希前缀为 '{hash_prefix}' 的历史节点。",
+                    fg=typer.colors.RED,
+                    err=True,
                 )
                 ctx.exit(1)
             if len(matches) > 1:
                 typer.secho(
-                    f"❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {len(matches)} 个节点。", fg=typer.colors.RED, err=True
+                    f"❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {len(matches)} 个节点。",
+                    fg=typer.colors.RED,
+                    err=True,
                 )
                 ctx.exit(1)
             target_node = matches[0]
@@ -42,12 +46,16 @@ def register(app: typer.Typer):
 
             current_hash = engine.git_db.get_tree_hash()
             if current_hash == target_output_tree_hash:
-                typer.secho(f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
+                typer.secho(
+                    f"✅ 工作区已处于目标状态 ({target_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True
+                )
                 ctx.exit(0)
 
             is_dirty = engine.current_node is None or engine.current_node.output_tree != current_hash
             if is_dirty:
-                typer.secho("⚠️  检测到当前工作区存在未记录的变更，将自动创建捕获节点...", fg=typer.colors.YELLOW, err=True)
+                typer.secho(
+                    "⚠️  检测到当前工作区存在未记录的变更，将自动创建捕获节点...", fg=typer.colors.YELLOW, err=True
+                )
                 engine.capture_drift(current_hash)
                 typer.secho("✅ 变更已捕获。", fg=typer.colors.GREEN, err=True)
                 current_hash = engine.git_db.get_tree_hash()
@@ -148,7 +156,9 @@ def register(app: typer.Typer):
                     typer.secho("✅ 已在最旧的兄弟分支。", fg=typer.colors.GREEN, err=True)
                     ctx.exit(0)
                 target_node = siblings[idx - 1]
-                _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到上一个兄弟节点: {target_node.short_hash}")
+                _execute_visit(
+                    ctx, engine, target_node.output_tree, f"正在切换到上一个兄弟节点: {target_node.short_hash}"
+                )
             except ValueError:
                 pass
 
@@ -175,7 +185,9 @@ def register(app: typer.Typer):
                     typer.secho("✅ 已在最新的兄弟分支。", fg=typer.colors.GREEN, err=True)
                     ctx.exit(0)
                 target_node = siblings[idx + 1]
-                _execute_visit(ctx, engine, target_node.output_tree, f"正在切换到下一个兄弟节点: {target_node.short_hash}")
+                _execute_visit(
+                    ctx, engine, target_node.output_tree, f"正在切换到下一个兄弟节点: {target_node.short_hash}"
+                )
             except ValueError:
                 pass
 

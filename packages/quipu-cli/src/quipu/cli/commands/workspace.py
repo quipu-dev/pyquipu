@@ -74,7 +74,9 @@ def register(app: typer.Typer):
 
             current_hash = engine.git_db.get_tree_hash()
             if current_hash == target_tree_hash:
-                typer.secho(f"✅ 工作区已经是干净状态 ({latest_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True)
+                typer.secho(
+                    f"✅ 工作区已经是干净状态 ({latest_node.short_hash})，无需操作。", fg=typer.colors.GREEN, err=True
+                )
                 ctx.exit(0)
 
             diff_stat = engine.git_db.get_diff_stat(target_tree_hash, current_hash)

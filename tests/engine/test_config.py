@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from quipu.core.config import ConfigManager
 
+
 # A pytest fixture to provide a clean work directory for each test
 @pytest.fixture
 def work_dir(tmp_path: Path) -> Path:
@@ -27,12 +28,9 @@ def test_config_load_from_file(work_dir: Path):
     config_dir = work_dir / ".quipu"
     config_dir.mkdir()
     config_file = config_dir / "config.yml"
-    
+
     # Create a dummy config file
-    dummy_config = {
-        "storage": {"type": "sqlite"},
-        "sync": {"user_id": "test-user-from-file"}
-    }
+    dummy_config = {"storage": {"type": "sqlite"}, "sync": {"user_id": "test-user-from-file"}}
     with open(config_file, "w") as f:
         yaml.dump(dummy_config, f)
 
@@ -49,7 +47,7 @@ def test_config_load_from_file(work_dir: Path):
 def test_config_set_and_save(work_dir: Path):
     """Test setting a simple value and saving it to a new file."""
     config = ConfigManager(work_dir)
-    
+
     # Pre-check: value should be default (None)
     assert config.get("sync.user_id") is None
 
@@ -66,14 +64,14 @@ def test_config_set_and_save(work_dir: Path):
     # Verify the content of the saved file
     with open(config_file, "r") as f:
         saved_data = yaml.safe_load(f)
-    
+
     assert saved_data == {"sync": {"user_id": "test-user-new"}}
 
 
 def test_config_nested_set_and_save(work_dir: Path):
     """Test that setting a nested key creates the necessary dictionaries."""
     config = ConfigManager(work_dir)
-    
+
     config.set("a.b.c", 123)
     config.save()
 

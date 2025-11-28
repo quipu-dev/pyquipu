@@ -120,7 +120,6 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
         # Mock implementation, not needed for most tests.
         return {}
 
-
     def get_node_count(self) -> int:
         return len(self.db.nodes)
 

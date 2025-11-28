@@ -80,7 +80,7 @@ class GitObjectHistoryReader(HistoryReader):
         ref_tuples = self.git_db.get_all_ref_heads("refs/quipu/")
         if not ref_tuples:
             return []
-        
+
         all_heads = list(set(t[0] for t in ref_tuples))
         log_entries = self.git_db.log_ref(all_heads)
         if not log_entries:

@@ -30,7 +30,9 @@ def test_find_command(runner, quipu_workspace):
     engine.capture_drift(hash_v1, message="Fix bug")
     (work_dir / "f2").touch()
     hash_v2 = engine.git_db.get_tree_hash()
-    engine.create_plan_node(input_tree=hash_v1, output_tree=hash_v2, plan_content="content", summary_override="Implement feature")
+    engine.create_plan_node(
+        input_tree=hash_v1, output_tree=hash_v2, plan_content="content", summary_override="Implement feature"
+    )
     result = runner.invoke(app, ["find", "-s", "Fix", "-w", str(work_dir)])
     assert "--- 查找结果 ---" in result.stderr
     assert "Fix bug" in result.stdout

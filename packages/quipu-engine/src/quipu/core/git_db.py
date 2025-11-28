@@ -364,7 +364,7 @@ class GitDB:
         res = self._run(["for-each-ref", f"--format=%(objectname) %(refname)", prefix], check=False)
         if res.returncode != 0 or not res.stdout.strip():
             return []
-        
+
         results = []
         for line in res.stdout.strip().splitlines():
             parts = line.split(" ", 1)
