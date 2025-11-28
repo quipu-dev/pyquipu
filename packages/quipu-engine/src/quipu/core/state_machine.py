@@ -1,14 +1,16 @@
 import logging
 import re
+import subprocess
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple, Any
-from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
-from .git_db import GitDB
-from .config import ConfigManager
-from .hydrator import Hydrator
+from quipu.common.identity import get_user_id_from_email
 from quipu.core.models import QuipuNode
 from quipu.core.storage import HistoryReader, HistoryWriter
+
+from .config import ConfigManager
+from .git_db import GitDB
+from .hydrator import Hydrator
 
 # 导入类型以进行类型提示
 try:
@@ -98,6 +100,42 @@ class Engine:
         """关闭引擎持有的所有资源，如数据库连接。"""
         if self.db_manager:
             self.db_manager.close()
+
+    def _get_current_user_id(self) -> str:
+        """
+        确定当前用户的 ID，实现统一的、鲁棒的身份识别。
+        优先级:
+        1. .quipu/config.yml 中的 `sync.user_id`
+        2. `git config user.email` (经过规范化处理)
+        3. 回退到 "unknown-local-user"
+        """
+        # 1. 尝试从 Quipu 配置中读取
+        config = ConfigManager(self.root_dir)
+        user_id = config.get("sync.user_id")
+        if user_id:
+            return user_id
+
+        # 2. 如果配置中没有，则回退到 Git 配置
+        try:
+            result = subprocess.run(
+                ["git", "config", "user.email"],
+                cwd=self.root_dir,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            email = result.stdout.strip()
+            if email:
+                derived_id = get_user_id_from_email(email)
+                logger.debug(f"从 Git config 动态获取 user_id: {derived_id}")
+                return derived_id
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logger.debug("无法从 git config 中获取 user.email。")
+            pass  # 忽略错误，继续执行最终的回退逻辑
+
+        # 3. 最终回退
+        logger.debug("未找到 user_id，将使用默认回退值 'unknown-local-user'。")
+        return "unknown-local-user"
 
     def _read_head(self) -> Optional[str]:
         if self.head_file.exists():
@@ -191,33 +229,7 @@ class Engine:
         # 如果使用 SQLite，先进行数据补水
         if self.db_manager:
             try:
-                config = ConfigManager(self.root_dir)
-                user_id = config.get("sync.user_id")
-
-                if not user_id:
-                    # 关键修复: 在测试环境或未配置 sync 的情况下，尝试从 git config 动态生成 user_id
-                    try:
-                        import subprocess
-                        from quipu.common.identity import get_user_id_from_email
-
-                        result = subprocess.run(
-                            ["git", "config", "user.email"],
-                            cwd=self.root_dir,
-                            capture_output=True,
-                            text=True,
-                            check=True,
-                        )
-                        email = result.stdout.strip()
-                        if email:
-                            user_id = get_user_id_from_email(email)
-                            logger.debug(f"补水时从 Git config 动态获取 user_id: {user_id}")
-                    except (subprocess.CalledProcessError, FileNotFoundError):
-                        pass  # 忽略错误，继续使用回退逻辑
-
-                if not user_id:
-                    logger.debug("补水时未找到 user_id，将使用默认回退值 'unknown-local-user'。")
-                    user_id = "unknown-local-user"
-
+                user_id = self._get_current_user_id()
                 hydrator = Hydrator(self.git_db, self.db_manager)
                 hydrator.sync(local_user_id=user_id)
             except Exception as e:
@@ -289,8 +301,15 @@ class Engine:
             f"### 📝 变更文件摘要:\n```\n{diff_summary}\n```"
         )
 
+        user_id = self._get_current_user_id()
+
         new_node = self.writer.create_node(
-            node_type="capture", input_tree=input_hash, output_tree=current_hash, content=body, message=message
+            node_type="capture",
+            input_tree=input_hash,
+            output_tree=current_hash,
+            content=body,
+            message=message,
+            owner_id=user_id,
         )
 
         self.history_graph[current_hash] = new_node
@@ -309,12 +328,15 @@ class Engine:
         else:
             logger.info(f"📝 正在记录 Plan 节点: {input_tree[:7]} -> {output_tree[:7]}")
 
+        user_id = self._get_current_user_id()
+
         new_node = self.writer.create_node(
             node_type="plan",
             input_tree=input_tree,
             output_tree=output_tree,
             content=plan_content,
             summary_override=summary_override,
+            owner_id=user_id,
         )
 
         self.history_graph[output_tree] = new_node

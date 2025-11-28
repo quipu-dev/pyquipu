@@ -417,14 +417,16 @@ class SQLiteHistoryWriter(HistoryWriter):
             meta_json_str = json.dumps(metadata)
 
             # 2.2 写入 'nodes' 表
+            owner_id = kwargs.get("owner_id", "unknown-local-user")
             self.db_manager.execute_write(
                 """
                 INSERT OR REPLACE INTO nodes 
-                (commit_hash, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (commit_hash, owner_id, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     commit_hash,
+                    owner_id,
                     output_tree,
                     node_type,
                     start_time,
