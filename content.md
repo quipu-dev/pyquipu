@@ -1,96 +1,70 @@
-You are absolutely correct. My apologies. I made a mistake by suggesting a CSS property that does not exist in Textual's CSS dialect. The traceback confirms it: `shrink` is not a valid property. Thank you for catching this and providing the precise error.
+Of course. We have completed a significant set of improvements to the TUI, addressing performance, stability, and usability. It is now time to consolidate this work into a single, comprehensive commit.
 
-My reasoning was correct (we need to stop the widget from shrinking), but the specific implementation I provided was wrong.
+I will generate the final `[COMMIT]` plan.
 
-**Correct Analysis and Solution**:
-
-The correct way to achieve this in Textual is to control the layout properties of both the child widget (`#content-placeholder`) and its parent container (`#content-view`).
-
-1.  **Child Widget (`#content-placeholder`):** We need to tell it to determine its own height based on its content. The `height: auto;` property is the correct way to do this.
-2.  **Parent Container (`#content-view`):** This is the key part I missed. We must explicitly tell this container what to do when its content (the child widget) becomes taller than the container itself. The CSS property for this is `overflow-y`. By setting `overflow-y: scroll;`, we command the container to always show a vertical scrollbar if its content overflows.
-
-The combination of the child demanding its full height (`height: auto`) and the parent being configured to scroll when overflow happens (`overflow-y: scroll`) is the correct and robust solution.
-
-I will now generate a corrected plan that implements this proper CSS.
-
-## [WIP] fix: Correctly enable scrolling in TUI raw text view
-
-### 错误分析
-The previously suggested CSS fix used an invalid property, `shrink`, which caused the TUI's CSS parser to fail. The correct approach requires modifying the parent container to handle overflow, rather than trying to modify a non-existent property on the child widget.
+## [COMMIT] feat(cli/tui): 增强 TUI 性能并添加渲染控制
 
 ### 用户需求
-The raw text view must be scrollable, just like the Markdown view.
+The Quipu TUI needed significant enhancements to address performance issues during scrolling, improve stability, and give users more control over the content rendering. The key requirements were to make scrolling responsive, prevent crashes from malformed content, add a plain-text viewing mode, and ensure content consistency between different views.
 
 ### 评论
-This fix correctly applies standard CSS principles for overflow handling within the Textual framework. It's a more fundamental and correct solution that ensures the UI behaves as expected.
+This is a major user experience overhaul for the Quipu TUI. By implementing a debounced rendering strategy with an instant plain-text preview, we've made the application feel significantly more responsive. Adding user-configurable rendering modes (`--raw` flag and a hotkey) and fixing critical stability and layout bugs (markup parsing, missing scrollbars) transforms the TUI from a proof-of-concept into a robust and genuinely useful tool for exploring Quipu history.
 
 ### 目标
-1.  Modify `packages/quipu-cli/src/quipu/cli/tui.css`.
-2.  Add the `overflow-y: scroll;` property to the `#content-view` rule.
-3.  Remove the invalid `shrink` property from the `#content-placeholder` rule, ensuring `height: auto;` remains.
+1.  **Performance**: The TUI is now highly responsive during scrolling, showing an instant plain-text preview of content.
+2.  **Stability**: Crashes related to markup parsing have been eliminated by correctly configuring the preview widget.
+3.  **Usability**: A missing scrollbar in the raw text view has been fixed.
+4.  **Customization**: Users can now start the TUI in a performance-focused raw text mode via a `--raw` flag and can toggle Markdown rendering on/off at runtime with the `m` key.
+5.  **Consistency**: Both raw and Markdown views now display the exact same content, including public and private data.
+6.  **Git History**: All these related changes are now ready to be committed as a single, logical feature enhancement.
 
 ### 基本原理
-We are creating a classic scrollable container. The child element (`#content-placeholder`) is configured with `height: auto;`, which makes its height expand to fit all of its text content. The parent element (`#content-view`) is configured with `overflow-y: scroll;`. When the child's auto-sized height exceeds the parent's fixed height, the parent's `overflow-y` rule is triggered, causing the scrollbar to appear.
+The solution combines several techniques:
+-   **Debounced Rendering**: A state machine (`LOADING` -> `SHOWING_CONTENT`) uses a `Timer` to delay expensive Markdown rendering until the user stops scrolling.
+-   **Instant Preview**: During the `LOADING` state, a `Static` widget configured with `markup=False` displays the node's full content as plain text, providing immediate feedback.
+-   **Robust Layout**: CSS properties (`overflow-y: scroll` on the container and `height: auto` on the content widget) are correctly used to ensure scrolling is available in all modes.
+-   **Stateful Configuration**: A `self.markdown_enabled` flag, controlled by a command-line option and a hotkey, dictates which final view (Markdown or Static) is displayed.
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/cli #concept/ui #scope/ux #ai/instruct #task/domain/ui #task/object/tui-performance #task/action/optimization #task/state/continue
+#intent/build #intent/refine #intent/fix #flow/ready #priority/high #comp/cli #concept/ui #scope/ux #ai/instruct #task/domain/ui #task/object/tui-performance #task/action/optimization #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: Apply the correct CSS to enable scrolling
+#### Acts 1: Stage and Commit All TUI Enhancements
 
-We will replace the entire `tui.css` file to ensure it contains the correct and final version of the styles.
+We will now add all the modified files to the Git staging area and create a single, well-documented commit that captures the full scope of this feature.
 
 ~~~~~act
-write_file
+git_add
+packages/quipu-cli/src/quipu/cli/commands/ui.py
+packages/quipu-cli/src/quipu/cli/tui.py
 packages/quipu-cli/src/quipu/cli/tui.css
 ~~~~~
-~~~~~css
-/* Base layout for the main container */
-#main-container {
-    layout: horizontal;
-}
 
-/* The history table should take up all available space by default */
-#history-table {
-    width: 1fr;
-}
+~~~~~act
+git_commit
+~~~~~
+~~~~~text
+feat(cli/tui): enhance TUI performance and add rendering controls
 
-/* The content view is hidden by default */
-#content-view {
-    display: none;
-    width: 0;
-    height: 100%;
-    border-left: solid $accent;
-    /* THE FIX PART 1: Enable vertical scrolling when content overflows */
-    overflow-y: scroll;
-}
+Implements a comprehensive overhaul of the TUI to improve performance, stability, and user control over content rendering.
 
-/* When in split mode, the content view becomes visible */
-#main-container.split-mode > #content-view {
-    display: block;
-    width: 1fr; /* Takes up 50% of the space with the table */
-}
-
-/*
- * THE FIX PART 2:
- * This ensures the Static placeholder widget reports its full content height,
- * which will trigger the overflow on its parent container.
- */
-#content-placeholder {
-    width: 100%;
-    height: auto;
-}
-
-#content-header {
-    text-align: center;
-    text-style: bold;
-    padding: 0 1;
-    background: $surface-lighten-1;
-}
+Key Improvements:
+-   **Performance:** Introduces a debounced rendering mechanism. While scrolling, a fast, plain-text preview is shown instantly. Full Markdown rendering is deferred until scrolling stops, making the UI feel significantly more responsive.
+-   **Stability:**
+    -   Fixes critical crashes caused by the `Static` widget attempting to parse markup in raw node content. The preview widget is now correctly configured with `markup=False`.
+    -   Resolves layout issues where the raw text view was missing a scrollbar by applying correct CSS (`overflow-y: scroll`).
+-   **Features & UX:**
+    -   Adds a `--raw` command-line flag to the `ui` command, allowing users to start in a high-performance, plain-text-only mode.
+    -   Introduces an `m` keybinding to toggle Markdown rendering on and off at runtime.
+    -   Ensures content consistency by making both raw and Markdown views display the same complete data bundle (public and private content).
+    -   The footer now dynamically displays the current rendering mode.
 ~~~~~
 
 ### 下一步建议
-This corrected CSS should now work as intended. Please restart the TUI (`qd ui --raw`) and confirm that the scrollbar is present and functional for the raw text view. This should be the final fix for this issue. Once you confirm, we can proceed to commit all the TUI improvements.
+The TUI is now in a much more stable and feature-complete state. Future work could focus on:
+-   **Search/Filter**: Adding a command palette or a filter bar to quickly search for nodes within the TUI.
+-   **Branch Visualization**: Improving the graph rendering to better handle complex branching and merging scenarios.
+-   **Actions**: Adding more actions that can be triggered from within the TUI, such as creating a `save` point or deleting a node.

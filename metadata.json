@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: Correctly enable scrolling in TUI raw text view", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764327483.1749554, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] feat(cli/tui): 增强 TUI 性能并添加渲染控制", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764327614.9929836, "duration_ms": 0}}
