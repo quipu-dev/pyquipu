@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "chore: 更新集成测试以验证所有权传播逻辑", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764301359.2476516, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复集成测试中 git log 命令缺失 --all 参数的问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764301507.1893387, "duration_ms": 0}}
