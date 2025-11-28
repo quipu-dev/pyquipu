@@ -23,28 +23,20 @@ class Hydrator:
 
     def _get_owner_from_ref(self, ref_name: str, local_user_id: str) -> Optional[str]:
         """从 Git ref 路径中解析 owner_id。"""
-        # 匹配 remote 镜像: refs/quipu/remotes/<remote_name>/<user_id>/heads/...
         remote_match = re.match(r"refs/quipu/remotes/[^/]+/([^/]+)/heads/.*", ref_name)
         if remote_match:
             return remote_match.group(1)
-
-        # 匹配 local heads
         if ref_name.startswith("refs/quipu/local/heads/"):
             return local_user_id
-
         return None
 
     def _get_commit_owners(self, local_user_id: str) -> Dict[str, str]:
-        """
-        构建一个从 commit_hash 到 owner_id 的映射。
-        一个 commit 的所有者由指向它的最高优先级引用决定。
-        """
+        """构建一个从 commit_hash 到 owner_id 的映射。"""
         ref_tuples = self.git_db.get_all_ref_heads("refs/quipu/")
         commit_to_owner: Dict[str, str] = {}
         for commit_hash, ref_name in ref_tuples:
             if commit_hash in commit_to_owner:
                 continue
-            
             owner_id = self._get_owner_from_ref(ref_name, local_user_id)
             if owner_id:
                 commit_to_owner[commit_hash] = owner_id
@@ -56,23 +48,22 @@ class Hydrator:
         此实现经过重构，以确保在从零重建时能够处理完整的历史图谱。
         """
         # --- 阶段 1: 发现 ---
-        # 1.1 获取所有 Quipu 历史中的 commit 日志
         all_ref_heads = [t[0] for t in self.git_db.get_all_ref_heads("refs/quipu/")]
         if not all_ref_heads:
             logger.debug("✅ Git 中未发现 Quipu 引用，无需补水。")
             return
 
+        # 1.1 获取所有 Quipu 历史中的完整 commit 日志
         all_git_logs = self.git_db.log_ref(all_ref_heads)
         if not all_git_logs:
             logger.debug("✅ Git 中未发现 Quipu 历史，无需补水。")
             return
-            
         log_map = {entry["hash"]: entry for entry in all_git_logs}
         
-        # 1.2 确定所有者的映射关系
+        # 1.2 确定 HEAD commit 的所有者
         commit_owners = self._get_commit_owners(local_user_id)
 
-        # 1.3 计算真正需要插入的节点 (所有历史节点 - 已在数据库中的节点)
+        # 1.3 计算需要插入的节点 (所有历史节点 - 已在数据库中的节点)
         db_hashes = self.db_manager.get_all_node_hashes()
         missing_hashes = set(log_map.keys()) - db_hashes
         
@@ -86,11 +77,9 @@ class Hydrator:
         nodes_to_insert: List[Tuple] = []
         edges_to_insert: List[Tuple] = []
 
-        # 2.1 批量获取 Trees
         tree_hashes = [log_map[h]["tree"] for h in missing_hashes if h in log_map]
         trees_content = self.git_db.batch_cat_file(tree_hashes)
 
-        # 2.2 解析 Trees, 批量获取 Metas
         tree_to_meta_blob: Dict[str, str] = {}
         meta_blob_hashes: List[str] = []
         for tree_hash, content_bytes in trees_content.items():
@@ -101,11 +90,9 @@ class Hydrator:
                 meta_blob_hashes.append(blob_hash)
         metas_content = self.git_db.batch_cat_file(meta_blob_hashes)
 
-        # 2.3 构建插入数据 (只遍历需要补水的节点)
         for commit_hash in missing_hashes:
             log_entry = log_map[commit_hash]
             tree_hash = log_entry["tree"]
-            # 确定所有者：优先从 head 映射中获取，如果没有则认为是本地用户
             owner_id = commit_owners.get(commit_hash, local_user_id)
 
             meta_blob_hash = tree_to_meta_blob.get(tree_hash)
@@ -131,11 +118,9 @@ class Hydrator:
                         meta_bytes.decode("utf-8"), None
                     )
                 )
-                # 处理边关系：父节点必须存在于我们的完整历史记录中
                 for p_hash in log_entry["parent"].split():
                     if p_hash in log_map:
                         edges_to_insert.append((commit_hash, p_hash))
-
             except (json.JSONDecodeError, KeyError) as e:
                 logger.error(f"解析 {commit_hash[:7]} 的元数据失败: {e}")
 
