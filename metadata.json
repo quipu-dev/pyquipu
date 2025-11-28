@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "commit: test: 为 CLI 命令模块添加全面的单元测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764310753.0958087, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] feat: 实现无状态的 `quipu axon` 子命令", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764312917.29325, "duration_ms": 0}}
