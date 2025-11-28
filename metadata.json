@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "commit: refactor(cli): 将 CLI 命令拆分到模块并重构 TUI 状态", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764309916.278076, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "test: 提升 CLI 命令与 ViewModel 的测试覆盖率", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764310467.3778849, "duration_ms": 0}}
