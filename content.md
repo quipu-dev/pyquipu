@@ -1,45 +1,56 @@
-好的。这个问题的解决过程很有代表性，从一个看似简单的 `.gitignore` 错误，深入到一个核心的性能瓶颈，最终通过一个精巧的方案完美解决。这个过程值得在提交信息中被详细记录。
+好的，这是一个严重的性能问题。我将修改 `capture` 功能，限制生成的文件变更摘要的长度，以避免在面对大量文件变更时（如 Linux 内核编译后）产生数兆字节的节点文件。
 
-这是最终的提交计划。
+## fix: 限制 `capture` 节点中文件变更摘要的长度
 
-我将直接生成 `git commit` 指令，你可以复制并执行。
+### 错误分析
+`quipu ui` 命令在启动时，如果检测到工作区为 "DIRTY" 状态，会触发 `capture_drift` 流程来记录当前状态。此流程会调用 `git diff-tree --stat` 来生成文件变更摘要。在大型代码库（如 Linux 内核）中，一次编译可能会导致数万个文件变更，`--stat` 的输出会变得极其巨大（用户报告为 5.5MB），这导致生成的 `capture` 节点内容过大，严重影响性能和可用性。
+
+### 用户需求
+用户要求 `capture` 功能不应提取完整的文件变更列表，以避免产生巨大的节点文件。
+
+### 评论
+这是一个严重的设计疏忽。`capture` 节点中的摘要应当是“摘要”，而不是“详单”。限制其输出长度是合理的，可以显著提升在大型项目中的用户体验。
+
+### 目标
+修改 `GitDB.get_diff_stat` 方法，为 `git diff-tree --stat` 命令添加输出行数限制。
+
+### 基本原理
+利用 `git diff-tree` 命令的 `--stat` 选项的扩展语法 `--stat=,,<count>`，将输出限制在一个合理的行数内（例如 30 行）。Git 会自动在末尾添加一个“... and N more files”的摘要行，这正是我们所需要的功能。
+
+### 标签
+#intent/fix #flow/ready #priority/critical #comp/engine #concept/state #scope/ux #ai/instruct #task/domain/performance #task/object/capture-node #task/action/optimization #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 提交最终修复
+#### Acts 1: 限制 diff-stat 输出
+
+修改 `git_db.py` 中的 `get_diff_stat` 方法，为 `git diff-tree` 命令添加行数限制。
 
 ~~~~~act
-git_add
+patch_file
 packages/quipu-engine/src/quipu/core/git_db.py
 ~~~~~
-
-~~~~~act
-git_commit
+~~~~~python
+    def get_diff_stat(self, old_tree: str, new_tree: str) -> str:
+        """
+        获取两个 Tree 之间的差异统计 (Human Readable)。
+        """
+        result = self._run(["diff-tree", "--stat", old_tree, new_tree])
+        return result.stdout.strip()
 ~~~~~
+~~~~~python
+    def get_diff_stat(self, old_tree: str, new_tree: str, count=30) -> str:
+        """
+        获取两个 Tree 之间的差异统计 (Human Readable)。
+        默认限制输出为最多 30 行，以避免在有大量文件变更时生成过大的摘要。
+        """
+        # 使用 --stat=<width>,<name-width>,<count> 格式
+        # 我们不关心 width，所以留空，只设置 count
+        result = self._run(["diff-tree", f"--stat=,,{count}", old_tree, new_tree])
+        return result.stdout.strip()
 ~~~~~
-fix(engine): 彻底修复 `get_tree_hash` 的性能与 .gitignore 兼容性问题
 
-本次提交解决了一个在大型代码库（如 Linux 内核）中暴露出的严重性能瓶颈和鲁棒性问题。`quipu save` 和 `quipu ui` 等命令的执行时间从 10-20 秒急剧下降至 1 秒以内。
-
-### 问题根源
-
-`get_tree_hash` 方法为了隔离性，使用了“影子索引” (`.quipu/tmp_index`)。此前的实现每次都从一个空白的索引开始，并执行 `git add -A`。
-
-在大型仓库中，这强制 Git 放弃所有缓存和优化，必须从磁盘完整地读取、压缩和哈希**每一个**文件来从零构建索引。这个过程产生了巨大的 I/O 和 CPU 开销，是导致性能雪崩的根本原因。
-
-此外，这个实现也无法正确处理项目中 `.gitignore` 文件忽略了 `.quipu` 目录本身的情况，导致命令在某些仓库中直接崩溃。
-
-### 解决方案：“复制+更新”策略
-
-新的实现采用了“复制+更新” (copy-on-write) 的策略，这是一种既高效又正确的方案：
-
-1.  **复制 (Warm-up)**: `shadow_index` 上下文管理器不再从空白开始，而是首先将用户项目现有的 `.git/index` 文件复制到临时位置。这是一个毫秒级的操作，为我们提供了一个包含绝大部分正确信息的“温热”索引。
-
-2.  **更新 (Catch-up)**: 接着，我们仍然在这个“温热”的索引上运行 `git add -A`。但此时，它的工作量从“处理数万个文件”急剧下降到“只处理用户未暂存的少数几个变更”，执行速度变得极快。
-
-3.  **清理 (Safety Net)**: 最后，`git rm --cached -r .quipu` 作为一个绝对可靠的安全措施被保留，确保 Quipu 自身的数据绝不会被计入状态快照。
-
-这个方案不仅将性能提升了超过一个数量级，也从根本上解决了与 `.gitignore` 的冲突问题，显著增强了 Quipu 在真实、复杂项目环境中的鲁棒性。
-~~~~~
+### 下一步建议
+执行此计划后，可以再次尝试在 Linux 内核仓库中运行 `qs ui > o.md`，确认生成的文件大小已恢复正常。
