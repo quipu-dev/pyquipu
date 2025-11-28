@@ -193,11 +193,14 @@ class GitDB:
         )
         return result.returncode == 0
 
-    def get_diff_stat(self, old_tree: str, new_tree: str) -> str:
+    def get_diff_stat(self, old_tree: str, new_tree: str, count=30) -> str:
         """
         获取两个 Tree 之间的差异统计 (Human Readable)。
+        默认限制输出为最多 30 行，以避免在有大量文件变更时生成过大的摘要。
         """
-        result = self._run(["diff-tree", "--stat", old_tree, new_tree])
+        # 使用 --stat=<width>,<name-width>,<count> 格式
+        # 我们不关心 width，所以留空，只设置 count
+        result = self._run(["diff-tree", f"--stat=,,{count}", old_tree, new_tree])
         return result.stdout.strip()
 
     def get_diff_name_status(self, old_tree: str, new_tree: str) -> List[Tuple[str, str]]:
