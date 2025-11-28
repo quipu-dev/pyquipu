@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] feat(cli):为 log 和 find 命令添加 --json 输出", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764320028.7353656, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] feat: 实现 `quipu show` 命令以查看节点元数据", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764320912.9439802, "duration_ms": 0}}
