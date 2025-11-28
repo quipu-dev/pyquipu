@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "commit: fix: 确保双写时实时写入正确的 owner_id", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764302580.9928913, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "fix: 修复在严格 .gitignore 环境中 git add 失败的问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764304310.1449034, "duration_ms": 0}}

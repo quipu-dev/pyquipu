@@ -1,72 +1,116 @@
-好的，测试已通过。现在我将生成最终的计划文件，并创建 Git 提交来永久记录这次修复。
+你的反对是完全正确的。我之前的方案过于简单粗暴，使用全局的 `--force` 会带来灾难性的副作用，即忽略所有 `.gitignore` 规则，把 `node_modules`、构建产物等大量不应被追踪的文件加入到临时索引中。这违背了“状态是真相”的核心原则。
 
-这个计划总结了我们刚才的修复工作：重构 `Engine` 以统一并强化用户 ID 的获取逻辑，确保在创建节点时能实时、准确地将 `owner_id` 写入数据库。
+让我们重新分析并设计一个更精确、安全的修复方案。
 
-### commit: fix: 确保双写时实时写入正确的 owner_id
+## fix: 修复在严格 .gitignore 环境中 git add 失败的问题
 
-#### 错误分析
-1.  **写入遗漏**: `SQLiteHistoryWriter` 的 `INSERT` 语句最初未包含 `owner_id` 字段，导致新创建节点的该字段在数据库中为空。
-2.  **数据源不可靠**: 初步修复后，发现 `Engine` 仅从 `.quipu/config.yml` 中获取 `user_id`。在测试环境或用户未运行 `quipu sync` 的场景下，该配置缺失，导致 `owner_id` 被错误地设置为回退值 `unknown-local-user`。
-3.  **逻辑不一致**: 数据补水 (`align`) 和节点创建 (`capture`, `plan`) 的 `user_id` 获取逻辑不统一。
+### 错误分析
+你指出的问题非常关键。我重新审视了 `git add` 的行为：
 
-#### 用户需求
--   在任何本地创建新节点的操作中（如 `save` 或 `run`），其 `owner_id` 必须能被立即、准确地识别并持久化到 SQLite 数据库中。
--   系统的身份识别应具备鲁棒性，优先使用 Quipu 配置，但在其不可用时能回退到 Git 的全局配置。
+1.  **扫描与错误**: `git add .` 命令会首先扫描当前目录下的所有文件和目录。当它遇到一个被 `.gitignore` 规则匹配的路径时（如此处的 `.quipu`），它会立即报告这个情况并以错误码退出。
+2.  **`pathspec` 的时机**: 我之前使用的 `:(exclude).quipu` 路径规范 (pathspec) 是在文件列表生成*之后*才应用的过滤器。因此，`git add .` 在扫描阶段就已经失败了，根本没有机会轮到 `pathspec` 来排除 `.quipu`。
+3.  **结论**: 问题在于我们向 `git add` 传递了一个它无法处理的、被明确忽略的顶级路径。因此，解决方案必须是在调用 `git add` 之前就避免将 `.quipu` 这个路径传递给它。
 
-#### 评论
-这是一个关键的数据完整性和鲁棒性修复。通过将 `user_id` 的获取逻辑抽象成一个带有回退机制的统一函数，我们确保了 `Engine` 在各种配置状态下都能正确识别用户身份，从而保证了数据写入的即时准确性，避免了对后续数据补水的依赖。
+### 用户需求
+在不使用全局 `--force` 标志的前提下，让 `quipu save` 能够在 `.gitignore` 文件忽略了 `.quipu` 目录的仓库中正确运行，同时必须严格遵守项目中其他的 `.gitignore` 规则。
 
-#### 目标
-1.  在 `Engine` 类中创建一个统一的私有方法 `_get_current_user_id`。
-2.  实现该方法的身份识别优先级：`.quipu/config.yml` > `git config user.email` > `"unknown-local-user"`。
-3.  重构 `align`, `capture_drift`, 和 `create_plan_node` 方法，使其全部调用此统一方法来获取 `user_id`。
-4.  确保 `SQLiteHistoryWriter` 能够接收并正确存入由 `Engine` 传递的 `owner_id`。
+### 评论
+这是一个非常好的反馈，它暴露了工具在复杂真实环境中的一个重要盲点。正确的修复方案将显著提升 Quipu 的鲁棒性。
 
-#### 基本原理
-将环境依赖（如配置读取、系统命令调用）封装在单一职责的辅助方法中，可以消除代码重复并提高系统的可维护性。`Engine` 作为状态管理的协调者，是确定当前操作上下文（包括用户身份）的正确位置。此修复遵循了这一原则，将身份识别的责任集中在 `Engine` 内部，使其对上层调用者透明。
+### 目标
+修改 `GitDB.get_tree_hash` 的实现，不再使用笼统的 `.` 作为路径参数，而是精确地构建一个不包含 `.quipu` 目录的顶层文件和目录列表，然后将这个列表传递给 `git add -A`。
 
-#### 标签
-#intent/fix #intent/refine #flow/done #priority/critical #comp/engine #concept/history #scope/core #ai/instruct #task/domain/storage #task/object/owner-id #task/action/persistence-fix #task/state/begin #task/state/end
+### 基本原理
+我们将利用 Python 的 `os.listdir()` 来获取工作区根目录下的所有条目。然后，我们从这个列表中过滤掉 `.quipu` 目录。最后，我们将这个过滤后的列表作为参数传递给 `git add -A`。
+
+这样做的好处是：
+1.  **精确规避**: `git add` 命令的参数将是 `["add", "-A", "file1", "dir2", ".another_dotfile", ...]`，其中不包含 `".quipu"`。这从根本上避免了触发 Git 的忽略错误。
+2.  **遵守规则**: `git add -A` 在处理我们传入的每个路径（如 `dir2`）时，会递归地扫描其内部，并在这个过程中**完全遵守**所有的 `.gitignore` 规则。
+3.  **无需 `-f`**: 因为我们没有要求 Git 添加一个它认为应该被忽略的路径，所以不再需要 `--force` 标志。
+4.  **简化**: 在这个新实现下，`:(exclude).quipu` 路径规范也变得多余了，因为我们从一开始就没有把 `.quipu` 传进去。这恰好也回答了你的第二个问题。
+
+这是一个更安全、更精确的解决方案。
+
+### 标签
+#intent/fix #flow/ready #priority/high #comp/engine #concept/state #scope/core #ai/instruct #task/domain/storage #task/object/git-backend #task/action/bug-fix #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 提交代码变更
+#### Acts 1: 重写 `get_tree_hash` 以精确控制添加路径
 
-将对 `state_machine.py` 和 `sqlite_storage.py` 的修复提交到版本控制。
-
-~~~~~act
-git_add
-packages/quipu-engine/src/quipu/core/state_machine.py
-packages/quipu-engine/src/quipu/core/sqlite_storage.py
-~~~~~
+我们将修改 `quipu-engine` 包中的 `git_db.py` 文件，替换原有的 `git add` 逻辑。
 
 ~~~~~act
-git_commit
+patch_file
+packages/quipu-engine/src/quipu/core/git_db.py
 ~~~~~
+~~~~~python
+import os
+import subprocess
+import logging
+import shutil
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple, Union
+from contextlib import contextmanager
+from quipu.core.exceptions import ExecutionError
 ~~~~~
-fix: 确保双写时实时写入正确的 owner_id
-
-此修复解决了在创建新节点时 `owner_id` 未被正确写入 SQLite 的问题。
-
-关键变更：
-1.  **统一身份识别**: 在 `Engine` 中添加了 `_get_current_user_id` 方法，
-    该方法按以下优先级获取用户ID：
-    - `.quipu/config.yml` 中的 `sync.user_id`
-    - `git config user.email`
-    - "unknown-local-user" 作为最终回退
-
-2.  **重构调用路径**: `align` (数据补水)、`capture_drift` (保存) 和
-    `create_plan_node` (运行计划) 均已更新，以调用此统一方法。
-
-3.  **数据库写入**: `SQLiteHistoryWriter` 现在可以接收 `owner_id`
-    并将其正确地 `INSERT` 到 `nodes` 表中。
-
-这确保了即使在运行 `quipu sync` 之前，本地创建的节点也能立即
-拥有正确的 `owner_id`，解决了测试中出现的 `unknown-local-user`
-问题，并提高了系统的整体数据一致性和鲁棒性。
+~~~~~python
+import os
+import subprocess
+import logging
+import shutil
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple, Union
+from contextlib import contextmanager
+from quipu.core.exceptions import ExecutionError
 ~~~~~
 
-### 下一步建议
-`sync` 功能的核心数据流已经稳定。我们可以继续实现 `quipu sync` 的 CLI 命令，或者编写集成测试来验证整个同步工作流。
+~~~~~act
+patch_file
+packages/quipu-engine/src/quipu/core/git_db.py
+~~~~~
+~~~~~python
+    def get_tree_hash(self) -> str:
+        """
+        计算当前工作区的 Tree Hash (Snapshot)。
+        实现 'State is Truth' 的核心。
+        """
+        with self.shadow_index() as env:
+            # 1. 将当前工作区全量加载到影子索引
+            # 使用 ':(exclude).quipu' 确保 Quipu 自身数据不影响状态计算
+            # -A: 自动处理添加、修改、删除
+            # --ignore-errors: 即使某些文件无法读取也继续（尽力而为）
+            self._run(["add", "-A", "--ignore-errors", ".", ":(exclude).quipu"], env=env)
+
+            # 2. 将索引写入对象库，返回 Tree Hash
+            result = self._run(["write-tree"], env=env)
+            return result.stdout.strip()
+~~~~~
+~~~~~python
+    def get_tree_hash(self) -> str:
+        """
+        计算当前工作区的 Tree Hash (Snapshot)。
+        实现 'State is Truth' 的核心。
+        """
+        with self.shadow_index() as env:
+            # 1. 将当前工作区全量加载到影子索引
+            # 为了避免 `git add .` 因 `.quipu` 目录被 .gitignore 忽略而失败，
+            # 我们手动构建要添加的顶层路径列表，从中排除 `.quipu`。
+            # `git add -A` 会在处理这些路径时，继续遵守所有深层的 .gitignore 规则。
+            try:
+                paths_to_add = [p for p in os.listdir(self.root) if p != ".quipu"]
+            except OSError as e:
+                logger.error(f"无法读取工作区目录 '{self.root}': {e}")
+                raise RuntimeError(f"无法扫描工作区: {e}") from e
+
+            if paths_to_add:
+                # -A: 自动处理添加、修改、删除
+                # --ignore-errors: 即使某些文件无法读取也继续（尽力而为）
+                self._run(["add", "-A", "--ignore-errors"] + paths_to_add, env=env)
+
+            # 2. 将索引写入对象库，返回 Tree Hash
+            result = self._run(["write-tree"], env=env)
+            return result.stdout.strip()
+~~~~~
