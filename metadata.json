@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix(interfaces): 修复 `storage.py` 中缺失的 `Dict` 类型导入", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764321383.949729, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "错误分析", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764321723.6191072, "duration_ms": 0}}
