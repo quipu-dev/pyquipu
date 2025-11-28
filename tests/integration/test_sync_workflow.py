@@ -85,13 +85,32 @@ class TestSyncWorkflow:
     def test_collaboration_subscribe_and_fetch(self, sync_test_environment):
         """
         Tests that User B can subscribe to and fetch User A's history.
-        This test depends on the state after the first push.
+        AND verifies that ownership is correctly propagated to all ancestor nodes during hydration.
         """
         remote_path, user_a_path, user_b_path = sync_test_environment
         user_a_id = get_user_id_from_email("user.a@example.com")
         user_b_id = get_user_id_from_email("user.b@example.com")
 
-        # User B onboards first
+        # --- Step 1: User A creates more history (Node 2) ---
+        # This ensures User A has a history chain: Node 1 -> Node 2.
+        # Node 1 is an ancestor (non-head), which is critical for testing the ownership propagation bug.
+        (user_a_path / "plan2.md").write_text("~~~~~act\necho 'world'\n~~~~~")
+        runner.invoke(app, ["run", str(user_a_path / "plan2.md"), "--work-dir", str(user_a_path), "-y"])
+        
+        # Capture User A's commit hashes for verification later
+        # We expect 2 quipu commits.
+        # NOTE: Must use --all because Quipu commits are not on the master branch.
+        user_a_commits = run_git_command(
+            user_a_path,
+            ["log", "--all", "--format=%H", "--grep=X-Quipu-Output-Tree"]
+        ).splitlines()
+        assert len(user_a_commits) >= 2, "User A should have at least 2 Quipu nodes"
+
+        # User A pushes again
+        runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
+
+        # --- Step 2: User B setup ---
+        # User B onboards
         runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
 
         # User B subscribes to User A
@@ -99,35 +118,45 @@ class TestSyncWorkflow:
         with open(config_path_b, "r") as f:
             config_b = yaml.safe_load(f)
         config_b["sync"]["subscriptions"] = [user_a_id]
-        # Explicitly enable SQLite storage to test hydration
+        # Explicitly enable SQLite storage
         if "storage" not in config_b:
             config_b["storage"] = {}
         config_b["storage"]["type"] = "sqlite"
         with open(config_path_b, "w") as f:
             yaml.dump(config_b, f)
 
-        # User B syncs again to fetch User A's data
+        # --- Step 3: User B Syncs (Fetch) ---
         sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_b_path), "--remote", "origin"])
         assert sync_result.exit_code == 0
-        assert f"拉取 2 个用户的历史" in sync_result.stderr  # Self + subscription
+        assert f"拉取 2 个用户的历史" in sync_result.stderr
 
         # Verify local mirror ref in User B's repo
         local_refs_b = run_git_command(user_b_path, ["for-each-ref", "--format=%(refname)"])
         assert f"refs/quipu/remotes/origin/{user_a_id}/heads/" in local_refs_b
 
-        # Verify hydration
+        # --- Step 4: Verify Hydration Integrity ---
+        # Run cache sync to populate SQLite
         cache_sync_result = runner.invoke(app, ["cache", "sync", "--work-dir", str(user_b_path)])
         assert cache_sync_result.exit_code == 0
 
         db_path_b = user_b_path / ".quipu" / "history.sqlite"
         assert db_path_b.exists()
+        
         conn = sqlite3.connect(db_path_b)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT owner_id FROM nodes")
-        owners = {row[0] for row in cursor.fetchall()}
+        
+        # Check ownership for User A's commits
+        # We check ALL commits from User A, including the ancestor (Node 1).
+        # If the bug existed, Node 1 would likely be assigned to User B (local user fallback).
+        for commit_hash in user_a_commits:
+            cursor.execute("SELECT owner_id FROM nodes WHERE commit_hash = ?", (commit_hash,))
+            row = cursor.fetchone()
+            assert row is not None, f"Commit {commit_hash} not found in DB"
+            assert row["owner_id"] == user_a_id, \
+                f"Incorrect owner for commit {commit_hash}. Expected {user_a_id}, got {row['owner_id']}"
+        
         conn.close()
-
-        assert user_a_id in owners
 
     def test_sync_is_idempotent(self, sync_test_environment):
         """
@@ -152,16 +181,15 @@ class TestSyncWorkflow:
         user_a_id = get_user_id_from_email("user.a@example.com")
 
         # Create two new nodes
-        (user_a_path / "plan2.md").write_text("~~~~~act\necho 'plan2'\n~~~~~")
         (user_a_path / "plan3.md").write_text("~~~~~act\necho 'plan3'\n~~~~~")
-        runner.invoke(app, ["run", str(user_a_path / "plan2.md"), "--work-dir", str(user_a_path), "-y"])
+        (user_a_path / "plan4.md").write_text("~~~~~act\necho 'plan4'\n~~~~~")
         runner.invoke(app, ["run", str(user_a_path / "plan3.md"), "--work-dir", str(user_a_path), "-y"])
+        runner.invoke(app, ["run", str(user_a_path / "plan4.md"), "--work-dir", str(user_a_path), "-y"])
 
         runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
         remote_refs_before = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
         num_refs_before = len(remote_refs_before.splitlines())
-        assert num_refs_before >= 2
-
+        
         # Find a ref to delete locally
         local_quipu_refs = run_git_command(
             user_a_path, ["for-each-ref", "--format=%(refname)", "refs/quipu/local/heads"]

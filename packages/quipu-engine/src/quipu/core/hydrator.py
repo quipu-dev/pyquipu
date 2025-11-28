@@ -31,16 +31,53 @@ class Hydrator:
         return None
 
     def _get_commit_owners(self, local_user_id: str) -> Dict[str, str]:
-        """构建一个从 commit_hash 到 owner_id 的映射。"""
-        ref_tuples = self.git_db.get_all_ref_heads("refs/quipu/")
-        commit_to_owner: Dict[str, str] = {}
-        for commit_hash, ref_name in ref_tuples:
-            if commit_hash in commit_to_owner:
-                continue
+        """
+        构建一个从 commit_hash 到 owner_id 的完整映射。
+        通过从每个分支末端向上遍历图来传播所有权。
+        """
+        # 1. 获取所有分支末端 (heads) 及其直接所有者
+        head_ref_tuples = self.git_db.get_all_ref_heads("refs/quipu/")
+        head_owners: Dict[str, str] = {}
+        for commit_hash, ref_name in head_ref_tuples:
+            # 优先级：远程所有者 > 本地所有者。避免本地 ref 覆盖正确的远程所有者。
             owner_id = self._get_owner_from_ref(ref_name, local_user_id)
             if owner_id:
-                commit_to_owner[commit_hash] = owner_id
-        return commit_to_owner
+                if ref_name.startswith("refs/quipu/remotes"):
+                    head_owners[commit_hash] = owner_id
+                elif commit_hash not in head_owners:
+                    head_owners[commit_hash] = owner_id
+
+        if not head_owners:
+            return {}
+
+        # 2. 获取完整的历史图谱日志
+        all_git_logs = self.git_db.log_ref(list(head_owners.keys()))
+        log_map = {entry["hash"]: entry for entry in all_git_logs}
+
+        # 3. 从 Heads 开始，通过图遍历传播所有权
+        final_commit_owners: Dict[str, str] = {}
+        queue = list(head_owners.keys())
+        
+        # 将 head 节点预先填入，作为遍历的起点
+        for commit_hash in queue:
+            final_commit_owners[commit_hash] = head_owners[commit_hash]
+
+        visited = set(head_owners.keys())
+
+        while queue:
+            child_hash = queue.pop(0)
+            owner = final_commit_owners.get(child_hash)
+            if not owner or child_hash not in log_map:
+                continue
+
+            parent_hashes = log_map[child_hash]["parent"].split()
+            for parent_hash in parent_hashes:
+                if parent_hash and parent_hash not in visited:
+                    final_commit_owners[parent_hash] = owner
+                    visited.add(parent_hash)
+                    queue.append(parent_hash)
+
+        return final_commit_owners
 
     def sync(self, local_user_id: str):
         """
@@ -53,24 +90,23 @@ class Hydrator:
             logger.debug("✅ Git 中未发现 Quipu 引用，无需补水。")
             return
 
-        # 1.1 获取所有 Quipu 历史中的完整 commit 日志
         all_git_logs = self.git_db.log_ref(all_ref_heads)
         if not all_git_logs:
             logger.debug("✅ Git 中未发现 Quipu 历史，无需补水。")
             return
         log_map = {entry["hash"]: entry for entry in all_git_logs}
-        
-        # 1.2 确定 HEAD commit 的所有者
+
+        # 1.2 [FIXED] 构建一个覆盖所有历史节点的完整所有权地图
         commit_owners = self._get_commit_owners(local_user_id)
 
         # 1.3 计算需要插入的节点 (所有历史节点 - 已在数据库中的节点)
         db_hashes = self.db_manager.get_all_node_hashes()
         missing_hashes = set(log_map.keys()) - db_hashes
-        
+
         if not missing_hashes:
             logger.debug("✅ 数据库与 Git 历史一致，无需补水。")
             return
-            
+
         logger.info(f"发现 {len(missing_hashes)} 个需要补水的节点。")
 
         # --- 阶段 2: 批量准备数据 ---
@@ -93,7 +129,11 @@ class Hydrator:
         for commit_hash in missing_hashes:
             log_entry = log_map[commit_hash]
             tree_hash = log_entry["tree"]
-            owner_id = commit_owners.get(commit_hash, local_user_id)
+            # [FIXED] 从完整的映射中获取 owner_id，不再使用错误的 fallback
+            owner_id = commit_owners.get(commit_hash)
+            if not owner_id:
+                logger.warning(f"跳过 {commit_hash[:7]}: 无法确定所有者")
+                continue
 
             meta_blob_hash = tree_to_meta_blob.get(tree_hash)
             if not meta_blob_hash or meta_blob_hash not in metas_content:
