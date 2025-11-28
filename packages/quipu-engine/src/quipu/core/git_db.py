@@ -68,6 +68,16 @@ class GitDB:
         index_path = self.quipu_dir / "tmp_index"
         self.quipu_dir.mkdir(exist_ok=True)
 
+        # --- 性能优化：通过复制用户的索引来“预热”影子索引 ---
+        # 这避免了从零开始扫描整个仓库的巨大开销。
+        # 后续的 `git add -A` 只需要处理未暂存的变更。
+        user_index_path = self.root / ".git" / "index"
+        if user_index_path.exists():
+            try:
+                shutil.copy2(user_index_path, index_path)
+            except OSError as e:
+                logger.warning(f"无法复制用户索引进行预热: {e}")
+
         # 定义隔离的环境变量
         env = {"GIT_INDEX_FILE": str(index_path)}
 
@@ -87,13 +97,15 @@ class GitDB:
         实现 'State is Truth' 的核心。
         """
         with self.shadow_index() as env:
-            # 1. 将当前工作区全量加载到影子索引
-            # 使用 ':(exclude).quipu' 确保 Quipu 自身数据不影响状态计算
-            # -A: 自动处理添加、修改、删除
-            # --ignore-errors: 即使某些文件无法读取也继续（尽力而为）
-            self._run(["add", "-A", "--ignore-errors", ".", ":(exclude).quipu"], env=env)
+            # 阶段 1: 更新索引以匹配工作区。
+            # 由于 shadow_index 上下文已经通过复制预热了索引，
+            # 此处的 `git add -A` 只会处理少量未暂存的变更，速度非常快。
+            self._run(["add", "-A", "--ignore-errors"], env=env)
 
-            # 2. 将索引写入对象库，返回 Tree Hash
+            # 阶段 2: 显式移除 .quipu 目录作为安全网。
+            self._run(["rm", "--cached", "-r", ".quipu"], env=env, check=False)
+
+            # 阶段 3: 将最终的纯净索引写入对象库，返回 Tree Hash。
             result = self._run(["write-tree"], env=env)
             return result.stdout.strip()
 
