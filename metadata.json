@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "fix: 修复在严格 .gitignore 环境中 git add 失败的问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764304485.137724, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "综合分析：复制索引的利与弊", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764305014.6962397, "duration_ms": 0}}
