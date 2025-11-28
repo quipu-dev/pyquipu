@@ -1,57 +1,40 @@
-这是因为在当前的 `create_engine` 实现中，默认的 `storage.type` 是 `git_object`，在这种模式下 `db_manager` 不会被初始化，因此 `history.sqlite` 不会被创建，`Hydrator` 也不会运行。
+好的。现在将本次会话中的所有成功修复整合为一次 Git 提交。
 
-为了测试 SQLite 补水和聚合功能，我们需要在测试用例中显式将 User B 的存储类型配置为 `sqlite`。
+### 提交信息
 
-## fix: 修复集成测试中 SQLite 数据库未创建的问题
+**标题**: `fix(tests): 修复 Sync 集成测试的路径引用和配置问题`
 
-### 错误分析
-测试用例 `test_collaboration_subscribe_and_fetch` 断言 `history.sqlite` 文件存在，但默认配置下 Quipu 运行在纯 Git 模式，不创建 SQLite 缓存。只有当配置 `storage.type = sqlite` 时，`create_engine` 才会初始化 `DatabaseManager` 并触发补水逻辑。
+**正文**:
+本次提交修复了 `test_sync_workflow.py` 中存在的两个核心问题，确保了 Sync 功能集成测试的稳定性和正确性：
 
-### 用户需求
-- 修复 `test_sync_workflow.py`，使其能正确验证数据补水逻辑。
+1.  **修复文件路径引用**: 在 `CliRunner` 调用 `quipu run` 时，将相对文件名（如 `"plan.md"`）修改为绝对路径。此问题导致测试无法找到计划文件，引发了级联故障。
+2.  **显式启用 SQLite 模式**: 在 `test_collaboration_subscribe_and_fetch` 测试中，为 User B 的配置文件增加了 `storage: {type: sqlite}`。这确保了在测试数据补水（Hydration）功能时，SQLite 数据库能够被正确创建和验证。
 
-### 目标
-- 在测试用例中修改 User B 的 `config.yml`，启用 SQLite 存储模式。
-
-### 标签
-#intent/fix #flow/ready #priority/high #comp/tests #scope/core #ai/instruct #task/domain/testing #task/object/integration-test #task/action/fix-config #task/state/continue
+通过这些修复，Sync 功能的 Onboarding、Push、Fetch、Pruning 和多用户数据聚合流程现在都得到了有效的自动化测试覆盖。
 
 ---
 
 ### Script
 
-#### Acts 1: 在测试中启用 SQLite 配置
+#### Acts 1: 将所有变更添加到暂存区
 
 ~~~~~act
-patch_file
+git_add
 tests/integration/test_sync_workflow.py
 ~~~~~
-~~~~~python
-        # User B subscribes to User A
-        config_path_b = user_b_path / ".quipu" / "config.yml"
-        with open(config_path_b, "r") as f:
-            config_b = yaml.safe_load(f)
-        config_b["sync"]["subscriptions"] = [user_a_id]
-        with open(config_path_b, "w") as f:
-            yaml.dump(config_b, f)
 
-        # User B syncs again to fetch User A's data
+#### Acts 2: 执行 Git 提交
+
+~~~~~act
+git_commit
 ~~~~~
-~~~~~python
-        # User B subscribes to User A
-        config_path_b = user_b_path / ".quipu" / "config.yml"
-        with open(config_path_b, "r") as f:
-            config_b = yaml.safe_load(f)
-        config_b["sync"]["subscriptions"] = [user_a_id]
-        # Explicitly enable SQLite storage to test hydration
-        if "storage" not in config_b:
-            config_b["storage"] = {}
-        config_b["storage"]["type"] = "sqlite"
-        with open(config_path_b, "w") as f:
-            yaml.dump(config_b, f)
-
-        # User B syncs again to fetch User A's data
 ~~~~~
+fix(tests): 修复 Sync 集成测试的路径引用和配置问题
 
-### 下一步建议
-重新运行测试。
+本次提交修复了 `test_sync_workflow.py` 中存在的两个核心问题，确保了 Sync 功能集成测试的稳定性和正确性：
+
+1.  **修复文件路径引用**: 在 `CliRunner` 调用 `quipu run` 时，将相对文件名（如 `"plan.md"`）修改为绝对路径。此问题导致测试无法找到计划文件，引发了级联故障。
+2.  **显式启用 SQLite 模式**: 在 `test_collaboration_subscribe_and_fetch` 测试中，为 User B 的配置文件增加了 `storage: {type: sqlite}`。这确保了在测试数据补水（Hydration）功能时，SQLite 数据库能够被正确创建和验证。
+
+通过这些修复，Sync 功能的 Onboarding、Push、Fetch、Pruning 和多用户数据聚合流程现在都得到了有效的自动化测试覆盖。
+~~~~~
