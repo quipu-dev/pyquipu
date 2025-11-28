@@ -1,107 +1,62 @@
-我的错误。
+好的，所有测试都已通过。我们已经成功修复了因底层接口重构而导致的整个测试套件的失败。现在是时候将这些修复工作作为一个原子单元提交到版本控制中了。
 
-我分析了测试报告和你提供的文件内容。问题非常清楚：**我在上一个计划中把补丁打错了文件**。
+我将生成一个 `[COMMIT]` 计划来完成这项工作。
 
-我试图将 `get_node_blobs` 方法添加到 `InMemoryHistoryManager` 类中，但这个类实际上定义在 `tests/helpers.py` 文件里，而不是 `tests/engine/test_engine_memory.py`。我的 `patch_file` 指令错误地将这段代码插入到了 `test_engine_memory.py` 的模块级别，这不仅没有解决 `TypeError`，还造成了语法上的混乱。
-
-现在，我将生成一个正确的计划来修正我之前的错误。
-
-## [WIP] fix(tests): 修正错误的补丁位置以修复 `TypeError`
-
-### 错误分析
-上一个计划错误地将 `get_node_blobs` 方法的实现添加到了 `tests/engine/test_engine_memory.py` 文件中，而不是它所属的 `InMemoryHistoryManager` 类的定义文件 `tests/helpers.py`。这导致 `InMemoryHistoryManager` 仍然没有实现所需的抽象方法，因此在实例化时继续抛出 `TypeError`。
+## [COMMIT] fix(tests): 修复测试套件以适配新的存储接口和二进制数据流
 
 ### 用户需求
-1.  清理 `tests/engine/test_engine_memory.py` 中被错误添加的无效代码。
-2.  在正确的文件 (`tests/helpers.py`) 中为 `InMemoryHistoryManager` 类实现 `get_node_blobs` 方法。
+将最近为修复测试套件所做的所有更改（包括接口实现、类型导入和逻辑断言更新）提交到 Git 仓库，并撰写一条清晰的提交信息，说明修复的原因和内容。
 
 ### 评论
-这是一个典型的“修复补丁”操作，它纠正了上一步的执行错误。通过将代码移动到正确的位置，我们将彻底解决 `TypeError`，并让测试套件恢复正常。
+这次对测试套件的修复是底层存储接口重构工作的最后一步，也是至关重要的一步。一个健康的、全绿的测试套件是我们未来进行更复杂功能开发和重构的信心保证。
 
 ### 目标
-1.  从 `tests/engine/test_engine_memory.py` 中删除无效的 `get_node_blobs` 函数定义。
-2.  在 `tests/helpers.py` 文件中，为 `InMemoryHistoryManager` 类正确地添加 `get_node_blobs` 方法，并导入所需的 `Dict` 类型。
+1.  将所有已修改的测试文件和引擎代码文件添加到 Git 暂存区。
+2.  创建一个符合 Conventional Commits 规范的 Git 提交，清晰地记录本次修复工作。
 
 ### 基本原理
-将方法的实现放置在其所属类的定义内部是 Python 的基本语法要求。通过纠正文件和代码位置，我们将使 `InMemoryHistoryManager` 类符合 `HistoryReader` 接口的契约，从而消除 `TypeError`。
+通过一个原子提交来封装所有与本次修复相关的更改，可以确保版本历史的清晰和可追溯性。提交信息将详细解释失败的根本原因（接口变更和数据格式变更）以及相应的修复策略，为未来的代码审查和维护提供上下文。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/tests #scope/core #ai/instruct #task/domain/testing #task/object/test-suite #task/action/bug-fix #task/state/continue
+#intent/fix #flow/ready #priority/high #comp/tests #comp/engine #scope/core #ai/instruct #task/domain/testing #task/object/test-suite #task/action/bug-fix #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 清理 `test_engine_memory.py` 中的错误代码
+#### Acts 1: 将所有相关的修复提交到版本控制
 
-首先，我们移除被错误放置的函数。
+我们将把所有修改过的文件添加到暂存区，并创建一个内容详尽的提交。
 
 ~~~~~act
-patch_file
+git_add
 tests/engine/test_engine_memory.py
-~~~~~
-~~~~~python
-    engine = Engine(root_dir=tmp_path, db=db, reader=history_manager, writer=history_manager)
-    return engine
-
-
-    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
-        """获取一个节点内所有文件的原始二进制内容，以字典形式返回 {filename: content_bytes}。"""
-        # For memory backend, this can be implemented if needed, otherwise return empty.
-        return {}
-
-
-class TestEngineWithMemoryBackend:
-~~~~~
-~~~~~python
-    engine = Engine(root_dir=tmp_path, db=db, reader=history_manager, writer=history_manager)
-    return engine
-
-
-class TestEngineWithMemoryBackend:
-~~~~~
-
-#### Acts 2: 在 `tests/helpers.py` 中正确实现接口
-
-现在，我们在 `InMemoryHistoryManager` 的定义处添加所需的方法和类型导入。
-
-~~~~~act
-patch_file
+tests/cli/test_view_model.py
+packages/quipu-engine/src/quipu/core/git_object_storage.py
+tests/engine/test_git_db.py
 tests/helpers.py
-~~~~~
-~~~~~python
-from quipu.core.models import QuipuNode
-from quipu.core.storage import HistoryReader, HistoryWriter
-~~~~~
-~~~~~python
-from typing import Dict
-from quipu.core.models import QuipuNode
-from quipu.core.storage import HistoryReader, HistoryWriter
 ~~~~~
 
 ~~~~~act
-patch_file
-tests/helpers.py
+git_commit
 ~~~~~
-~~~~~python
-    def __init__(self, db: InMemoryDB):
-        self.db = db  # The db holds the single source of truth for nodes
+~~~~~text
+fix(tests): align test suite with new storage interface and binary data handling
 
-    def load_all_nodes(self) -> List[QuipuNode]:
-        return list(self.db.nodes.values())
-~~~~~
-~~~~~python
-    def __init__(self, db: InMemoryDB):
-        self.db = db  # The db holds the single source of truth for nodes
+This commit resolves a series of test failures that occurred after refactoring the HistoryReader interface and the underlying git_db data handling.
 
-    def load_all_nodes(self) -> List[QuipuNode]:
-        return list(self.db.nodes.values())
+The failures were caused by two main issues:
 
-    def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
-        # Mock implementation, not needed for most tests.
-        return {}
+1.  **Interface Mismatch (TypeError):**
+    The `HistoryReader` abstract class introduced a new `get_node_blobs` method. Mock classes used in tests (`InMemoryHistoryManager`, `MockHistoryReader`) had not implemented this method, causing `TypeError` during test collection and setup. This has been fixed by adding a stub implementation to these classes in `tests/helpers.py` and `tests/cli/test_view_model.py`.
 
+2.  **Behavioral Changes (AssertionError/KeyError):**
+    The `git_db.cat_file` method was updated to return raw `bytes` instead of decoded text. Tests and reader logic that relied on the old text-based output failed.
+    - Fixed a bug in `GitObjectHistoryReader` where a call to `cat_file` was missing the `object_type` argument.
+    - Updated assertions in `test_git_db.py` to correctly handle and verify binary data from tree objects.
+
+These changes restore the test suite to a fully passing state, validating the recent core refactoring work.
 ~~~~~
 
 ### 下一步建议
-我们已经将修复应用到了正确的位置。现在请重新运行测试。预期所有测试都将通过，这将标志着我们对底层接口的重构和相关的测试修复工作已全部完成。
+测试套件已经恢复健康。现在我们可以继续开发新功能了。根据我们的任务列表，下一步是实现 `quipu show` 命令，它将允许用户查看单个历史节点的详细信息。如果你同意，我将开始制定实现该功能的计划。
