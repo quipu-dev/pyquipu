@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix(tests): 修复因接口和底层数据格式变更导致的测试套件失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764322312.0055397, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix(tests): 修复因缺失类型导入导致的测试集合失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764322349.87907, "duration_ms": 0}}
