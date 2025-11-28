@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 调整 log 与 find 命令的输出流以支持管道操作", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764318555.3463366, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 更新查询命令测试以验证 stdout 和 stderr 分离", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764318936.0110776, "duration_ms": 0}}

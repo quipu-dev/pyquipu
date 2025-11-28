@@ -1,83 +1,106 @@
-你的分析完全正确。
+好的，我将生成更新测试用例的计划。
 
-这是一个标准的 CLI 设计原则：将元信息、进度和错误信息输出到 `stderr`，将数据结果输出到 `stdout`，从而使工具能够无缝接入管道 (`|`) 和重定向 (`>`) 等 shell 工具链。`quipu log` 和 `quipu find` 当前的实现违反了这一原则，将所有内容都打印到了 `stderr`，导致 `grep` 无法接收到数据。
-
-你的想法是优雅且正确的。我将生成一个计划来实现这个改动。
-
-## [WIP] fix: 调整 log 与 find 命令的输出流以支持管道操作
-
-### 错误分析
-当前 `quipu log` 和 `quipu find` 命令将其所有输出（包括进度信息和实际的数据结果）都发送到了标准错误流 (`stderr`)。这是通过在 `typer.secho` 和 `typer.echo` 调用中普遍使用 `err=True` 参数实现的。
-
-这导致了一个问题：当用户试图使用管道 (`|`) 将这些命令的输出传递给其他标准 Unix 工具（如 `grep`, `awk`, `less`）时，这些工具收不到任何数据，因为管道默认只处理标准输出流 (`stdout`)。用户的 `qs find ... | grep ...` 命令就是一个典型的失败案例。
+## [WIP] test: 更新查询命令测试以验证 stdout 和 stderr 分离
 
 ### 用户需求
-修改 `quipu log` 和 `quipu find` 命令，使其：
-1.  将标题、警告和元信息（如 "--- 查找结果 ---"）继续输出到 `stderr`。
-2.  将核心的数据结果（即每一行节点信息）输出到 `stdout`。
+根据上一步的代码修改，需要更新 `tests/cli/test_query_commands.py` 文件中的测试用例。新的测试必须能够区分标准输出 (`stdout`) 和标准错误 (`stderr`)，以验证 `log` 和 `find` 命令现在是否将数据正确输出到 `stdout`，同时将元信息保留在 `stderr`。
 
 ### 评论
-这是一个对开发者体验 (DX) 和用户体验 (UX) 的重要改进。它使 Quipu CLI 工具的行为更符合 Unix 哲学，增强了其在自动化脚本和命令行工作流中的可用性和组合性。
+更新测试是确保软件质量的关键步骤。这些修改将使我们的测试套件更加精确和健壮，能够捕获与输出流相关的回归错误，并正式确认 CLI 工具的行为符合预期。
 
 ### 目标
-1.  定位 `query.py` 中 `log` 和 `find_command` 函数的输出循环。
-2.  移除在打印节点数据行时 `typer.secho` 和 `typer.echo` 调用中的 `err=True` 参数。
-3.  确保打印标题和警告的调用仍然保留 `err=True`。
+1.  重写 `tests/cli/test_query_commands.py` 文件。
+2.  在 `test_log_output` 中，断言元信息在 `stderr` 中，而节点数据在 `stdout` 中。
+3.  在 `test_find_command` 中，同样断言元信息在 `stderr` 中，而匹配到的节点数据在 `stdout` 中。
 
 ### 基本原理
-通过区分两种类型的输出，我们可以将它们定向到正确的流。`typer` 库通过 `err=True` 参数可以方便地控制输出目标。我们将仅对负责打印核心数据的代码行进行修改，将其 `err=True` 移除，使其默认输出到 `stdout`。`typer` 足够智能，当 `stdout` 不是一个 TTY (例如在管道中) 时，它会自动禁用颜色代码，从而确保 `grep` 等工具接收到的是纯净的文本。
+通过使用 `typer.testing.CliRunner`，我们可以检查 `result.stdout` 和 `result.stderr` 属性。我们将修改测试断言，从之前只检查 `result.stderr` 改为分别检查这两个输出流，从而精确验证命令的输出行为是否符合 Unix 管道规范。
 
 ### 标签
-#intent/fix #flow/ready #priority/medium #comp/cli #concept/ui #scope/ux #scope/dx #ai/instruct #task/domain/cli #task/object/output-streams #task/action/refactor #task/state/begin
+#intent/tooling #flow/ready #priority/high #comp/tests #concept/ui #scope/dx #ai/instruct #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 修改 `query.py` 的输出逻辑
+#### Acts 1: 重写查询命令的测试文件
 
-我们将修改 `log` 和 `find` 两个命令中负责打印结果的循环，将它们的输出重定向到 `stdout`。
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/query.py
-~~~~~
-~~~~~python
-            for node in nodes:
-                ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-                tag = f"[{node.node_type.upper()}]"
-                summary = node.summary
-                typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False, err=True)
-                typer.echo(f" - {summary}", err=True)
-~~~~~
-~~~~~python
-            for node in nodes:
-                ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-                tag = f"[{node.node_type.upper()}]"
-                summary = node.summary
-                typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False)
-                typer.echo(f" - {summary}")
-~~~~~
+我们将用包含新断言逻辑的完整内容覆盖现有的测试文件，以确保测试的准确性。
 
 ~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/query.py
+write_file
+tests/cli/test_query_commands.py
 ~~~~~
 ~~~~~python
-            for node in nodes:
-                ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-                tag = f"[{node.node_type.upper()}]"
-                typer.secho(f"{ts} {tag:<9} {node.output_tree}", fg=color, nl=False, err=True)
-                typer.echo(f" - {node.summary}", err=True)
+from quipu.cli.main import app
+
+
+def test_log_empty(runner, quipu_workspace):
+    work_dir, _, _ = quipu_workspace
+    result = runner.invoke(app, ["log", "-w", str(work_dir)])
+    assert result.exit_code == 0
+    assert "历史记录为空" in result.stderr
+
+
+def test_log_output(runner, quipu_workspace):
+    work_dir, _, engine = quipu_workspace
+
+    # 创建一些历史
+    (work_dir / "f1").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
+
+    (work_dir / "f2").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 2")
+
+    result = runner.invoke(app, ["log", "-w", str(work_dir)])
+    assert result.exit_code == 0
+
+    # 验证元数据在 stderr
+    assert "--- Quipu History Log ---" in result.stderr
+
+    # 验证数据在 stdout
+    assert "Node 1" in result.stdout
+    assert "Node 2" in result.stdout
+    assert "[CAPTURE]" in result.stdout
+
+    # 验证数据不在 stderr
+    assert "Node 1" not in result.stderr
+
+
+def test_find_command(runner, quipu_workspace):
+    work_dir, _, engine = quipu_workspace
+
+    (work_dir / "f1").touch()
+    capture_node = engine.capture_drift(engine.git_db.get_tree_hash(), message="Fix bug")
+    hash_v1 = capture_node.output_tree
+
+    (work_dir / "f2").touch()
+    hash_v2 = engine.git_db.get_tree_hash()
+    engine.create_plan_node(
+        input_tree=hash_v1,
+        output_tree=hash_v2,
+        plan_content="content",
+        summary_override="Implement feature",
+    )
+
+    # 查找 "Fix"
+    result = runner.invoke(app, ["find", "-s", "Fix", "-w", str(work_dir)])
+    assert "--- 查找结果 ---" in result.stderr
+    assert "Fix bug" in result.stdout
+    assert "Implement feature" not in result.stdout
+    assert "Fix bug" not in result.stderr
+
+    # 查找类型 "plan"
+    result_type = runner.invoke(app, ["find", "-t", "plan", "-w", str(work_dir)])
+    assert "--- 查找结果 ---" in result_type.stderr
+    assert "Implement feature" in result_type.stdout
+    assert "Fix bug" not in result_type.stdout
+    assert "Implement feature" not in result_type.stderr
 ~~~~~
-~~~~~python
-            for node in nodes:
-                ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
-                tag = f"[{node.node_type.upper()}]"
-                typer.secho(f"{ts} {tag:<9} {node.output_tree}", fg=color, nl=False)
-                typer.echo(f" - {node.summary}")
-~~~~~
+
+### 下一步建议
+我们已经成功地：
+1.  修复了 `query.py` 中的输出流问题。
+2.  更新了测试用例以验证该修复。
+
+现在，这个逻辑单元已经完整，是时候将其作为一个 `[COMMIT]` 提交到版本控制中了。如果你同意，我将生成一个包含 `git add` 和 `git commit` 指令的最终计划。
