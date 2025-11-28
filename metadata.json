@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "我们将创建一个巨大的、总结性的提交，为 `sync` 功能的完整开发周期画上句号。这个提交将涵盖从最初的架构设计到最终的测试修复所有工作。", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764294372.4998102, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "feat: 为 v1.1 架构创建数据迁移工具", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764294565.3572273, "duration_ms": 0}}
