@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] fix(cli): 将 log 和 find 命令的数据输出重定向到 stdout", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764318989.2150443, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 统一 --list-acts 等命令的输出流", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764319126.439663, "duration_ms": 0}}
