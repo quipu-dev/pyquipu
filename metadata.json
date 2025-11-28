@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "修复方案：`sync` 的安全实现", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764317588.9325566, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 为无损多设备同步机制添加集成测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764317798.7229335, "duration_ms": 0}}
