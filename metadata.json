@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 优化 TUI 加载占位符，使用节点摘要替代通用文本", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764324769.4310243, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Capture: M tui.css", "type": "capture", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764325141.610734, "duration_ms": 0}}
