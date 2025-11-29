@@ -22,17 +22,21 @@ class MessageStore:
             logger.error("Message resource directory 'locales' not found. UI messages will be unavailable.")
             return
 
-        message_file = locales_dir / self.locale / "cli.json"
-        if not message_file.exists():
-            logger.error(f"Message file for locale '{self.locale}' not found at {message_file}")
+        locale_path = locales_dir / self.locale
+        if not locale_path.is_dir():
+            logger.error(f"Locale directory for '{self.locale}' not found at {locale_path}")
             return
 
-        try:
-            with open(message_file, "r", encoding="utf-8") as f:
-                self._messages = json.load(f)
+        for message_file in locale_path.glob("*.json"):
+            try:
+                with open(message_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._messages.update(data)
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"Failed to load or parse message file {message_file}: {e}")
+
+        if self._messages:
             logger.debug(f"Successfully loaded {len(self._messages)} messages for locale '{self.locale}'.")
-        except (json.JSONDecodeError, IOError) as e:
-            logger.error(f"Failed to load or parse message file {message_file}: {e}")
 
     def get(self, msg_id: str, default: str = "") -> str:
         """Retrieves a message template by its ID."""

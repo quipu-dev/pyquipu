@@ -1,0 +1,48 @@
+{
+    "runtime.executor.info.starting": "🚀 正在开始执行 {count} 个操作...",
+    "runtime.executor.info.executing": "⚙️  正在执行 [{current}/{total}]: {act_name} (模式: {mode}, 参数: {arg_count})",
+    "runtime.executor.info.noChange": "🤷 内容无变化，操作已跳过。",
+    "runtime.executor.warning.createRootDirFailed": "⚠️  无法创建根目录 {path}: {error}",
+    "runtime.executor.warning.noConfirmHandler": "⚠️  无确认处理器，已跳过需要用户确认的操作。",
+    "runtime.executor.warning.skipEmpty": "⚠️  跳过空指令 [{current}/{total}]",
+    "runtime.executor.warning.skipUnknown": "⚠️  跳过未知操作 [{current}/{total}]: {act_name}",
+    "runtime.executor.warning.ignoreInlineArgs": "⚠️  [{act_name}] 模式为 block_only，已忽略行内参数: {args}",
+
+    "runtime.plugin.info.loading": "🔍 正在从 '{plugin_dir}' 加载插件...",
+    "runtime.plugin.warning.notDirectory": "⚠️  路径 '{path}' 不是目录，跳过插件加载。",
+    "runtime.plugin.error.specFailed": "❌ 无法为 {file_path} 创建模块规范",
+    "runtime.plugin.error.loadFailed": "❌ 加载插件 {plugin_name} 失败: {error}",
+
+    "acts.basic.success.fileWritten": "✅ [写入] 文件已写入: {path}",
+    "acts.basic.success.filePatched": "✅ [更新] 文件内容已更新: {path}",
+    "acts.basic.success.fileAppended": "✅ [追加] 内容已追加到: {path}",
+
+    "acts.check.success.filesExist": "✅ [检查] 所有指定文件均存在。",
+    "acts.check.success.cwdMatched": "✅ [检查] 工作区目录匹配: {path}",
+
+    "acts.git.success.initialized": "✅ [Git] 已初始化仓库: {path}",
+    "acts.git.success.added": "✅ [Git] 已添加文件: {targets}",
+    "acts.git.success.committed": "✅ [Git] 提交成功: {message}",
+    "acts.git.warning.repoExists": "⚠️  Git 仓库已存在，跳过初始化。",
+    "acts.git.warning.commitSkipped": "⚠️  [Git] 没有暂存的更改，跳过提交。",
+
+    "acts.memory.success.thoughtLogged": "🧠 [记忆] 思维已记录到 .quipu/memory.md",
+
+    "acts.read.info.searching": "🔍 [搜索] 模式: '{pattern}' 于 {path}",
+    "acts.read.info.useRipgrep": "⚡ 使用 'rg' (ripgrep) 进行高性能搜索。",
+    "acts.read.info.noMatchRipgrep": "🤷 (rg) 未找到匹配项。",
+    "acts.read.info.usePythonSearch": "🐢 使用原生 Python 搜索 (回退模式)。",
+    "acts.read.info.noMatchPython": "🤷 (Python) 未找到匹配项。",
+    "acts.read.info.readingFile": "📖 [读取] 正在读取 {filename}...",
+    "acts.read.info.listingTree": "📂 [列表] 目录树: {path}",
+    "acts.read.info.listingDir": "📂 [列表] 目录内容: {path}",
+    "acts.read.warning.ripgrepFailed": "⚠️  ripgrep 执行出错，回退到 Python 搜索: {error}",
+    "acts.read.error.readFailed": "❌ [读取] 无法读取二进制或非 UTF-8 文件: {filename}",
+
+    "acts.refactor.success.moved": "✅ [移动] 已移动/重命名: {source} -> {destination}",
+    "acts.refactor.success.deleted": "🗑️  [删除] 已删除: {path}",
+    "acts.refactor.warning.deleteSkipped": "⚠️  文件不存在，跳过删除: {path}",
+
+    "acts.shell.info.executing": "🚀 [Shell] 正在执行: {command}",
+    "acts.shell.warning.stderrOutput": "⚠️  [Stderr]:\n{output}"
+}
