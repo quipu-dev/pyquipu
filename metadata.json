@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] feat: 在 quipu-common 中实现 MessageBus 基础设施", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764413893.5230758, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor(cli): 将 workspace 命令输出迁移到 MessageBus", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764414110.7619061, "duration_ms": 0}}
