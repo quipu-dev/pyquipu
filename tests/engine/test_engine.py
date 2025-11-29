@@ -69,33 +69,32 @@ def test_capture_drift_git_object(engine_instance: Engine):
 class TestEngineFindNodes:
     @pytest.fixture
     def populated_engine(self, engine_instance: Engine):
+        """
+        Populates an engine instance with a linear history using shared test helpers.
+        History: (Genesis) -> Plan -> Capture -> Plan
+        """
+        from tests.helpers import (
+            create_plan_node_with_change,
+            create_capture_node_with_change,
+            EMPTY_TREE_HASH,
+        )
         import time
 
-        engine, repo_path = engine_instance, engine_instance.root_dir
-
-        def add_commit(filename, content, message, node_type, parent_hash):
-            """辅助函数：创建文件变更并生成一个新节点"""
-            (repo_path / filename).write_text(content)
-            time.sleep(0.01)  # 确保时间戳唯一
-            new_hash = engine.git_db.get_tree_hash()
-            if node_type == "plan":
-                engine.create_plan_node(parent_hash, new_hash, message)
-            else:  # capture
-                # 对于 capture，message 是用户备注，不是 plan content
-                engine.capture_drift(new_hash, message=message)
-            return new_hash
-
-        # 创世状态
-        parent = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        engine = engine_instance
+        parent = EMPTY_TREE_HASH
 
         # Node 1 (Plan)
-        parent = add_commit("f_a.txt", "content_a", "# feat: Add feature A", "plan", parent)
-        # Node 2 (Capture)
-        parent = add_commit("f_b.txt", "content_b", "Snapshot after feature A", "capture", parent)
-        # Node 3 (Plan)
-        parent = add_commit("f_c.txt", "content_c", "refactor: Cleanup code", "plan", parent)
+        parent = create_plan_node_with_change(engine, parent, "f_a.txt", "content_a", "# feat: Add feature A")
+        time.sleep(0.01)  # Ensure unique timestamps for ordering
 
-        # 重新对齐以加载完整的图谱
+        # Node 2 (Capture) - Parented to Node 1's state
+        parent = create_capture_node_with_change(engine, "f_b.txt", "content_b", "Snapshot after feature A")
+        time.sleep(0.01)
+
+        # Node 3 (Plan) - Parented to Node 2's state
+        parent = create_plan_node_with_change(engine, parent, "f_c.txt", "content_c", "refactor: Cleanup code")
+
+        # Re-align to load the full graph into the reader component for testing
         engine.align()
         return engine
 
