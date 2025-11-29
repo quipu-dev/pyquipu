@@ -8,6 +8,7 @@ import typer
 
 from .helpers import engine_context
 from ..config import DEFAULT_WORK_DIR
+from quipu.common.messaging import bus
 from quipu.interfaces.models import QuipuNode
 
 
@@ -55,25 +56,26 @@ def register(app: typer.Typer):
 
             if not graph:
                 if json_output:
-                    typer.echo("[]")
+                    bus.data("[]")
                 else:
-                    typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
+                    bus.info("query.info.emptyHistory")
                 raise typer.Exit(0)
 
             nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
 
             if json_output:
-                typer.echo(_nodes_to_json_str(nodes))
+                bus.data(_nodes_to_json_str(nodes))
                 raise typer.Exit(0)
 
-            typer.secho("--- Quipu History Log ---", bold=True, err=True)
+            bus.info("query.log.ui.header")
             for node in nodes:
                 ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
                 tag = f"[{node.node_type.upper()}]"
                 summary = node.summary
-                typer.secho(f"{ts} {tag:<9} {node.short_hash}", fg=color, nl=False)
-                typer.echo(f" - {summary}")
+                # Note: Coloring is a presentation detail handled by renderer, or omitted for data.
+                # Here we pass the uncolored data string to the bus.
+                data_line = f"{ts} {tag:<9} {node.short_hash} - {summary}"
+                bus.data(data_line)
 
     @app.command(name="find")
     def find_command(
@@ -94,28 +96,27 @@ def register(app: typer.Typer):
         with engine_context(work_dir) as engine:
             if not engine.history_graph:
                 if json_output:
-                    typer.echo("[]")
+                    bus.data("[]")
                 else:
-                    typer.secho("📜 历史记录为空。", fg=typer.colors.YELLOW, err=True)
+                    bus.info("query.info.emptyHistory")
                 ctx.exit(0)
 
             nodes = engine.find_nodes(summary_regex=summary_regex, node_type=node_type, limit=limit)
 
             if not nodes:
                 if json_output:
-                    typer.echo("[]")
+                    bus.data("[]")
                 else:
-                    typer.secho("🤷 未找到符合条件的历史节点。", fg=typer.colors.YELLOW, err=True)
+                    bus.info("query.info.noResults")
                 ctx.exit(0)
 
             if json_output:
-                typer.echo(_nodes_to_json_str(nodes))
+                bus.data(_nodes_to_json_str(nodes))
                 ctx.exit(0)
 
-            typer.secho("--- 查找结果 ---", bold=True, err=True)
+            bus.info("query.find.ui.header")
             for node in nodes:
                 ts = node.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                color = typer.colors.CYAN if node.node_type == "plan" else typer.colors.MAGENTA
                 tag = f"[{node.node_type.upper()}]"
-                typer.secho(f"{ts} {tag:<9} {node.output_tree}", fg=color, nl=False)
-                typer.echo(f" - {node.summary}")
+                data_line = f"{ts} {tag:<9} {node.output_tree} - {node.summary}"
+                bus.data(data_line)

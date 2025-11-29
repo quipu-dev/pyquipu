@@ -9,6 +9,7 @@ from rich.syntax import Syntax
 
 from .helpers import engine_context
 from ..config import DEFAULT_WORK_DIR
+from quipu.common.messaging import bus
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +22,10 @@ def _find_target_node(graph: Dict, hash_prefix: str):
         if node.commit_hash.startswith(hash_prefix) or node.output_tree.startswith(hash_prefix)
     ]
     if not matches:
-        typer.secho(f"❌ 错误: 未找到哈希前缀为 '{hash_prefix}' 的历史节点。", fg=typer.colors.RED, err=True)
+        bus.error("show.error.notFound", hash_prefix=hash_prefix)
         raise typer.Exit(1)
     if len(matches) > 1:
-        typer.secho(
-            f"❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {len(matches)} 个节点。",
-            fg=typer.colors.RED,
-            err=True,
-        )
+        bus.error("show.error.notUnique", hash_prefix=hash_prefix, count=len(matches))
         raise typer.Exit(1)
     return matches[0]
 
@@ -58,9 +55,9 @@ def register(app: typer.Typer):
 
             if not blobs:
                 if json_output:
-                    typer.echo("{}")
+                    bus.data("{}")
                 else:
-                    typer.secho("🤷 此节点内部无文件内容。", fg=typer.colors.YELLOW, err=True)
+                    bus.info("show.info.noContent")
                 raise typer.Exit()
 
             # --- Phase 1: Build output dictionary ---
@@ -69,8 +66,8 @@ def register(app: typer.Typer):
 
             for filename in files_to_process:
                 if filename not in blobs:
-                    typer.secho(f"❌ 错误: 在节点内未找到文件 '{filename}'。", fg=typer.colors.RED, err=True)
-                    typer.secho(f"可用文件: {', '.join(blobs.keys())}", fg=typer.colors.YELLOW, err=True)
+                    bus.error("show.error.fileNotInNode", filename=filename)
+                    bus.info("show.info.availableFiles", file_list=", ".join(blobs.keys()))
                     raise typer.Exit(1)
 
                 content_bytes = blobs[filename]
@@ -81,7 +78,7 @@ def register(app: typer.Typer):
 
             # --- Phase 2: Render output ---
             if json_output:
-                typer.echo(json.dumps(output_data, indent=2, ensure_ascii=False))
+                bus.data(json.dumps(output_data, indent=2, ensure_ascii=False))
             else:
                 console = Console()
                 if extract:

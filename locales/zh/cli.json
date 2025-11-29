@@ -1,5 +1,15 @@
 {
-  "common.error.generic": "❌ 系统错误: {error}",
+  "common.error.generic": "❌ 系统错误: {error,
+  "query.info.emptyHistory": "📜 历史记录为空。",
+  "query.info.noResults": "🤷 未找到符合条件的历史节点。",
+  "query.log.ui.header": "--- Quipu History Log ---",
+  "query.find.ui.header": "--- 查找结果 ---",
+  "show.error.notFound": "❌ 错误: 未找到哈希前缀为 '{hash_prefix}' 的历史节点。",
+  "show.error.notUnique": "❌ 错误: 哈希前缀 '{hash_prefix}' 不唯一，匹配到 {count} 个节点。",
+  "show.info.noContent": "🤷 此节点内部无文件内容。",
+  "show.error.fileNotInNode": "❌ 错误: 在节点内未找到文件 '{filename}'。",
+  "show.info.availableFiles": "可用文件: {file_list}"
+}",
   "common.prompt.cancel": "\n🚫 操作已取消。",
   "workspace.save.success": "📸 快照已保存: {short_hash}{msg_suffix}",
   "workspace.save.noChanges": "✅ 工作区状态未发生变化，无需创建快照。",
