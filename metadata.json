@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 将 `run` 和 `axon` 命令的输出迁移到 MessageBus", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764415262.5289438, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修正 MessageBus 重构引入的测试失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764415335.8023264, "duration_ms": 0}}
