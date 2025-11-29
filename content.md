@@ -1,36 +1,35 @@
-好的，我理解了。当前的 `tests/helpers.py` 文件中的内存模拟后端 (`in-memory backend`) 存在功能缺失和逻辑错误（幻觉），导致依赖它的测试（如 `Engine` 的单元测试）不可靠。你需要我基于你提供的、之前可用的 `InMemoryDB` 实现，来重写 `tests/helpers.py`，创建一个功能完备、高保真度的内存测试助手。
+好的，我理解了问题所在。当前的 `tests/helpers.py` 文件中的内存后端模拟实现 (`InMemoryDB`, `InMemoryHistoryManager`) 存在缺陷，导致了 `AttributeError` 和 `AssertionError`，使得依赖内存后端的引擎测试 (`test_engine_memory.py`) 失败。
 
-我将生成一个计划，使用 `write_file` 指令一次性地、完整地替换 `tests/helpers.py` 的内容。新的实现将融合你提供的代码中的健壮逻辑和当前代码中一些好的模式（如图重构），以确保我们得到一个可靠的、功能齐全的内存测试后端。
+你提供的旧版代码是正确的，它通过将节点存储的唯一事实来源 (`self.nodes`) 统一放在 `InMemoryDB` 中，并确保在创建节点时就正确链接父子关系，解决了状态不一致的问题。同时，它也包含了缺失的 `get_diff_stat` 方法。
 
-## [WIP] refactor(tests): 重写 in-memory 测试助手以提高保真度和正确性
+我将生成一个计划，用你提供的正确实现来覆盖 `tests/helpers.py` 中的错误部分，同时保留文件中其他有效的、基于 Git 的辅助函数。
+
+## [WIP] fix: 修复 `tests/helpers.py` 中错误的内存后端模拟实现
 
 ### 错误分析
-当前的 `tests/helpers.py` 文件中的内存模拟后端存在严重的功能缺陷：
-1.  **`InMemoryDB.get_diff_name_status`** 仅是一个空实现 (`return []`)，这导致了依赖它的 `capture_drift` 等功能的摘要生成逻辑在测试中完全失效。
-2.  **`InMemoryHistoryManager`** 缺失了大量 `HistoryReader` 接口的关键方法实现，如 `find_nodes`, `get_ancestor_output_trees`, `get_descendant_output_trees` 等，它们都是空的或不存在的。
-3.  这些缺陷导致依赖内存后端的单元测试（如 `tests/engine/test_engine_memory.py` 和 `tests/cli/test_view_model.py`）无法准确地模拟真实场景，甚至无法测试某些核心功能（如 TUI 的可达性过滤）。
+当前的 `tests/helpers.py` 文件中，用于模拟 `Engine` 内存后端的 `InMemoryDB` 和 `InMemoryHistoryManager` 类存在几个严重的设计缺陷：
+
+1.  **状态分裂**: `InMemoryDB` 和 `InMemoryHistoryManager` 各自维护了一个独立的节点列表 (`self.nodes`)，导致状态不一致。正确的做法应该是将 `InMemoryDB`作为唯一的事实来源。
+2.  **父子关系链接失败**: `InMemoryHistoryManager` 的 `create_node` 方法没有在创建时正确地链接父节点，导致在 `test_plan_node_creation` 测试中，新节点的 `parent` 属性为 `None`，引发断言失败。
+3.  **接口不匹配**: `InMemoryDB` 缺少 `get_diff_stat` 方法，该方法被 `Engine` 的 `capture_drift` 逻辑所调用，导致在 `test_capture_drift_from_genesis` 测试中出现 `AttributeError`。
 
 ### 用户需求
-基于一个之前可用的、功能更完整的内存后端实现，完整地重写 `tests/helpers.py` 文件。新的助手必须：
-1.  提供一个功能完备的、高保真度的 `InMemoryDB`，特别是 `get_diff_name_status` 方法。
-2.  提供一个完整实现了 `HistoryReader` 和 `HistoryWriter` 所有接口的 `InMemoryHistoryManager`。
-3.  确保 `Engine` 在使用此内存后端时，其行为与使用真实 Git 后端时在逻辑上是一致的。
+使用一份已知可用的、正确的内存后端模拟实现来完整替换 `tests/helpers.py` 中有问题的代码，以修复 `tests/engine/test_engine_memory.py` 中的测试失败。
 
 ### 评论
-这是一个至关重要的重构。一个可靠的、快速的内存测试后端是实现 `Engine` 和 `ViewModel` 等核心组件的健壮单元测试的基石。它能让我们在不依赖真实文件系统和 Git 子进程的情况下，隔离并验证核心的图谱逻辑、状态转换和数据查询逻辑，从而极大地提升测试速度和稳定性。
+这是一个关键的修复，它能确保我们的核心 `Engine` 逻辑可以在一个快速、隔离的内存环境中被正确地、可靠地测试，而无需每次都依赖于较慢的、基于文件系统的 Git 操作。
 
 ### 目标
-1.  创建一个新的 `tests/helpers.py` 文件。
-2.  在该文件中，实现一个 `VirtualFileSystem` 类来模拟文件操作。
-3.  实现一个 `InMemoryDB` 类，它能模拟 `GitDB` 的核心功能，包括基于 VFS 内容生成确定性哈希、创建状态快照、恢复状态 (`checkout_tree`) 以及计算状态差异 (`get_diff_name_status`)。
-4.  实现一个 `InMemoryHistoryManager` 类，它完整地实现了 `HistoryReader` 和 `HistoryWriter` 接口，能够进行节点的创建、加载、父子关系链接、查找和遍历。
-5.  保留文件中原有的、基于真实 Git 环境的测试助手函数 (`create_plan_node_with_change`, `create_capture_node_with_change`)，因为它们在集成测试中仍然有用。
+1.  使用 `write_file` 操作，将 `tests/helpers.py` 文件的内容更新为正确的版本。
+2.  新的文件内容将包含：
+    *   保留现有文件中正确的、基于 Git 的辅助函数 (`create_plan_node_with_change`, `create_capture_node_with_change`)。
+    *   集成你提供的、正确的 `VirtualFileSystem`, `InMemoryDB`, `InMemoryHistoryManager` 实现。
 
 ### 基本原理
-我们将采用你提供的可靠实现作为蓝本，因为它包含了所有关键功能的正确逻辑。同时，我们会对结构进行微调，以确保接口的清晰和实现的健壮性。例如，我们会将节点（Nodes）的管理放在 `InMemoryHistoryManager` 中，而状态快照（Snapshots）的管理放在 `InMemoryDB` 中，以实现更好的关注点分离。最终，通过一个 `write_file` 操作，我们将这个经过精心设计的、完整的内存后端写入 `tests/helpers.py`，从而一劳永逸地解决当前测试助手的功能缺陷问题。
+通过整合，我们将创建一个统一且正确的 `tests/helpers.py` 文件。新的 `InMemoryDB` 将作为节点存储的中心，而 `InMemoryHistoryManager` 将围绕它工作，确保在节点创建时就建立正确的图谱关系。这将解决所有已知的测试失败，并为未来的内存后端测试提供一个稳定的基础。
 
 ### 标签
-#intent/refactor #intent/fix #flow/ready #priority/high #comp/tests #concept/state #concept/history #scope/dx #ai/instruct #task/domain/testing #task/object/test-helpers #task/action/refactor #task/state/begin
+#intent/fix #flow/ready #priority/high #comp/tests #concept/state #scope/core #ai/instruct #task/domain/testing #task/object/test-helpers #task/action/refactor #task/state/begin
 
 ---
 
@@ -38,10 +37,11 @@
 
 #### Acts 1: 重写 `tests/helpers.py`
 
-这个操作将使用一个完整的、经过验证的实现来覆盖当前的 `tests/helpers.py` 文件。
+我们将用一个整合了原有 Git 辅助函数和新的正确内存后端模拟的版本来覆盖此文件。
 
 ~~~~~act
-write_file tests/helpers.py
+write_file
+tests/helpers.py
 ~~~~~
 ~~~~~python
 import hashlib
@@ -121,6 +121,7 @@ class InMemoryDB:
     def __init__(self):
         self.vfs = VirtualFileSystem()
         self.snapshots: Dict[str, VirtualFileSystem] = {EMPTY_TREE_HASH: VirtualFileSystem()}
+        self.nodes: Dict[str, QuipuNode] = {}  # output_tree -> Node
 
     def get_tree_hash(self) -> str:
         """对当前 VFS 内容进行确定性哈希。"""
@@ -164,13 +165,16 @@ class InMemoryDB:
                 changes.append(("M", f))
         return sorted(changes)
 
+    def get_diff_stat(self, old_tree: str, new_tree: str) -> str:
+        changes = self.get_diff_name_status(old_tree, new_tree)
+        return "\n".join(f"{status}\t{path}" for status, path in changes)
+
 
 class InMemoryHistoryManager(HistoryReader, HistoryWriter):
     """同时实现 Reader 和 Writer 接口的内存历史管理器。"""
 
     def __init__(self, db: InMemoryDB):
-        self.db = db
-        self.nodes: Dict[str, QuipuNode] = {}  # output_tree -> QuipuNode
+        self.db = db  # The db holds the single source of truth for nodes
 
     def create_node(
         self,
@@ -194,31 +198,24 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
             summary=summary_override or (content.splitlines()[0] if content else f"Node {output_tree[:7]}"),
         )
 
-        self.nodes[output_tree] = node
+        # Correctly link parent upon creation
+        if input_tree in self.db.nodes:
+            parent_node = self.db.nodes[input_tree]
+            node.parent = parent_node
+            parent_node.children.append(node)
+
+        self.db.nodes[output_tree] = node
         return node
 
     def load_all_nodes(self) -> List[QuipuNode]:
-        """加载所有节点并重建父子关系图。"""
-        all_nodes = list(self.nodes.values())
-        # Reset relationships before rebuilding
-        for node in all_nodes:
-            node.parent = None
-            node.children = []
-
-        for node in all_nodes:
-            if node.input_tree in self.nodes:
-                parent_node = self.nodes[node.input_tree]
-                node.parent = parent_node
-                if node not in parent_node.children:
-                    parent_node.children.append(node)
-
-        return sorted(all_nodes, key=lambda n: n.timestamp)
+        # The relationships are already built, just return the list
+        return sorted(list(self.db.nodes.values()), key=lambda n: n.timestamp)
 
     def get_node_count(self) -> int:
-        return len(self.nodes)
+        return len(self.db.nodes)
 
     def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:
-        all_nodes = sorted(self.nodes.values(), key=lambda n: n.timestamp, reverse=True)
+        all_nodes = sorted(self.db.nodes.values(), key=lambda n: n.timestamp, reverse=True)
         return all_nodes[offset : offset + limit]
 
     def find_nodes(
@@ -227,7 +224,7 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
         node_type: Optional[str] = None,
         limit: int = 10,
     ) -> List[QuipuNode]:
-        candidates = list(self.nodes.values())
+        candidates = list(self.db.nodes.values())
 
         if summary_regex:
             try:
@@ -247,29 +244,27 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
 
     def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         ancestors = set()
-        if start_output_tree_hash not in self.nodes:
+        if start_output_tree_hash not in self.db.nodes:
             return ancestors
 
-        curr = self.nodes[start_output_tree_hash]
-        while curr and curr.input_tree in self.nodes:
-            parent_node = self.nodes[curr.input_tree]
+        curr = self.db.nodes[start_output_tree_hash]
+        while curr and curr.parent:
+            parent_node = curr.parent
             ancestors.add(parent_node.output_tree)
             curr = parent_node
         return ancestors
 
     def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:
         descendants = set()
-        if start_output_tree_hash not in self.nodes:
+        if start_output_tree_hash not in self.db.nodes:
             return descendants
 
-        queue = [self.nodes[start_output_tree_hash]]
+        queue = [self.db.nodes[start_output_tree_hash]]
         visited = {start_output_tree_hash}
 
         while queue:
             current_node = queue.pop(0)
-            # Rebuild children on the fly for correctness
-            children = [n for n in self.nodes.values() if n.input_tree == current_node.output_tree]
-            for child in children:
+            for child in current_node.children:
                 if child.output_tree not in visited:
                     descendants.add(child.output_tree)
                     visited.add(child.output_tree)
@@ -277,7 +272,7 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
         return descendants
 
     def get_node_position(self, output_tree_hash: str) -> int:
-        all_nodes = sorted(self.nodes.values(), key=lambda n: n.timestamp, reverse=True)
+        all_nodes = sorted(self.db.nodes.values(), key=lambda n: n.timestamp, reverse=True)
         for i, node in enumerate(all_nodes):
             if node.output_tree == output_tree_hash:
                 return i
@@ -291,7 +286,4 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
 ~~~~~
 
 ### 下一步建议
-在执行完这个计划后，`tests/helpers.py` 将被一个功能完备的实现所取代。下一步最关键的操作是：
-1.  **运行完整的测试套件**: 执行 `pytest` 命令，确保所有测试都能通过。
-2.  **检查失败的测试**: 特别关注 `tests/engine/test_engine_memory.py` 和 `tests/cli/test_view_model.py` 中的测试。如果它们之前因为 mock 功能不全而跳过或失败，现在应该能够正常通过。如果出现新的失败，则说明 `Engine` 或 `ViewModel` 的逻辑与新 mock 的行为不符，需要进行调试。
-3.  **扩展测试**: 基于这个可靠的内存后端，为 `Engine` 和 `ViewModel` 补充更多的单元测试，覆盖之前无法测试的边界情况。
+在应用此修复后，请重新运行 `pytest tests/engine/test_engine_memory.py` 以确认问题已解决。如果所有测试通过，我们可以继续处理下一个任务，或者将此修复提交到版本控制中。
