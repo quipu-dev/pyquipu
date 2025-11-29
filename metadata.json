@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] test(cli): 为用户交互添加“不友好路径”测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764400174.6813054, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 扩展“不友好路径”测试以覆盖 discard 和 checkout", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764400326.0725439, "duration_ms": 0}}
