@@ -2,6 +2,7 @@ import importlib.util
 import logging
 import sys
 from pathlib import Path
+from quipu.common.messaging import bus
 from .executor import Executor
 
 logger = logging.getLogger(__name__)
@@ -17,11 +18,11 @@ def load_plugins(executor: Executor, plugin_dir: Path):
     if not plugin_dir.exists():
         return
 
-    logger.info(f"🔍 正在从 '{plugin_dir}' 加载插件...")
+    bus.info("runtime.plugin.info.loading", plugin_dir=plugin_dir)
 
     # 确保是一个目录
     if not plugin_dir.is_dir():
-        logger.warning(f"⚠️  路径 '{plugin_dir}' 不是目录，跳过。")
+        bus.warning("runtime.plugin.warning.notDirectory", path=plugin_dir)
         return
 
     # 扫描目录下所有 .py 文件
@@ -53,7 +54,7 @@ def load_plugins(executor: Executor, plugin_dir: Path):
                     # 静默跳过没有 register 的辅助文件
                     pass
             else:
-                logger.warning(f"❌ 无法为 {file_path} 创建模块规范")
+                bus.error("runtime.plugin.error.specFailed", file_path=file_path)
 
         except Exception as e:
-            logger.error(f"❌ 加载插件 {file_path.name} 失败: {e}")
+            bus.error("runtime.plugin.error.loadFailed", plugin_name=file_path.name, error=e)

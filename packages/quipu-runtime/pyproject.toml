@@ -18,11 +18,13 @@ classifiers = [
 ]
 dependencies = [
     "quipu-interfaces",
+    "quipu-common",
     "typer>=0.9.0"
 ]
 
 [tool.uv.sources]
 quipu-interfaces = { workspace = true }
+quipu-common = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = ["src"]

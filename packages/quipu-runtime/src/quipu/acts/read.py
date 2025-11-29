@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 from typing import List
 import logging
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
 from quipu.interfaces.exceptions import ExecutionError
 
@@ -50,22 +51,22 @@ def _search_files(ctx: ActContext, args: List[str]):
     if not search_path.exists():
         ctx.fail(f"搜索路径不存在: {search_path}")
 
-    logger.info(f"🔍 [Search] Pattern: '{parsed_args.pattern}' in {search_path}")
+    bus.info("acts.read.info.searching", pattern=parsed_args.pattern, path=search_path)
 
     if shutil.which("rg"):
-        logger.info("⚡ Using 'rg' (ripgrep) for high-performance search.")
+        bus.info("acts.read.info.useRipgrep")
         try:
             cmd = ["rg", "-n", "--no-heading", "--color=never", parsed_args.pattern, str(search_path)]
             result = subprocess.run(cmd, capture_output=True, text=True, cwd=ctx.root_dir)
             if result.stdout:
-                print(result.stdout.strip())
+                bus.data(result.stdout.strip())
             else:
-                logger.info("No matches found (via rg).")
+                bus.info("acts.read.info.noMatchRipgrep")
             return
         except Exception as e:
-            logger.warning(f"⚠️  ripgrep 执行出错，回退到 Python 搜索: {e}")
+            bus.warning("acts.read.warning.ripgrepFailed", error=str(e))
 
-    logger.info("🐢 Using Python native search (Fallback).")
+    bus.info("acts.read.info.usePythonSearch")
     _python_search(ctx, search_path, parsed_args.pattern)
 
 
@@ -92,9 +93,9 @@ def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
                 continue
 
     if matches:
-        print("\n".join(matches))
+        bus.data("\n".join(matches))
     else:
-        logger.info("No matches found (via Python).")
+        bus.info("acts.read.info.noMatchPython")
 
 
 def _read_file(ctx: ActContext, args: List[str]):
@@ -113,10 +114,10 @@ def _read_file(ctx: ActContext, args: List[str]):
 
     try:
         content = target_path.read_text(encoding="utf-8")
-        logger.info(f"📖 [Read] Reading {target_path.name}...")
-        print(content)
+        bus.info("acts.read.info.readingFile", filename=target_path.name)
+        bus.data(content)
     except UnicodeDecodeError:
-        logger.error(f"❌ [Read] 无法读取二进制文件或非 UTF-8 文件: {args[0]}")
+        bus.error("acts.read.error.readFailed", filename=args[0])
     except Exception as e:
         ctx.fail(f"读取文件失败: {e}")
 
@@ -141,7 +142,7 @@ def _list_files(ctx: ActContext, args: List[str]):
 
     output = []
     if parsed_args.tree:
-        logger.info(f"📂 [List] Directory Tree: {target_dir}")
+        bus.info("acts.read.info.listingTree", path=target_dir)
         # Simplified tree implementation
         for path_object in sorted(target_dir.rglob("*")):
             if ".git" in path_object.parts or ".quipu" in path_object.parts:
@@ -150,7 +151,7 @@ def _list_files(ctx: ActContext, args: List[str]):
             indent = "    " * depth
             output.append(f"{indent}└── {path_object.name}{'/' if path_object.is_dir() else ''}")
     else:
-        logger.info(f"📂 [List] Directory: {target_dir}")
+        bus.info("acts.read.info.listingDir", path=target_dir)
         items = sorted(list(target_dir.iterdir()), key=lambda p: (p.is_file(), p.name.lower()))
         for item in items:
             if item.name.startswith("."):
@@ -159,4 +160,4 @@ def _list_files(ctx: ActContext, args: List[str]):
 
     if not output:
         output.append("(Empty directory)")
-    print("\n".join(output))
+    bus.data("\n".join(output))

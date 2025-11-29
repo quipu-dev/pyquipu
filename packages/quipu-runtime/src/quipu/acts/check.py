@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import List
 import logging
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def _check_files_exist(ctx: ActContext, args: List[str]):
         msg = f"❌ [Check] 以下文件在工作区中未找到:\n" + "\n".join(f"  - {f}" for f in missing_files)
         ctx.fail(msg)
 
-    logger.info(f"✅ [Check] 所有符合条件的文件均存在。")
+    bus.success("acts.check.success.filesExist")
 
 
 def _check_cwd_match(ctx: ActContext, args: List[str]):
@@ -57,4 +58,4 @@ def _check_cwd_match(ctx: ActContext, args: List[str]):
     if current_root != expected_path:
         ctx.fail(f"❌ [Check] 工作区目录不匹配!\n  预期: {expected_path}\n  实际: {current_root}")
 
-    logger.info(f"✅ [Check] 工作区目录匹配: {current_root}")
+    bus.success("acts.check.success.cwdMatched", path=current_root)

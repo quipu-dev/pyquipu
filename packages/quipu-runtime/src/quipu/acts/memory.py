@@ -1,6 +1,7 @@
 import logging
 from typing import List
 from datetime import datetime
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
@@ -36,4 +37,4 @@ def _log_thought(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(f"无法写入记忆文件: {e}")
 
-    logger.info(f"🧠 [Memory] 思维已记录到 .quipu/memory.md")
+    bus.success("acts.memory.success.thoughtLogged")

@@ -21,7 +21,7 @@ class TestGitActs:
         subprocess.run(["git", "config", "user.email", "quipu@test.com"], cwd=isolated_vault, check=True)
         subprocess.run(["git", "config", "user.name", "Quipu Bot"], cwd=isolated_vault, check=True)
 
-    def test_git_workflow(self, executor: Executor, isolated_vault: Path):
+    def test_git_workflow(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):
         # 1. 创建文件
         target_file = isolated_vault / "README.md"
         target_file.write_text("# Test Repo", encoding="utf-8")
@@ -29,6 +29,7 @@ class TestGitActs:
         # 2. Git Add
         git_add, _, _ = executor._acts["git_add"]
         git_add(executor, ["README.md"])
+        mock_runtime_bus.success.assert_called_with("acts.git.success.added", targets=["README.md"])
 
         # 验证状态 (porcelain 输出 ?? 代表未追踪，A 代表已添加)
         status = subprocess.check_output(["git", "status", "--porcelain"], cwd=isolated_vault, text=True)
@@ -37,35 +38,22 @@ class TestGitActs:
         # 3. Git Commit
         git_commit, _, _ = executor._acts["git_commit"]
         git_commit(executor, ["Initial commit"])
+        mock_runtime_bus.success.assert_called_with("acts.git.success.committed", message="Initial commit")
 
         # 验证提交日志
         log = subprocess.check_output(["git", "log", "--oneline"], cwd=isolated_vault, text=True)
         assert "Initial commit" in log
 
-    # This test is obsolete after redirecting git_status output to stdout
-    # and has been removed. The behavior is now correctly tested by
-    # test_git_status_output_stream.
-
-    def test_git_init_idempotent(self, executor: Executor, caplog):
+    def test_git_init_idempotent(self, executor: Executor, mock_runtime_bus):
         # setup_git_env 已经 init 过了，再次 init 应该提示跳过
-        import logging
-
-        caplog.set_level(logging.INFO)
-
         func, _, _ = executor._acts["git_init"]
         func(executor, [])
-        assert "Git 仓库已存在" in caplog.text
+        mock_runtime_bus.warning.assert_called_with("acts.git.warning.repoExists")
 
-    def test_git_status_output_stream(self, executor: Executor, isolated_vault: Path, capsys, caplog):
+    def test_git_status_output_stream(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):
         """
-        验证 git_status 的输出流是否正确。
-        - 结果数据 (git status 内容) 应在 stdout。
-        - 执行日志 (e.g., "Executing operation...") 应在 stderr (通过 logging)。
+        验证 git_status 使用 bus.data 输出数据，而 executor 使用 bus.info 输出进度。
         """
-        import logging
-
-        caplog.set_level(logging.INFO)
-
         # 1. 制造一些状态变更
         (isolated_vault / "untracked.txt").write_text("new file")
 
@@ -73,18 +61,15 @@ class TestGitActs:
         stmts = [{"act": "git_status", "contexts": []}]
         executor.execute(stmts)
 
-        # 3. 捕获并验证输出
-        # 使用 capsys 捕获 stdout
-        captured_streams = capsys.readouterr()
+        # 3. 验证 bus 调用
+        # 验证执行器日志
+        mock_runtime_bus.info.assert_any_call(
+            "runtime.executor.info.executing", current=1, total=1, act_name="git_status", mode="exclusive", arg_count=0
+        )
 
-        # 验证 stdout 包含 git status 的核心内容
-        assert "Untracked files" in captured_streams.out
-        assert "untracked.txt" in captured_streams.out
-
-        # 验证 stderr (原始流) 不包含 git status 的内容
-        assert "Untracked files" not in captured_streams.err
-
-        # 使用 caplog 捕获日志记录
-        # 验证日志中确实包含了执行信息
-        assert "Executing operation" in caplog.text
-        assert "git_status" in caplog.text
+        # 验证数据输出
+        # args[0] 应该是 status 字符串，包含 untracked.txt
+        assert mock_runtime_bus.data.called
+        data_arg = mock_runtime_bus.data.call_args[0][0]
+        assert "Untracked files" in data_arg
+        assert "untracked.txt" in data_arg

@@ -2,8 +2,8 @@ import subprocess
 import logging
 import os
 from typing import List
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
-from quipu.interfaces.exceptions import ExecutionError
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +49,10 @@ def _git_init(ctx: ActContext, args: List[str]):
     Args: []
     """
     if (ctx.root_dir / ".git").exists():
-        logger.info("⚠️  Git 仓库已存在，跳过初始化。")
+        bus.warning("acts.git.warning.repoExists")
         return
     _run_git_cmd(ctx, ["init"])
-    logger.info(f"✅ [Git] 已初始化仓库: {ctx.root_dir}")
+    bus.success("acts.git.success.initialized", path=ctx.root_dir)
 
 
 def _git_add(ctx: ActContext, args: List[str]):
@@ -69,7 +69,7 @@ def _git_add(ctx: ActContext, args: List[str]):
     if not targets:
         targets = ["."]
     _run_git_cmd(ctx, ["add"] + targets)
-    logger.info(f"✅ [Git] 已添加文件: {targets}")
+    bus.success("acts.git.success.added", targets=targets)
 
 
 def _git_commit(ctx: ActContext, args: List[str]):
@@ -84,13 +84,13 @@ def _git_commit(ctx: ActContext, args: List[str]):
 
     status = _run_git_cmd(ctx, ["status", "--porcelain"])
     if not status:
-        logger.warning("⚠️  [Git] 没有检测到暂存的更改，跳过提交。")
+        bus.warning("acts.git.warning.commitSkipped")
         return
 
     ctx.request_confirmation(ctx.root_dir / ".git", "Staged Changes", f"Commit Message: {message}")
 
     _run_git_cmd(ctx, ["commit", "-m", message])
-    logger.info(f"✅ [Git] 提交成功: {message}")
+    bus.success("acts.git.success.committed", message=message)
 
 
 def _git_status(ctx: ActContext, args: List[str]):
@@ -99,4 +99,4 @@ def _git_status(ctx: ActContext, args: List[str]):
     Args: []
     """
     status = _run_git_cmd(ctx, ["status"])
-    print(status)
+    bus.data(status)

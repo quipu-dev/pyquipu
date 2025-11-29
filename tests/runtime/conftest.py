@@ -1,7 +1,33 @@
 import pytest
 from pathlib import Path
+from unittest.mock import MagicMock
 from quipu.runtime.executor import Executor
 from quipu.acts.basic import register as register_basic_acts
+
+
+@pytest.fixture(autouse=True)
+def mock_runtime_bus(monkeypatch):
+    """
+    自动 patch 所有 runtime 模块中导入的 'bus' 实例。
+
+    这是解决 'from ... import ...' 语句导致的 patch 问题的关键。
+    我们必须在每个使用 'bus' 的模块的命名空间中替换它。
+    """
+    m_bus = MagicMock()
+    patch_targets = [
+        "quipu.runtime.executor.bus",
+        "quipu.runtime.plugin_loader.bus",
+        "quipu.acts.basic.bus",
+        "quipu.acts.check.bus",
+        "quipu.acts.git.bus",
+        "quipu.acts.memory.bus",
+        "quipu.acts.read.bus",
+        "quipu.acts.refactor.bus",
+        "quipu.acts.shell.bus",
+    ]
+    for target in patch_targets:
+        monkeypatch.setattr(target, m_bus, raising=False)  # raising=False 避免模块不存在时报错
+    return m_bus
 
 
 @pytest.fixture

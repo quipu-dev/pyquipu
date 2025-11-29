@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Callable
 import shlex
 
+from quipu.common.messaging import bus
 from quipu.interfaces.types import Statement, ActFunction, ActContext
 from quipu.interfaces.exceptions import ExecutionError, OperationCancelledError
 
@@ -36,7 +37,7 @@ class Executor:
             try:
                 self.root_dir.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                logger.warning(f"无法创建根目录 {self.root_dir}: {e}")
+                bus.warning("runtime.executor.warning.createRootDirFailed", path=self.root_dir, error=e)
 
     def register(self, name: str, func: ActFunction, arg_mode: str = "hybrid", summarizer: Any = None):
         """
@@ -72,9 +73,6 @@ class Executor:
         if not tokens:
             return None
 
-        if not tokens:
-            return None
-
         act_name = tokens[0]
         inline_args = tokens[1:]
         contexts = stmt["contexts"]
@@ -90,6 +88,7 @@ class Executor:
         try:
             return summarizer(inline_args, contexts)
         except Exception as e:
+            # Summarizer 失败不应影响主流程，仅记录日志
             logger.warning(f"Summarizer for '{act_name}' failed: {e}")
             return None
 
@@ -125,11 +124,11 @@ class Executor:
         )
 
         if not diff:
-            logger.info("⚠️  内容无变化")
+            bus.info("runtime.executor.info.noChange")
             return
 
         if not self.confirmation_handler:
-            logger.warning("无确认处理器，已跳过需要用户确认的操作。")
+            bus.warning("runtime.executor.warning.noConfirmHandler")
             raise OperationCancelledError("No confirmation handler is configured.")
 
         prompt = f"❓ 是否对 {file_path.name} 执行上述修改?"
@@ -138,7 +137,7 @@ class Executor:
 
     def execute(self, statements: List[Statement]):
         """执行一系列语句"""
-        logger.info(f"Starting execution of {len(statements)} operations...")
+        bus.info("runtime.executor.info.starting", count=len(statements))
 
         # 创建一个可重用的上下文对象
         ctx = ActContext(self)
@@ -153,14 +152,19 @@ class Executor:
                 raise ExecutionError(f"Error parsing Act command line: {raw_act_line} ({e})")
 
             if not tokens:
-                logger.warning(f"Skipping empty instruction [{i + 1}/{len(statements)}]")
+                bus.warning("runtime.executor.warning.skipEmpty", current=i + 1, total=len(statements))
                 continue
 
             act_name = tokens[0]
             inline_args = tokens[1:]
 
             if act_name not in self._acts:
-                logger.warning(f"Skipping unknown operation [{i + 1}/{len(statements)}]: {act_name}")
+                bus.warning(
+                    "runtime.executor.warning.skipUnknown",
+                    current=i + 1,
+                    total=len(statements),
+                    act_name=act_name,
+                )
                 continue
 
             func, arg_mode, _ = self._acts[act_name]
@@ -179,12 +183,17 @@ class Executor:
                     final_args = block_contexts
             elif arg_mode == "block_only":
                 if inline_args:
-                    logger.warning(f"⚠️  [{act_name} - BlockOnly] Ignoring illegal inline arguments: {inline_args}")
+                    bus.warning("runtime.executor.warning.ignoreInlineArgs", act_name=act_name, args=inline_args)
                 final_args = block_contexts
 
             try:
-                logger.info(
-                    f"Executing operation [{i + 1}/{len(statements)}]: {act_name} (Mode: {arg_mode}, Args: {len(final_args)})"
+                bus.info(
+                    "runtime.executor.info.executing",
+                    current=i + 1,
+                    total=len(statements),
+                    act_name=act_name,
+                    mode=arg_mode,
+                    arg_count=len(final_args),
                 )
                 # 传递上下文对象，而不是 executor 实例
                 func(ctx, final_args)
@@ -192,5 +201,6 @@ class Executor:
                 # 显式地重新抛出，以确保它能被上层捕获
                 raise
             except Exception as e:
+                # 记录详细日志供调试，同时抛出标准错误供上层展示
                 logger.error(f"Execution failed for '{act_name}': {e}")
                 raise ExecutionError(f"An error occurred while executing '{act_name}': {e}") from e

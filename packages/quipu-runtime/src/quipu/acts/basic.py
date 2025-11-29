@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import List
 import logging
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def _echo(ctx: ActContext, args: List[str]):
     if len(args) < 1:
         ctx.fail("echo 需要至少一个参数: [content]")
 
-    print(args[0])
+    bus.data(args[0])
 
 
 def _write_file(ctx: ActContext, args: List[str]):
@@ -83,7 +84,7 @@ def _write_file(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(f"写入文件时发生未知错误: {e}")
 
-    logger.info(f"✅ [Write] 文件已写入: {target_path.relative_to(ctx.root_dir)}")
+    bus.success("acts.basic.success.fileWritten", path=target_path.relative_to(ctx.root_dir))
 
 
 def _patch_file(ctx: ActContext, args: List[str]):
@@ -119,7 +120,7 @@ def _patch_file(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(f"更新文件时发生未知错误: {e}")
 
-    logger.info(f"✅ [patch_file] 文件内容已更新: {target_path.relative_to(ctx.root_dir)}")
+    bus.success("acts.basic.success.filePatched", path=target_path.relative_to(ctx.root_dir))
 
 
 def _append_file(ctx: ActContext, args: List[str]):
@@ -154,4 +155,4 @@ def _append_file(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(f"追加文件时发生未知错误: {e}")
 
-    logger.info(f"✅ [Append] 内容已追加到: {target_path.relative_to(ctx.root_dir)}")
+    bus.success("acts.basic.success.fileAppended", path=target_path.relative_to(ctx.root_dir))

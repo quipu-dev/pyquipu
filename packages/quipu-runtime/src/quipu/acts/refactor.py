@@ -1,6 +1,7 @@
 import shutil
 from typing import List
 import logging
+from quipu.common.messaging import bus
 from quipu.interfaces.types import ActContext, Executor
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def _move_file(ctx: ActContext, args: List[str]):
         ctx.fail(f"移动/重命名失败: 权限不足。源: '{src_raw}', 目标: '{dest_raw}'")
     except Exception as e:
         ctx.fail(f"移动/重命名时发生未知错误: {e}")
-    logger.info(f"✅ [Move] 已移动/重命名: {src_raw} -> {dest_raw}")
+    bus.success("acts.refactor.success.moved", source=src_raw, destination=dest_raw)
 
 
 def _delete_file(ctx: ActContext, args: List[str]):
@@ -52,7 +53,7 @@ def _delete_file(ctx: ActContext, args: List[str]):
     target_path = ctx.resolve_path(raw_path)
 
     if not target_path.exists():
-        logger.warning(f"⚠️  文件不存在，跳过删除: {raw_path}")
+        bus.warning("acts.refactor.warning.deleteSkipped", path=raw_path)
         return
 
     file_type = "目录 (递归删除!)" if target_path.is_dir() else "文件"
@@ -70,4 +71,4 @@ def _delete_file(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(f"删除时发生未知错误: {e}")
 
-    logger.info(f"🗑️  [Delete] 已删除: {raw_path}")
+    bus.success("acts.refactor.success.deleted", path=raw_path)
