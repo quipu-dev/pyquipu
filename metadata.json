@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 修复 `tests/helpers.py` 中错误的内存后端模拟实现", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764399121.8037086, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] fix(tests): 修复内存后端测试辅助函数的实现", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764399177.1615872, "duration_ms": 0}}
