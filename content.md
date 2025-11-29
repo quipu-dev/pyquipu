@@ -1,72 +1,65 @@
-好的，我看到了测试结果。这是一个典型的、在大型重构后出现的“连锁反应”错误。
+是的，测试已全部通过。
 
-你的分析是正确的，这是一个同类错误。根本原因在于我们上一步的重构。
+我们成功地执行了两个步骤：首先，进行了大规模的 Fixture 重构；其次，修复了由此引发的 `runtime` 测试的依赖问题。现在，整个测试套件处于一个健康、稳定且更优化的状态。这是一个理想的提交点。
 
-### 错误分析
-我们在 `tests/conftest.py` 中集中化了 `engine_instance` 和 `git_workspace` 等 **Engine 层**的 Fixture。然而，我们忽略了 `tests/runtime/` 目录下的测试有其自身的依赖：一个 `Executor` 实例。
+我将生成一个 `[COMMIT]` 计划，将这次重构作为一个完整的、原子性的工作单元进行提交。
 
-在重构之前，这个 `executor` fixture 很可能是在一个（现在不存在的）`tests/runtime/conftest.py` 中定义的。我们的重构无意中删除了或未迁移这个对 `runtime` 测试至关重要的 Fixture，导致所有依赖它的测试在启动时都因“找不到 Fixture”而失败。
+## [COMMIT] refactor(tests): 集中化测试 Fixture 以消除冗余
 
 ### 用户需求
-修复 `tests/runtime/` 目录下的所有测试，为它们提供所需的 `executor` fixture。
+测试套件中存在大量重复的 Fixture 定义，用于创建带有 Git 和 Quipu Engine 的测试环境。这违反了 DRY 原则，增加了维护成本。需要将这些 Fixture 统一到 `tests/conftest.py` 中。
 
 ### 评论
-这是一个非常好的教训，它强调了在重构时需要考虑所有子系统的特定依赖。修复这个问题将使我们的测试结构更加健壮和清晰：`tests/` 下有全局 Fixture，而 `tests/runtime/` 下有其作用域内专用的 Fixture。
+这次重构是提升代码库健康度的关键一步。通过建立一个单一、权威的 Fixture 来源，我们不仅消除了冗余，还确保了所有测试都在一致的环境下运行，极大地增强了测试代码的可维护性和健壮性。
 
 ### 目标
-1.  创建一个新的 `tests/runtime/conftest.py` 文件。
-2.  在该文件中定义一个名为 `executor` 的 Fixture。
-3.  这个 Fixture 将为每个测试函数提供一个独立的 `Executor` 实例，该实例在一个临时的、隔离的文件目录 (`tmp_path`) 中运行，以确保测试之间不会相互干扰。
-4.  同时定义一个 `isolated_vault` fixture，使其返回 executor 的工作目录，以兼容现有测试。
+1.  已在 `tests/conftest.py` 中创建了共享的 `engine_instance` 和 `git_workspace` Fixture。
+2.  已重构 `tests/cli` 和 `tests/engine` 目录下的测试，使其使用新的共享 Fixture。
+3.  已通过创建 `tests/runtime/conftest.py` 修复了 `runtime` 测试对 `executor` Fixture 的依赖问题。
+4.  整个测试套件现已完全通过，验证了重构的正确性。
 
 ### 基本原理
-Pytest 会在测试文件的目录及其父目录中查找 `conftest.py` 文件来加载 Fixture。通过在 `tests/runtime/` 目录下创建一个 `conftest.py` 并定义 `executor`，我们就能让该目录及其子目录下的所有测试文件自动发现并使用这个 Fixture，从而解决依赖缺失的问题。
+利用 Pytest 的 Fixture 发现机制，将通用 Fixture 提升到顶层 `conftest.py`，同时将特定子系统的 Fixture (如 `executor`) 保留在其作用域内 (`tests/runtime/conftest.py`)。这种分层策略在实现代码复用的同时，也保持了测试结构的清晰和模块化。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/fixtures #task/action/bug-fix #task/state/continue
+#intent/refine #flow/ready #priority/high #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/fixtures #task/action/refactor #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 为 `runtime` 测试创建专用的 `conftest.py`
+#### Acts 1: 提交本次重构的所有变更
 
-我们将创建 `tests/runtime/conftest.py` 文件，并定义 `executor` 和 `isolated_vault` 这两个缺失的 Fixture。
+现在，我们将所有相关的变更（新建的 `conftest.py` 和被修改的测试文件）添加到暂存区，并创建一个内容详尽的 Git 提交。
 
 ~~~~~act
-write_file
+git_add
+tests/conftest.py
+tests/cli/conftest.py
+tests/engine/test_engine.py
+tests/cli/test_navigation_commands.py
 tests/runtime/conftest.py
 ~~~~~
-~~~~~python
-import pytest
-from pathlib import Path
-from quipu.runtime.executor import Executor
-from quipu.acts.basic import register as register_basic_acts
 
+~~~~~act
+git_commit
+~~~~~
+~~~~~text
+refactor(tests): Centralize test fixtures to eliminate redundancy
 
-@pytest.fixture
-def executor(tmp_path: Path) -> Executor:
-    """
-    为运行时测试提供一个隔离的 Executor 实例。
-    - 在独立的临时目录 (tmp_path) 中运行。
-    - 自动注册基础 acts。
-    - 默认以非交互模式 (yolo=True) 运行。
-    """
-    # yolo=True 避免在测试中出现交互式提示，这对于非 CLI 测试至关重要
-    instance = Executor(root_dir=tmp_path, yolo=True)
-    # 自动注册基础指令，因为大多数测试都依赖它们
-    register_basic_acts(instance)
-    return instance
+Consolidates duplicated test environment setup logic into a shared, root-level `tests/conftest.py`. This significantly improves maintainability and ensures a consistent testing environment across the suite.
 
+Key changes:
+- A new root `tests/conftest.py` now provides shared fixtures like `engine_instance` and `git_workspace`.
+- Test files in `tests/cli/` and `tests/engine/` have been refactored to use these shared fixtures, removing their local, redundant setup code.
+- Fixed a dependency issue for runtime tests by creating a dedicated `tests/runtime/conftest.py` to provide the `executor` fixture, which is specific to that test domain.
 
-@pytest.fixture
-def isolated_vault(executor: Executor) -> Path:
-    """
-    提供 Executor 实例的根工作目录。
-    这是一个便利性的 fixture，用于需要直接操作文件系统的测试。
-    """
-    return executor.root_dir
+This change adheres to the DRY principle and makes the test suite cleaner and easier to manage.
 ~~~~~
 
 ### 下一步建议
-这个计划应该能修复所有 `fixture 'executor' not found` 的错误。请执行此计划，然后再次运行完整的测试套件 (`pytest`)，确认问题已解决并且没有引入新的错误。
+我们已经完成了 Fixture 的重构。现在可以处理之前发现的第二个优化点：
+
+*   **调整测试归属**：将 `tests/cli/test_navigation_commands.py` 中属于 `engine` 单元测试的 `TestNavigationEngine` 类，迁移到 `tests/engine/` 目录下。
+
+如果你同意，我将为你生成执行此项重构的计划。

@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "错误分析", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764397436.7642016, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(tests): 集中化测试 Fixture 以消除冗余", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764397511.1280236, "duration_ms": 0}}
