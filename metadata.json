@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] feat(cli): 为 export 命令添加对导航链接的精细控制", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764405948.9471476, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] 修复在 `export` 命令重构过程中引入的 `NameError`", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764406037.422525, "duration_ms": 0}}
