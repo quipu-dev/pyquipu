@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] chore(cli): 增强日志记录与错误处理", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764399695.0562775, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] style: 使用 ruff 格式化全库代码", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764399702.2862062, "duration_ms": 0}}
