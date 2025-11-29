@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 重写内存测试后端以正确模拟状态和行为", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764398519.6972058, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor(tests): 重写 in-memory 测试助手以提高保真度和正确性", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764398975.0522525, "duration_ms": 0}}
