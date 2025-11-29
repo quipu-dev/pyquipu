@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 启用 TTY 交互以支持管道中的用户确认", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764395822.8085551, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: Standardize on a robust TTY prompt for all user confirmations", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764395960.3530269, "duration_ms": 0}}
