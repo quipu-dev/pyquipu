@@ -4,6 +4,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 from quipu.cli.controller import run_quipu, QuipuResult
 from quipu.cli.main import app
+from quipu.interfaces.exceptions import ExecutionError
 from quipu.runtime.executor import Executor
 from quipu.acts.basic import register as register_basic
 
@@ -90,7 +91,9 @@ boo
 
         assert result.success is False
         assert result.exit_code == 1
-        assert "文件不存在" in result.message
+        assert result.message == "run.error.execution"
+        assert isinstance(result.error, ExecutionError)
+        assert "ghost.txt" in str(result.error)
 
     def test_run_quipu_empty_plan(self, workspace):
         """测试无有效指令"""
@@ -98,9 +101,9 @@ boo
 
         result = run_quipu(content=plan, work_dir=workspace, yolo=True)
 
-        assert result.success is False  # 视为非成功状态（虽然不是错误，但任务未完成）
-        assert result.exit_code == 0  # 但退出码为 0，不报错
-        assert "未找到任何有效的" in result.message
+        assert result.success is True  # No failure, just nothing to do
+        assert result.exit_code == 0
+        assert result.message == "axon.warning.noStatements"
 
 
 # --- 2. CLI Layer Tests (The Shell) ---

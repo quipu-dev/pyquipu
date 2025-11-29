@@ -1,5 +1,7 @@
 {
   "common.error.generic": "❌ 系统错误: {error}",
+  "common.error.fileNotFound": "❌ 错误: 找不到指令文件: {path}",
+  "common.error.pathNotFile": "❌ 错误: 路径不是文件: {path}",
   "query.info.emptyHistory": "📜 历史记录为空。",
   "query.info.noResults": "🤷 未找到符合条件的历史节点。",
   "query.log.ui.header": "--- Quipu History Log ---",
