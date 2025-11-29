@@ -1,318 +1,319 @@
-分析正确。测试失败暴露了两个核心问题：一个是由 `QuipuNode` 对象不可哈希导致的 `TypeError`，另一个是测试用例中对 `Engine` 的不正确实例化。
+好的，分析完全正确。这两个看似孤立的测试失败确实指向了 `Engine` 核心的数据结构缺陷和测试用例的状态污染问题。我将生成一个计划来同时解决这两个根本原因。
 
-**错误分析**:
+首先，我将修正 `Engine` 的核心逻辑，确保它使用唯一不变的 `commit_hash` 作为历史图谱的主键，这将彻底解决由幂等节点引发的节点覆盖问题。其次，我将重构相关的测试用例，将复合测试拆分为独立的、原子化的单元，确保测试之间的状态隔离。
 
-1.  **`TypeError: unhashable type: 'QuipuNode'`**: 这是导致前五个测试失败的根本原因。在 `export.py` 中，我试图将 `QuipuNode` 对象直接用作字典的键 (`filename_map`)和集合的元素 (`exported_nodes_set`)。由于 `QuipuNode` 是一个包含列表（`children`）的数据类，它是可变的，因此不可哈希。这导致了程序在尝试构建这些数据结构时崩溃，无法生成任何导出文件。
-2.  **`TypeError: Engine.__init__() missing ... arguments`**: 在 `test_export_edge_cases` 中，我使用了 `engine = Engine(work_dir)` 来实例化引擎。这是一个错误，因为 `Engine` 的构造函数需要 `db`, `reader`, 和 `writer` 等多个依赖项。正确的做法是使用 `conftest.py` 中定义的 `engine_instance` 或 `quipu_workspace` fixture，它们会返回一个被正确初始化的 `Engine` 实例。
-
-**解决方案**:
-
-1.  **修复 `TypeError`**: 我将修改 `export.py`，不再使用 `QuipuNode` 对象作为键。取而代之，我将使用每个节点唯一的、可哈希的 `commit_hash` 字符串作为标识符。所有相关的数据结构和函数调用都将进行相应调整。
-2.  **修复测试实例化**: 我将修改 `test_export_edge_cases`，使用 `quipu_workspace` fixture 来获取一个正确构造的 `Engine` 实例，而不是错误地直接调用其构造函数。
-3.  **修正测试断言**: 我还发现 `test_export_navbar_logic` 中对“总结节点”的断言逻辑存在瑕疵，将一并修正以确保测试的准确性。
-
-## [COMMIT] fix: 修正 export 命令的哈希错误和测试实例化问题
+## [WIP] fix: 修正 export 测试因节点覆盖和状态不隔离导致的失败
 
 ### 错误分析
-`quipu export` 命令因使用不可哈希的 `QuipuNode` 对象作为字典键和集合元素而引发 `TypeError`，导致所有相关测试失败。此外，`test_export_edge_cases` 测试用例中对 `Engine` 的实例化方式不正确，未能提供必要的依赖项，导致了另一个 `TypeError`。
+`quipu export` 的测试因两大问题而失败：首先，`Engine` 使用 `output_tree` 作为历史图谱的键，导致幂等节点（其 `input_tree` 与 `output_tree` 相同）覆盖其父节点，使得导出的文件数量不正确。其次，`test_export_options` 函数内部缺乏状态隔离，导致后续的断言在前一次命令调用的残留文件上执行，从而失败。
 
 ### 用户需求
-修复 `export.py` 中的哈希问题和 `test_export_command.py` 中的 `Engine` 实例化问题，使所有 `export` 命令相关的测试都能通过。
+修复 `Engine` 的节点存储逻辑和 `export` 命令的测试用例，确保所有测试都能在隔离的环境中正确运行并通过。
 
 ### 评论
-这是一个典型的由数据结构选择不当和对测试 Fixture 理解不足引发的问题。通过将键替换为稳定的 `commit_hash` 并遵循正确的 Fixture 使用模式，我们可以快速修复这些问题，并使代码更加健壮和可预测。
+这是一个关键的修复，它不仅解决了测试问题，还纠正了 `quipu-engine` 核心设计中一个可能导致数据丢失的缺陷。通过使用 `commit_hash` 作为唯一标识符，我们确保了历史记录的完整性和准确性。将测试用例拆分是保证测试可靠性的标准实践。
 
 ### 目标
-1.  修改 `export.py`，将 `filename_map` 和 `exported_nodes_set` 的键/元素从 `QuipuNode` 对象更改为 `node.commit_hash` 字符串。
-2.  相应地更新 `_generate_navbar` 和 `_generate_file_content` 函数，以使用 `commit_hash` 进行查找。
-3.  修改 `test_export_edge_cases` 测试，从 `quipu_workspace` fixture 获取 `engine` 实例。
-4.  修正 `test_export_navbar_logic` 中关于总结节点的断言逻辑。
+1.  修改 `packages/quipu-engine/src/quipu/engine/state_machine.py`，将 `history_graph` 的键从 `output_tree` 更改为 `commit_hash`，并调整所有相关的查找逻辑。
+2.  修改 `packages/quipu-cli/src/quipu/cli/commands/navigation.py`、`helpers.py` 和 `workspace.py` 以适应 `Engine` 的上述更改。
+3.  将 `tests/cli/test_export_command.py` 中的 `test_export_options` 拆分为两个独立的测试函数，确保状态隔离。
 
 ### 基本原理
-Python 的核心数据结构 `dict` 和 `set` 要求其键和元素必须是可哈希的。可变对象（如列表）是不可哈希的。通过使用节点唯一的、不可变的 `commit_hash` 字符串作为代理标识符，我们解决了这个核心问题。在测试中，始终优先使用 Fixture 来获取复杂的、带依赖的对象实例，是确保测试环境正确性的最佳实践。
+每个 Quipu 节点代表一个独特的历史事件，由其 `commit_hash` 唯一标识。文件系统的状态 (`output_tree`) 可能会在不同事件后保持不变（幂等操作），因此不适合作为唯一键。通过将 `Engine` 的核心数据结构与事件的唯一标识符绑定，我们确保了历史记录的无损性。测试的原子性和隔离性是保证其结果可信的基础，每个测试应在独立的、可预测的环境中运行。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/cli #comp/tests #concept/history #scope/core #ai/instruct #task/domain/cli #task/object/export-command #task/action/bug-fix #task/state/end #task/status/completed
+#intent/fix #flow/ready #priority/high #comp/engine #comp/cli #comp/tests #concept/state #concept/history #scope/core #ai/instruct #task/domain/testing #task/object/test-suite #task/action/bug-fix #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 修复 `export.py` 中的 `TypeError`
+#### Acts 1: 修正 Engine 核心的状态管理逻辑
 
-我们将修改 `export.py`，使用 `commit_hash` 作为唯一的、可哈希的键。
+我们将修改 `Engine`，使其内部历史图谱 `history_graph` 使用 `commit_hash` 作为主键，并更新所有依赖此数据结构的方法。
 
 ~~~~~act
 patch_file
-packages/quipu-cli/src/quipu/cli/commands/export.py
+packages/quipu-engine/src/quipu/engine/state_machine.py
 ~~~~~
 ~~~~~python
-def _generate_navbar(
-    current_node: QuipuNode, exported_nodes_set: Set[QuipuNode], filename_map: Dict[QuipuNode, str]
-) -> str:
-    """生成导航栏 Markdown 字符串。"""
-    nav_links = []
+        all_nodes = self.reader.load_all_nodes()
+        final_graph: Dict[str, QuipuNode] = {}
+        for node in all_nodes:
+            if node.output_tree not in final_graph or node.timestamp > final_graph[node.output_tree].timestamp:
+                final_graph[node.output_tree] = node
+        self.history_graph = final_graph
+        if all_nodes:
+            logger.info(f"从存储中加载了 {len(all_nodes)} 个历史事件，形成 {len(final_graph)} 个唯一状态节点。")
 
-    # 1. 总结节点 (↑)
-    ancestor = current_node.parent
-    while ancestor:
-        if ancestor.input_tree == ancestor.output_tree and ancestor in exported_nodes_set:
-            nav_links.append(f"> ↑ [总结节点]({filename_map[ancestor]})")
-            break
-        ancestor = ancestor.parent
+        current_hash = self.git_db.get_tree_hash()
+        EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        if current_hash == EMPTY_TREE_HASH and not self.history_graph:
+            logger.info("✅ 状态对齐：检测到创世状态 (空仓库)。")
+            self.current_node = None
+            return "CLEAN"
 
-    # 2. 上一分支点 (↓)
-    ancestor = current_node.parent
-    while ancestor:
-        if len(ancestor.children) > 1 and ancestor in exported_nodes_set:
-            nav_links.append(f"> ↓ [上一分支点]({filename_map[ancestor]})")
-            break
-        ancestor = ancestor.parent
+        if current_hash in self.history_graph:
+            self.current_node = self.history_graph[current_hash]
+            logger.info(f"✅ 状态对齐：当前工作区匹配节点 {self.current_node.short_hash}")
+            self._write_head(current_hash)
+            return "CLEAN"
 
-    # 3. 父节点 (←)
-    if current_node.parent and current_node.parent in exported_nodes_set:
-        nav_links.append(f"> ← [父节点]({filename_map[current_node.parent]})")
-
-    # 4. 子节点 (→)
-    # 子节点已按时间升序排列
-    for child in current_node.children:
-        if child in exported_nodes_set:
-            nav_links.append(f"> → [子节点]({filename_map[child]})")
-
-    if not nav_links:
-        return ""
+        logger.warning(f"⚠️  状态漂移：当前 Tree Hash {current_hash[:7]} 未在历史中找到。")
 ~~~~~
 ~~~~~python
-def _generate_navbar(
-    current_node: QuipuNode, exported_hashes_set: Set[str], filename_map: Dict[str, str]
-) -> str:
-    """生成导航栏 Markdown 字符串。"""
-    nav_links = []
+        all_nodes = self.reader.load_all_nodes()
+        self.history_graph = {node.commit_hash: node for node in all_nodes}
+        if all_nodes:
+            logger.info(f"从存储中加载了 {len(all_nodes)} 个历史事件，形成 {len(self.history_graph)} 个唯一状态节点。")
 
-    # 1. 总结节点 (↑)
-    ancestor = current_node.parent
-    while ancestor:
-        if ancestor.input_tree == ancestor.output_tree and ancestor.commit_hash in exported_hashes_set:
-            nav_links.append(f"> ↑ [总结节点]({filename_map[ancestor.commit_hash]})")
-            break
-        ancestor = ancestor.parent
+        current_hash = self.git_db.get_tree_hash()
+        EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+        if current_hash == EMPTY_TREE_HASH and not self.history_graph:
+            logger.info("✅ 状态对齐：检测到创世状态 (空仓库)。")
+            self.current_node = None
+            return "CLEAN"
 
-    # 2. 上一分支点 (↓)
-    ancestor = current_node.parent
-    while ancestor:
-        if len(ancestor.children) > 1 and ancestor.commit_hash in exported_hashes_set:
-            nav_links.append(f"> ↓ [上一分支点]({filename_map[ancestor.commit_hash]})")
-            break
-        ancestor = ancestor.parent
+        # Find node by iterating since keys are now commit hashes
+        found_node = None
+        for node in self.history_graph.values():
+            if node.output_tree == current_hash:
+                found_node = node
+                break
+        
+        if found_node:
+            self.current_node = found_node
+            logger.info(f"✅ 状态对齐：当前工作区匹配节点 {self.current_node.short_hash}")
+            self._write_head(current_hash)
+            return "CLEAN"
 
-    # 3. 父节点 (←)
-    if current_node.parent and current_node.parent.commit_hash in exported_hashes_set:
-        nav_links.append(f"> ← [父节点]({filename_map[current_node.parent.commit_hash]})")
-
-    # 4. 子节点 (→)
-    # 子节点已按时间升序排列
-    for child in current_node.children:
-        if child.commit_hash in exported_hashes_set:
-            nav_links.append(f"> → [子节点]({filename_map[child.commit_hash]})")
-
-    if not nav_links:
-        return ""
+        logger.warning(f"⚠️  状态漂移：当前 Tree Hash {current_hash[:7]} 未在历史中找到。")
 ~~~~~
 
 ~~~~~act
 patch_file
-packages/quipu-cli/src/quipu/cli/commands/export.py
+packages/quipu-engine/src/quipu/engine/state_machine.py
 ~~~~~
 ~~~~~python
-def _generate_file_content(
-    node: QuipuNode, engine: Engine, no_frontmatter: bool, no_nav: bool,
-    exported_nodes_set: Set[QuipuNode], filename_map: Dict[QuipuNode, str]
-) -> str:
-    """构建单个 Markdown 文件的完整内容。"""
-    parts = []
-    if not no_frontmatter:
-        parts.append(_format_frontmatter(node))
+        new_node = self.writer.create_node(
+            node_type="capture",
+            input_tree=input_hash,
+            output_tree=current_hash,
+            content=body,
+            message=message,
+            owner_id=user_id,
+        )
 
-    public_content = engine.reader.get_node_content(node) or ""
-    parts.append("# content.md")
-    parts.append(public_content.strip())
-
-    private_content = engine.reader.get_private_data(node.commit_hash)
-    if private_content:
-        parts.append("# 开发者意图")
-        parts.append(private_content.strip())
-        
-    content_str = "\n\n".join(parts)
-
-    if not no_nav:
-        navbar_str = _generate_navbar(node, exported_nodes_set, filename_map)
-        content_str += navbar_str
-        
-    return content_str
+        self.history_graph[current_hash] = new_node
+        self.current_node = new_node
 ~~~~~
 ~~~~~python
-def _generate_file_content(
-    node: QuipuNode, engine: Engine, no_frontmatter: bool, no_nav: bool,
-    exported_hashes_set: Set[str], filename_map: Dict[str, str]
-) -> str:
-    """构建单个 Markdown 文件的完整内容。"""
-    parts = []
-    if not no_frontmatter:
-        parts.append(_format_frontmatter(node))
+        new_node = self.writer.create_node(
+            node_type="capture",
+            input_tree=input_hash,
+            output_tree=current_hash,
+            content=body,
+            message=message,
+            owner_id=user_id,
+        )
 
-    public_content = engine.reader.get_node_content(node) or ""
-    parts.append("# content.md")
-    parts.append(public_content.strip())
-
-    private_content = engine.reader.get_private_data(node.commit_hash)
-    if private_content:
-        parts.append("# 开发者意图")
-        parts.append(private_content.strip())
-        
-    content_str = "\n\n".join(parts)
-
-    if not no_nav:
-        navbar_str = _generate_navbar(node, exported_hashes_set, filename_map)
-        content_str += navbar_str
-        
-    return content_str
+        self.history_graph[new_node.commit_hash] = new_node
+        self.current_node = new_node
 ~~~~~
 
 ~~~~~act
 patch_file
-packages/quipu-cli/src/quipu/cli/commands/export.py
+packages/quipu-engine/src/quipu/engine/state_machine.py
 ~~~~~
 ~~~~~python
-            output_dir.mkdir(parents=True, exist_ok=True)
-            typer.secho(f"🚀 正在导出 {len(nodes_to_export)} 个节点到 '{output_dir}'...", fg=typer.colors.BLUE, err=True)
+        new_node = self.writer.create_node(
+            node_type="plan",
+            input_tree=input_tree,
+            output_tree=output_tree,
+            content=plan_content,
+            summary_override=summary_override,
+            owner_id=user_id,
+        )
 
-            # 预计算文件名和节点集合以供导航栏使用
-            filename_map = {node: _generate_filename(node) for node in nodes_to_export}
-            exported_nodes_set = set(nodes_to_export)
-
-            with typer.progressbar(nodes_to_export, label="导出进度") as progress:
-                for node in progress:
-                    filename = filename_map[node]
-                    content = _generate_file_content(node, engine, no_frontmatter, no_nav, exported_nodes_set, filename_map)
-                    (output_dir / filename).write_text(content, encoding="utf-8")
-
-            if zip_output:
-                typer.secho("📦 正在压缩导出文件...", fg=typer.colors.BLUE, err=True)
+        self.history_graph[output_tree] = new_node
+        self.current_node = new_node
 ~~~~~
 ~~~~~python
-            output_dir.mkdir(parents=True, exist_ok=True)
-            typer.secho(f"🚀 正在导出 {len(nodes_to_export)} 个节点到 '{output_dir}'...", fg=typer.colors.BLUE, err=True)
+        new_node = self.writer.create_node(
+            node_type="plan",
+            input_tree=input_tree,
+            output_tree=output_tree,
+            content=plan_content,
+            summary_override=summary_override,
+            owner_id=user_id,
+        )
 
-            # 预计算文件名和节点集合以供导航栏使用
-            filename_map = {node.commit_hash: _generate_filename(node) for node in nodes_to_export}
-            exported_hashes_set = {node.commit_hash for node in nodes_to_export}
-
-            with typer.progressbar(nodes_to_export, label="导出进度") as progress:
-                for node in progress:
-                    filename = filename_map[node.commit_hash]
-                    content = _generate_file_content(node, engine, no_frontmatter, no_nav, exported_hashes_set, filename_map)
-                    (output_dir / filename).write_text(content, encoding="utf-8")
-
-            if zip_output:
-                typer.secho("📦 正在压缩导出文件...", fg=typer.colors.BLUE, err=True)
+        self.history_graph[new_node.commit_hash] = new_node
+        self.current_node = new_node
 ~~~~~
 
-#### Acts 2: 修复 `test_export_command.py` 中的错误
+~~~~~act
+patch_file
+packages/quipu-engine/src/quipu/engine/state_machine.py
+~~~~~
+~~~~~python
+    def checkout(self, target_hash: str):
+        self.git_db.checkout_tree(target_hash)
+        self._write_head(target_hash)
+        if target_hash in self.history_graph:
+            self.current_node = self.history_graph[target_hash]
+        logger.info(f"🔄 状态已切换至: {target_hash[:7]}")
+~~~~~
+~~~~~python
+    def checkout(self, target_hash: str):
+        self.git_db.checkout_tree(target_hash)
+        self._write_head(target_hash)
+        self.current_node = None
+        for node in self.history_graph.values():
+            if node.output_tree == target_hash:
+                self.current_node = node
+                break
+        logger.info(f"🔄 状态已切换至: {target_hash[:7]}")
+~~~~~
 
-我们将修正测试文件中的 `Engine` 实例化错误和不正确的断言。
+#### Acts 2: 更新 CLI 命令以适应新的 Engine 逻辑
+
+现在我们需要更新所有直接访问 `engine.history_graph` 的 CLI 命令，使其能够正确处理以 `commit_hash` 为键的数据结构。
+
+~~~~~act
+patch_file
+packages/quipu-cli/src/quipu/cli/commands/navigation.py
+~~~~~
+~~~~~python
+            graph = engine.history_graph
+
+            matches = [node for output_tree, node in graph.items() if output_tree.startswith(hash_prefix)]
+            if not matches:
+                typer.secho(
+~~~~~
+~~~~~python
+            graph = engine.history_graph
+
+            matches = [node for node in graph.values() if node.output_tree.startswith(hash_prefix)]
+            if not matches:
+                typer.secho(
+~~~~~
+
+~~~~~act
+patch_file
+packages/quipu-cli/src/quipu/cli/commands/helpers.py
+~~~~~
+~~~~~python
+def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
+    """在图中查找与当前工作区状态匹配的节点"""
+    current_hash = engine.git_db.get_tree_hash()
+    # 修复：直接从 graph 中通过 output_tree hash 查找
+    for node in graph.values():
+        if node.output_tree == current_hash:
+            return node
+
+    typer.secho("⚠️  当前工作区状态未在历史中找到，或存在未保存的变更。", fg=typer.colors.YELLOW, err=True)
+~~~~~
+~~~~~python
+def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
+    """在图中查找与当前工作区状态匹配的节点"""
+    current_hash = engine.git_db.get_tree_hash()
+    # 修复：直接从 graph 中通过 output_tree hash 查找
+    for node in graph.values():
+        if node.output_tree == current_hash:
+            return node
+
+    typer.secho("⚠️  当前工作区状态未在历史中找到，或存在未保存的变更。", fg=typer.colors.YELLOW, err=True)
+~~~~~
+
+~~~~~act
+patch_file
+packages/quipu-cli/src/quipu/cli/commands/workspace.py
+~~~~~
+~~~~~python
+            target_tree_hash = engine._read_head()
+            if not target_tree_hash or target_tree_hash not in graph:
+                latest_node = max(graph.values(), key=lambda n: n.timestamp)
+                target_tree_hash = latest_node.output_tree
+                typer.secho(
+                    f"⚠️  HEAD 指针丢失或无效，将恢复到最新历史节点: {latest_node.short_hash}",
+                    fg=typer.colors.YELLOW,
+                    err=True,
+                )
+            else:
+                latest_node = graph[target_tree_hash]
+
+            current_hash = engine.git_db.get_tree_hash()
+~~~~~
+~~~~~python
+            target_tree_hash = engine._read_head()
+            latest_node = None
+            if target_tree_hash:
+                for node in graph.values():
+                    if node.output_tree == target_tree_hash:
+                        latest_node = node
+                        break
+            
+            if not latest_node:
+                latest_node = max(graph.values(), key=lambda n: n.timestamp)
+                target_tree_hash = latest_node.output_tree
+                typer.secho(
+                    f"⚠️  HEAD 指针丢失或无效，将恢复到最新历史节点: {latest_node.short_hash}",
+                    fg=typer.colors.YELLOW,
+                    err=True,
+                )
+
+            current_hash = engine.git_db.get_tree_hash()
+~~~~~
+
+#### Acts 3: 拆分并修复 `export` 命令的测试用例
+
+最后，我们将 `test_export_options` 拆分为两个独立的测试，以确保状态隔离。
 
 ~~~~~act
 patch_file
 tests/cli/test_export_command.py
 ~~~~~
 ~~~~~python
-def test_export_navbar_logic(runner, populated_history):
-    """验证导航栏链接的正确性。"""
+def test_export_options(runner, populated_history):
+    """测试 --no-nav 和 --no-frontmatter 选项。"""
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export"
-    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir)])
-
-    files = list(output_dir.glob("*.md"))
     
-    # Test Branch Point links (Node 2)
-    branch_point_file = next(f for f in files if "Branch_Point" in f.name)
-    content = branch_point_file.read_text()
-    assert content.count("→ [子节点]") == 2
-    assert "← [父节点]" in content
+    # Test --no-frontmatter
+    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-frontmatter"])
+    a_file = next(output_dir.glob("*.md"))
+    assert not a_file.read_text().startswith("---")
 
-    # Test Summary and Branch Point ancestor links (Node 4)
-    summary_node_file = next(f for f in files if "Summary_Node" in f.name)
-    content = summary_node_file.read_text()
-    assert "↑ [总结节点]" in content # It is its own summary node, so no link to ancestor
-    assert "↓ [上一分支点]" in content
-    assert "Branch_Point" in content # Check it links to the correct file
+    # Test --no-nav
+    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-nav"])
+    a_file = next(output_dir.glob("*.md"))
+    assert "> [!nav] 节点导航" not in a_file.read_text()
+
+
+def test_export_navbar_logic(runner, populated_history):
 ~~~~~
 ~~~~~python
-def test_export_navbar_logic(runner, populated_history):
-    """验证导航栏链接的正确性。"""
+def test_export_no_frontmatter(runner, populated_history):
+    """测试 --no-frontmatter 选项。"""
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export"
-    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir)])
+    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-frontmatter", "-n", "1"])
+    a_file = next(output_dir.glob("*.md"))
+    assert not a_file.read_text().startswith("---")
 
-    files = list(output_dir.glob("*.md"))
-    
-    # Test Branch Point links (Node 2)
-    branch_point_file = next(f for f in files if "Branch_Point" in f.name)
-    content = branch_point_file.read_text()
-    assert content.count("→ [子节点]") == 2
-    assert "← [父节点]" in content
 
-    # Test Summary and Branch Point ancestor links (Node 4)
-    summary_node_file = next(f for f in files if "Summary_Node" in f.name)
-    content = summary_node_file.read_text()
-    # n4 is a summary node, but its ancestors are not. So it should not have a summary link.
-    assert "↑ [总结节点]" not in content
-    assert "↓ [上一分支点]" in content
-    assert "Branch_Point" in content # Check it links to the correct file
-~~~~~
+def test_export_no_nav(runner, populated_history):
+    """测试 --no-nav 选项。"""
+    engine = populated_history
+    output_dir = engine.root_dir / ".quipu" / "test_export"
+    runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-nav", "-n", "1"])
+    a_file = next(output_dir.glob("*.md"))
+    assert "> [!nav] 节点导航" not in a_file.read_text()
 
-~~~~~act
-patch_file
-tests/cli/test_export_command.py
-~~~~~
-~~~~~python
-def test_export_edge_cases(runner, quipu_workspace):
-    """测试边界情况。"""
-    work_dir, _, _ = quipu_workspace # Empty history
-    
-    # Test empty history
-    result = runner.invoke(app, ["export", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    assert "历史记录为空" in result.stderr
 
-    # Create one node, then test no-match filter
-    (work_dir / "f").touch()
-    engine = Engine(work_dir) # Re-init engine
-    engine.capture_drift(engine.git_db.get_tree_hash())
-    
-    result = runner.invoke(app, ["export", "-w", str(work_dir), "--since", "2099-01-01 00:00"])
-    assert result.exit_code == 0
-    assert "未找到符合条件的节点" in result.stderr
-~~~~~
-~~~~~python
-def test_export_edge_cases(runner, quipu_workspace):
-    """测试边界情况。"""
-    work_dir, _, engine = quipu_workspace # Empty history
-    
-    # Test empty history
-    result = runner.invoke(app, ["export", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    assert "历史记录为空" in result.stderr
-
-    # Create one node, then test no-match filter
-    (work_dir / "f").touch()
-    # Use the properly initialized engine from the fixture
-    engine.capture_drift(engine.git_db.get_tree_hash())
-    
-    result = runner.invoke(app, ["export", "-w", str(work_dir), "--since", "2099-01-01 00:00"])
-    assert result.exit_code == 0
-    assert "未找到符合条件的节点" in result.stderr
+def test_export_navbar_logic(runner, populated_history):
 ~~~~~
 
 ### 下一步建议
-所有已知的 Bug 都已修复。现在，我们应该重新运行完整的测试套件，以确保我们的修复没有引入任何回归问题。如果所有测试都通过，这个功能就可以被认为已经完成并准备好提交了。
+现在核心缺陷和测试都已修复，我建议运行完整的测试套件 (`pytest`) 以确认所有功能均按预期工作，没有引入新的回归问题。通过后，我们就可以提交这些变更了。

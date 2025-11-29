@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] fix: 修正 export 命令的哈希错误和测试实例化问题", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764403176.954219, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修正 export 测试因节点覆盖和状态不隔离导致的失败", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764403705.8698294, "duration_ms": 0}}
