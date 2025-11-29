@@ -1,9 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Protocol
-
-import typer
+from typing import Dict, Any, Protocol, Optional
 
 from .messages import find_locales_dir
 
@@ -51,33 +49,22 @@ class Renderer(Protocol):
     def data(self, data_string: str) -> None: ...
 
 
-class TyperRenderer:
-    """A renderer that uses Typer for colored and styled CLI output."""
-
-    def success(self, message: str) -> None:
-        typer.secho(message, fg=typer.colors.GREEN, err=True)
-
-    def info(self, message: str) -> None:
-        typer.secho(message, fg=typer.colors.BLUE, err=True)
-
-    def warning(self, message: str) -> None:
-        typer.secho(message, fg=typer.colors.YELLOW, err=True)
-
-    def error(self, message: str) -> None:
-        typer.secho(message, fg=typer.colors.RED, err=True)
-
-    def data(self, data_string: str) -> None:
-        typer.echo(data_string, err=False)  # Explicitly to stdout
-
-
 class MessageBus:
     """The central service for all user-facing CLI output."""
 
-    def __init__(self, store: MessageStore, renderer: Renderer):
+    def __init__(self, store: MessageStore):
         self._store = store
+        self._renderer: Optional[Renderer] = None
+
+    def set_renderer(self, renderer: Renderer):
+        """Injects a concrete renderer implementation."""
         self._renderer = renderer
 
     def _render(self, level: str, msg_id: str, **kwargs: Any) -> None:
+        if not self._renderer:
+            logger.warning(f"MessageBus renderer not configured. Dropping message: '{msg_id}'")
+            return
+
         template = self._store.get(msg_id)
         try:
             message = template.format(**kwargs)
@@ -110,12 +97,14 @@ class MessageBus:
             return template
 
     def data(self, data_string: str) -> None:
+        if not self._renderer:
+            logger.warning("MessageBus renderer not configured. Dropping data output.")
+            return
         self._renderer.data(data_string)
 
 
 # --- Default Instance ---
 # A default instance that can be easily imported and used.
-# This avoids the need for complex dependency injection in the early stages.
+# The renderer will be injected at runtime by the application layer (e.g., CLI).
 _default_store = MessageStore(locale="zh")
-_default_renderer = TyperRenderer()
-bus = MessageBus(store=_default_store, renderer=_default_renderer)
+bus = MessageBus(store=_default_store)

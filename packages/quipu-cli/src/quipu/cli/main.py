@@ -1,10 +1,18 @@
 import logging
 import typer
 from .commands import axon, cache, navigation, query, remote, run, ui, workspace, show, export
+from .rendering import TyperRenderer
+from quipu.common.messaging import bus
 
-# 初始化日志记录器，但不配置 handler
-# handler 的配置（stderr 或 file）由具体命令在执行时决定
+# --- Global Setup ---
+# Inject the CLI-specific renderer into the common message bus instance.
+# This must be done once at the application's entry point.
+bus.set_renderer(TyperRenderer())
+
+# Initialize logger, but handler configuration (stderr or file)
+# is determined by specific commands at runtime.
 logging.getLogger(__name__)
+
 
 # --- App Definition ---
 app = typer.Typer(
