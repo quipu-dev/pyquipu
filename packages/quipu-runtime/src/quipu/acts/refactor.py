@@ -28,9 +28,7 @@ def _move_file(ctx: ActContext, args: List[str]):
         ctx.fail(f"源文件不存在: {src_raw}")
 
     msg = f"Move: {src_raw} -> {dest_raw}"
-    if not ctx.request_confirmation(src_path, f"Source Exists", msg):
-        logger.warning("❌ [Skip] 用户取消移动")
-        return
+    ctx.request_confirmation(src_path, f"Source Exists", msg)
 
     try:
         dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,9 +58,7 @@ def _delete_file(ctx: ActContext, args: List[str]):
     file_type = "目录 (递归删除!)" if target_path.is_dir() else "文件"
     warning = f"🚨 正在删除{file_type}: {target_path}"
 
-    if not ctx.request_confirmation(target_path, "EXISTING CONTENT", warning):
-        logger.warning("❌ [Skip] 用户取消删除")
-        return
+    ctx.request_confirmation(target_path, "EXISTING CONTENT", warning)
 
     try:
         if target_path.is_dir():

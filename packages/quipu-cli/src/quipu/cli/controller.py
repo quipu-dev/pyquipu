@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 from typing import List
 import typer
+import click
 
-from quipu.interfaces.exceptions import ExecutionError as CoreExecutionError
+from quipu.interfaces.exceptions import ExecutionError as CoreExecutionError, OperationCancelledError
 from quipu.runtime.executor import Executor
 from quipu.runtime.parser import detect_best_parser, get_parser
 from quipu.interfaces.result import QuipuResult
@@ -63,21 +64,29 @@ class QuipuApplication:
             typer.echo("\n🔍 变更预览:")
             for line in diff_lines:
                 if line.startswith("+"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.GREEN)
+                    typer.secho(line.strip("\n"), fg=typer.colors.GREEN, err=True)
                 elif line.startswith("-"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.RED)
+                    typer.secho(line.strip("\n"), fg=typer.colors.RED, err=True)
                 elif line.startswith("^"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.BLUE)
+                    typer.secho(line.strip("\n"), fg=typer.colors.BLUE, err=True)
                 else:
-                    typer.echo(line.strip("\n"))
-            typer.echo("")
+                    typer.echo(line.strip("\n"), err=True)
+            typer.echo("", err=True)
 
-            # 处理非交互式环境
-            if not sys.stdin.isatty():
-                logger.warning("非交互式环境，自动跳过确认。使用 --yolo 参数可自动批准。")
-                return False
+            typer.secho(f"{prompt} [Y/n]: ", nl=False, err=True)
 
-            return typer.confirm(prompt, default=True)
+            try:
+                char = click.getchar(echo=False)
+                click.echo(char, err=True)
+                confirmed = char.lower() != "n"
+            except (OSError, EOFError):
+                click.echo(" (non-interactive)", err=True)
+                confirmed = False
+
+            if not confirmed:
+                raise OperationCancelledError("User cancelled or non-interactive.")
+
+            return True
 
         executor = Executor(
             root_dir=self.work_dir,
@@ -158,6 +167,10 @@ def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: boo
     try:
         app = QuipuApplication(work_dir=work_dir, yolo=yolo)
         return app.run(content=content, parser_name=parser_name)
+
+    except OperationCancelledError as e:
+        logger.info(f"🚫 操作已取消: {e}")
+        return QuipuResult(success=False, exit_code=2, message=f"🚫 操作已取消: {e}", error=e)
 
     except CoreExecutionError as e:
         logger.error(f"❌ 操作失败: {e}")

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, List, Optional
 
 import typer
+import click
 from quipu.acts import register_core_acts
 from quipu.interfaces.exceptions import ExecutionError
 from quipu.runtime.executor import Executor
@@ -53,13 +54,17 @@ def register(app: typer.Typer):
                     typer.secho(line.strip("\n"), fg=typer.colors.BLUE)
                 else:
                     typer.echo(line.strip("\n"))
-            typer.echo("")
+            typer.echo("", err=True)
 
-            if not sys.stdin.isatty():
-                logger.warning("非交互式环境，自动跳过确认。使用 --yolo 参数可自动批准。")
+            typer.secho(f"{prompt} [Y/n]: ", nl=False, err=True)
+            try:
+                char = click.getchar(echo=False)
+                click.echo(char, err=True)
+                return char.lower() != "n"
+            except (OSError, EOFError):
+                click.echo(" (non-interactive)", err=True)
+                logger.warning("无法在当前环境中获取用户确认，操作已跳过。")
                 return False
-
-            return typer.confirm(prompt, default=True)
 
         # 2. 初始化无状态 Executor
         # 注意：这里不初始化 Engine，因此没有历史记录功能

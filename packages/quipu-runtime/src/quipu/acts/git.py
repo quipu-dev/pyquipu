@@ -87,9 +87,7 @@ def _git_commit(ctx: ActContext, args: List[str]):
         logger.warning("⚠️  [Git] 没有检测到暂存的更改，跳过提交。")
         return
 
-    if not ctx.request_confirmation(ctx.root_dir / ".git", "Staged Changes", f"Commit Message: {message}"):
-        logger.warning("❌ [Skip] 用户取消提交")
-        return
+    ctx.request_confirmation(ctx.root_dir / ".git", "Staged Changes", f"Commit Message: {message}")
 
     _run_git_cmd(ctx, ["commit", "-m", message])
     logger.info(f"✅ [Git] 提交成功: {message}")

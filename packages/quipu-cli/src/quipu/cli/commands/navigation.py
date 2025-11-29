@@ -3,7 +3,7 @@ from typing import Annotated
 
 import typer
 
-from .helpers import engine_context, _find_current_node, _execute_visit
+from .helpers import engine_context, _find_current_node, _execute_visit, _prompt_for_confirmation
 from ..config import DEFAULT_WORK_DIR
 
 
@@ -69,7 +69,7 @@ def register(app: typer.Typer):
 
             if not force:
                 prompt = f"🚨 即将重置工作区到状态 {target_node.short_hash} ({target_node.timestamp})。\n此操作会覆盖未提交的更改。是否继续？"
-                if not typer.confirm(prompt, default=False):
+                if not _prompt_for_confirmation(prompt, default=False):
                     typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
                     raise typer.Abort()
 

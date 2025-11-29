@@ -22,9 +22,7 @@ def _run_command(ctx: ActContext, args: List[str]):
     command = " ".join(args)
 
     warning_msg = f"⚠️  即将执行系统命令:\n  $ {command}\n  (CWD: {ctx.root_dir})"
-    if not ctx.request_confirmation(ctx.root_dir, "System State", warning_msg):
-        logger.warning(f"❌ [Skip] 用户取消执行命令: {command}")
-        return
+    ctx.request_confirmation(ctx.root_dir, "System State", warning_msg)
 
     logger.info(f"🚀 [Shell] Executing: {command}")
 

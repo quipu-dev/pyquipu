@@ -65,3 +65,25 @@ def test_discard_interactive_abort(runner, quipu_workspace):
     assert result.exit_code == 1
     assert "操作已取消" in result.stderr
     assert (work_dir / "file.txt").read_text() == "v2"
+def test_discard_interactive_with_piped_input_abort(runner, quipu_workspace):
+    """
+    验证在管道输入模式下，discard 命令能正确接收交互式输入 'n' 并中止操作。
+    """
+    work_dir, _, engine = quipu_workspace
+
+    # 初始状态 v1
+    (work_dir / "file.txt").write_text("v1")
+    engine.capture_drift(engine.git_db.get_tree_hash())
+
+    # 制造脏状态 v2
+    (work_dir / "file.txt").write_text("v2")
+
+    # 模拟用户通过管道输入 'n'
+    # 注意: 这里的 'input' 模拟的是用户在 TTY 的输入，因为 stdin 已经被 runner 接管
+    result = runner.invoke(app, ["discard", "-w", str(work_dir)], input="n")
+
+    # Abort() 会导致 exit_code 为 1
+    assert result.exit_code == 1
+    assert "操作已取消" in result.stderr
+    # 验证文件没有被回滚
+    assert (work_dir / "file.txt").read_text() == "v2"

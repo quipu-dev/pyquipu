@@ -73,9 +73,7 @@ def _write_file(ctx: ActContext, args: List[str]):
         except Exception:
             old_content = "[Binary or Unreadable]"
 
-    if not ctx.request_confirmation(target_path, old_content, content):
-        logger.warning(f"❌ [Skip] 用户取消写入: {raw_path}")
-        return
+    ctx.request_confirmation(target_path, old_content, content)
 
     try:
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,9 +110,7 @@ def _patch_file(ctx: ActContext, args: List[str]):
 
     new_content = content.replace(old_str, new_str, 1)
 
-    if not ctx.request_confirmation(target_path, content, new_content):
-        logger.warning(f"❌ [Skip] 用户取消替换: {raw_path}")
-        return
+    ctx.request_confirmation(target_path, content, new_content)
 
     try:
         target_path.write_text(new_content, encoding="utf-8")
@@ -148,9 +144,7 @@ def _append_file(ctx: ActContext, args: List[str]):
 
     new_content = old_content + content_to_append
 
-    if not ctx.request_confirmation(target_path, old_content, new_content):
-        logger.warning(f"❌ [Skip] 用户取消追加: {raw_path}")
-        return
+    ctx.request_confirmation(target_path, old_content, new_content)
 
     try:
         with open(target_path, "a", encoding="utf-8") as f:

@@ -14,3 +14,9 @@ class ExecutionError(AIFSOpsError):
     """操作执行错误"""
 
     pass
+
+
+class OperationCancelledError(ExecutionError):
+    """当用户取消一个操作时引发"""
+
+    pass

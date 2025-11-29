@@ -5,7 +5,7 @@ from typing import Dict, List, Any, Optional, Callable
 import shlex
 
 from quipu.interfaces.types import Statement, ActFunction, ActContext
-from quipu.interfaces.exceptions import ExecutionError
+from quipu.interfaces.exceptions import ExecutionError, OperationCancelledError
 
 logger = logging.getLogger(__name__)
 
@@ -106,14 +106,14 @@ class Executor:
 
         return abs_path
 
-    def request_confirmation(self, file_path: Path, old_content: str, new_content: str) -> bool:
+    def request_confirmation(self, file_path: Path, old_content: str, new_content: str):
         """
         生成 diff 并请求用户确认。
-        如果 self.yolo 为 True,则自动返回 True。
-        如果没有提供 confirmation_handler，则安全地返回 False。
+        如果 self.yolo 为 True, 则直接返回。
+        如果用户取消或环境不支持，此方法将抛出 OperationCancelledError。
         """
         if self.yolo:
-            return True
+            return
 
         diff = list(
             difflib.unified_diff(
@@ -126,14 +126,15 @@ class Executor:
 
         if not diff:
             logger.info("⚠️  内容无变化")
-            return True
+            return
 
         if not self.confirmation_handler:
             logger.warning("无确认处理器，已跳过需要用户确认的操作。")
-            return False
+            raise OperationCancelledError("No confirmation handler is configured.")
 
         prompt = f"❓ 是否对 {file_path.name} 执行上述修改?"
-        return self.confirmation_handler(diff, prompt)
+        # 此调用现在要么成功返回，要么抛出 OperationCancelledError
+        self.confirmation_handler(diff, prompt)
 
     def execute(self, statements: List[Statement]):
         """执行一系列语句"""
@@ -187,6 +188,9 @@ class Executor:
                 )
                 # 传递上下文对象，而不是 executor 实例
                 func(ctx, final_args)
+            except OperationCancelledError:
+                # 显式地重新抛出，以确保它能被上层捕获
+                raise
             except Exception as e:
                 logger.error(f"Execution failed for '{act_name}': {e}")
                 raise ExecutionError(f"An error occurred while executing '{act_name}': {e}") from e
