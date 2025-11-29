@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(cli): 创建 ui_utils 模块以解决循环依赖", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764396878.8613868, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(cli): 集中用户确认逻辑到 ui_utils 模块", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764396954.4598455, "duration_ms": 0}}
