@@ -4,9 +4,10 @@ from typing import Annotated
 
 import typer
 
-from .helpers import engine_context, _prompt_for_confirmation
+from .helpers import engine_context
 from ..config import DEFAULT_WORK_DIR
 from ..logger_config import setup_logging
+from ..ui_utils import prompt_for_confirmation
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def cache_rebuild(
 
     if not force:
         prompt = f"🚨 即将删除并重建数据库 {db_path}。\n此操作不可逆。是否继续？"
-        if not _prompt_for_confirmation(prompt, default=False):
+        if not prompt_for_confirmation(prompt, default=False):
             typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
             raise typer.Abort()
 

@@ -3,8 +3,9 @@ from typing import Annotated, Optional
 
 import typer
 
-from .helpers import engine_context, _prompt_for_confirmation
+from .helpers import engine_context
 from ..config import DEFAULT_WORK_DIR
+from ..ui_utils import prompt_for_confirmation
 
 
 def register(app: typer.Typer):
@@ -87,7 +88,7 @@ def register(app: typer.Typer):
 
             if not force:
                 prompt = f"🚨 即将丢弃上述所有变更，并恢复到状态 {latest_node.short_hash}。\n此操作不可逆。是否继续？"
-                if not _prompt_for_confirmation(prompt, default=False):
+                if not prompt_for_confirmation(prompt, default=False):
                     typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
                     raise typer.Abort()
 

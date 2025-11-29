@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Generator, Optional
 
-import click
 import typer
 from quipu.interfaces.models import QuipuNode
 from quipu.engine.state_machine import Engine
@@ -23,31 +22,6 @@ def engine_context(work_dir: Path) -> Generator[Engine, None, None]:
     finally:
         if engine:
             engine.close()
-
-
-def _prompt_for_confirmation(message: str, default: bool = False) -> bool:
-    """
-    使用单字符输入请求用户确认，无需回车。
-    此实现是健壮的，即使在 stdin 被管道占用的情况下也能工作。
-    """
-    prompt_suffix = " [Y/n]: " if default else " [y/N]: "
-    typer.secho(message + prompt_suffix, nl=False, err=True)
-
-    try:
-        # click.getchar() 会智能地尝试从 /dev/tty 读取
-        char = click.getchar(echo=False)
-        click.echo(char, err=True)  # 手动回显到 stderr
-    except (OSError, EOFError):
-        # 在完全没有 tty 的环境中 (例如 CI runner)，会抛出异常
-        click.echo(" (non-interactive)", err=True)
-        return False
-
-    if char.lower() == "y":
-        return True
-    if char.lower() == "n":
-        return False
-
-    return default
 
 
 def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
