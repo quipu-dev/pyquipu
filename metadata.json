@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] test: 添加 export 导航栏上下文逻辑的专项测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764405081.5492146, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix(cli): 修正 export 导航栏分支点链接的生成逻辑", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764405195.9661107, "duration_ms": 0}}
