@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 修复测试辅助函数中的错误参数名", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764397945.435672, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(tests): 提取共享的测试辅助函数", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764398011.2549112, "duration_ms": 0}}

@@ -1,57 +1,52 @@
-分析正确。测试失败了，并且错误日志非常清晰地指出了问题所在。
+好的，测试已通过。我们现在将这次成功的重构（提取共享辅助函数）提交到版本历史中。
 
-`TypeError: Engine.create_plan_node() got an unexpected keyword argument 'content'`
-
-这表明我在创建 `create_plan_node_with_change` 辅助函数时，调用 `engine.create_plan_node` 方法使用了错误的关键字参数名。我使用了 `content=message`，而 `Engine` 的 `create_plan_node` 方法期望的参数名应该是 `plan_content`。
-
-这是一个简单的笔误，我将立即生成计划来修复它。
-
-## [WIP] fix: 修复测试辅助函数中的错误参数名
-
-### 错误分析
-在 `tests/helpers.py` 中新创建的 `create_plan_node_with_change` 函数中，调用 `engine.create_plan_node` 时，错误地将 `plan_content` 参数写成了 `content`。这导致了 `TypeError`，使得所有依赖此辅助函数的测试都失败了。
+## [COMMIT] refactor(tests): 提取共享的测试辅助函数
 
 ### 用户需求
-修正 `tests/helpers.py` 文件中的错误，使测试能够通过。
+在测试通过后，为本次重构（创建 `tests/helpers.py` 并重构 `tests/engine/test_engine.py`）创建一个 Git 提交。
 
 ### 评论
-这是一个典型的重构过程中引入的小错误。清晰的错误日志和全面的测试覆盖使得定位和修复此类问题变得非常高效。
+这次重构是提升测试代码库质量的重要一步。通过将重复的节点创建逻辑抽象到 `tests/helpers.py` 中，我们遵循了 DRY 原则，减少了代码冗余，并为未来编写更复杂的测试用例提供了可复用的工具。
 
 ### 目标
-1.  修改 `tests/helpers.py` 文件。
-2.  将 `engine.create_plan_node(...)` 调用中的 `content=...` 参数更正为 `plan_content=...`。
+1.  将新创建的 `tests/helpers.py` 和修改后的 `tests/engine/test_engine.py` 添加到 Git 暂存区。
+2.  创建一个清晰的 Git 提交，记录本次重构的目的和内容。
 
 ### 基本原理
-通过一个精准的 `patch_file` 操作，我们可以修正这个笔误，而无需重写整个文件。这将使测试恢复正常，并完成我们之前开始的重构任务。
+使用 `git add` 和 `git commit` 将文件变更固化到版本历史中。提交信息遵循 Conventional Commits 规范，清晰地说明了这是一次对测试代码的重构，旨在提高代码的复用性和可维护性。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/test-helpers #task/action/refactor #task/state/continue
+#intent/refine #flow/ready #priority/medium #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/test-helpers #task/action/refactor #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 修正 `tests/helpers.py` 中的参数名
+#### Acts 1: 提交重构
 
-我们将 `content=message` 替换为 `plan_content=message`。
+我们将暂存相关文件并执行提交。
 
 ~~~~~act
-patch_file tests/helpers.py
+git_add
+tests/helpers.py
+tests/engine/test_engine.py
 ~~~~~
-~~~~~python
-    """
-    (engine.root_dir / file_name).write_text(content)
-    new_hash = engine.git_db.get_tree_hash()
-    engine.create_plan_node(input_tree=parent_hash, output_tree=new_hash, content=message)
-    return new_hash
+
+~~~~~act
+git_commit
 ~~~~~
-~~~~~python
-    """
-    (engine.root_dir / file_name).write_text(content)
-    new_hash = engine.git_db.get_tree_hash()
-    engine.create_plan_node(input_tree=parent_hash, output_tree=new_hash, plan_content=message)
-    return new_hash
+~~~~~text
+refactor(tests): extract shared test helper functions
+
+Creates a new `tests/helpers.py` module to house common utility functions for setting up test scenarios.
+
+- Introduces `create_plan_node_with_change` and `create_capture_node_with_change` to standardize the creation of history nodes with associated file changes.
+- Refactors the `populated_engine` fixture in `tests/engine/test_engine.py` to use these new shared helpers, removing the local, duplicated `add_commit` function.
+
+This change reduces code duplication, improves the readability of test setup (Arrange phase), and makes the test suite more maintainable.
 ~~~~~
 
 ### 下一步建议
-修正已完成。请再次运行测试，确认所有错误都已解决。测试通过后，我们就可以提交这次重构了。
+我们已经完成了之前分析中确定的所有高、中、低优先级的测试代码重构任务。测试代码库现在的结构更加清晰，冗余更少，维护性更强。
+
+接下来，我们可以继续进行新功能的开发，或者对代码库的其他部分进行进一步的探索和优化。
