@@ -33,6 +33,7 @@ def cache_sync(
             pass
         typer.secho("✅ 数据同步完成。", fg=typer.colors.GREEN, err=True)
     except Exception as e:
+        logger.error("数据同步失败", exc_info=True)
         typer.secho(f"❌ 数据同步失败: {e}", fg=typer.colors.RED, err=True)
         ctx.exit(1)
 
@@ -67,7 +68,8 @@ def cache_rebuild(
     try:
         db_path.unlink()
         typer.secho("🗑️  旧数据库已删除。", err=True)
-    except Exception as e:
+    except (OSError, PermissionError) as e:
+        logger.error(f"删除旧数据库文件 '{db_path}' 失败", exc_info=True)
         typer.secho(f"❌ 删除旧数据库失败: {e}", fg=typer.colors.RED, err=True)
         ctx.exit(1)
 

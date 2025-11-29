@@ -38,6 +38,7 @@ def register(app: typer.Typer):
                 msg_suffix = f" ({message})" if message else ""
                 typer.secho(f"📸 快照已保存: {node.short_hash}{msg_suffix}", fg=typer.colors.GREEN, err=True)
             except Exception as e:
+                logger.error("创建快照失败", exc_info=True)
                 typer.secho(f"❌ 创建快照失败: {e}", fg=typer.colors.RED, err=True)
                 ctx.exit(1)
 
@@ -96,5 +97,6 @@ def register(app: typer.Typer):
                 engine.visit(target_tree_hash)
                 typer.secho(f"✅ 工作区已成功恢复到节点 {latest_node.short_hash}。", fg=typer.colors.GREEN, err=True)
             except Exception as e:
+                logger.error(f"恢复工作区状态失败", exc_info=True)
                 typer.secho(f"❌ 恢复状态失败: {e}", fg=typer.colors.RED, err=True)
                 ctx.exit(1)

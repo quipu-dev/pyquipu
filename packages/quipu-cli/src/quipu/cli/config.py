@@ -38,4 +38,5 @@ DEFAULT_WORK_DIR: Path = Path(os.getenv("AI_FS_WORK_DIR", "."))
 DEFAULT_ENTRY_FILE: Path = Path(os.getenv("AXON_ENTRY_FILE", "o.md"))
 
 # 日志级别
-LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+# 使用项目特定的环境变量 QUIPU_LOG_LEVEL，并确保其值为大写
+LOG_LEVEL: str = os.getenv("QUIPU_LOG_LEVEL", "INFO").upper()

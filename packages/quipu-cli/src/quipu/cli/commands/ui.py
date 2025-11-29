@@ -5,9 +5,9 @@ from typing import Annotated
 import typer
 
 from .helpers import engine_context, _execute_visit
-from ..config import DEFAULT_WORK_DIR
+from ..config import DEFAULT_WORK_DIR, LOG_LEVEL
 from ..factory import create_engine
-from ..logger_config import configure_file_logging
+from ..logger_config import configure_file_logging, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,12 @@ def register(app: typer.Typer):
             typer.secho("💡 请运行: pip install 'textual>=0.58.0'", err=True)
             ctx.exit(1)
 
-        log_file = work_dir / ".quipu" / "tui.debug.log"
-        configure_file_logging(log_file)
+        if LOG_LEVEL == "DEBUG":
+            log_file = work_dir / ".quipu" / "tui.debug.log"
+            configure_file_logging(log_file)
+        else:
+            setup_logging()  # Use standard stderr logging for INFO level and above
+
         logging.info("Starting Quipu UI command...")
 
         temp_engine = create_engine(work_dir, lazy=True)

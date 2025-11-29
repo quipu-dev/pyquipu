@@ -41,6 +41,7 @@ def register(app: typer.Typer):
         Axon: 无状态的 Markdown 任务执行器 (不记录历史)。
         """
         setup_logging()
+        logger.debug(f"axon started with file={file}, work_dir={work_dir}, parser={parser_name}, yolo={yolo}")
 
         # 1. 配置执行器的 UI 确认回调
         def typer_confirmation_handler(diff_lines: List[str], prompt: str) -> bool:
@@ -142,7 +143,11 @@ def register(app: typer.Typer):
         except ExecutionError as e:
             typer.secho(f"\n❌ 执行失败: {e}", fg=typer.colors.RED, err=True)
             ctx.exit(1)
+        except ValueError as e:
+            logger.error(f"无效的参数或配置: {e}", exc_info=True)
+            typer.secho(f"\n❌ 无效的参数或配置: {e}", fg=typer.colors.RED, err=True)
+            ctx.exit(1)
         except Exception as e:
-            logger.error(f"系统错误: {e}", exc_info=True)
+            logger.error(f"未预期的系统错误: {e}", exc_info=True)
             typer.secho(f"\n❌ 系统错误: {e}", fg=typer.colors.RED, err=True)
             ctx.exit(1)

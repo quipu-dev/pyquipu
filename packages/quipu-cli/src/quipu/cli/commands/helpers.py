@@ -44,5 +44,6 @@ def _execute_visit(ctx: typer.Context, engine: Engine, target_hash: str, descrip
         engine.visit(target_hash)
         typer.secho(f"✅ 已成功切换到状态 {target_hash[:7]}。", fg=typer.colors.GREEN, err=True)
     except Exception as e:
+        logger.error(f"导航操作失败 (目标哈希: {target_hash[:12]})", exc_info=True)
         typer.secho(f"❌ 导航操作失败: {e}", fg=typer.colors.RED, err=True)
         ctx.exit(1)

@@ -208,6 +208,7 @@ def register(app: typer.Typer):
                 else:
                     typer.secho("⚠️  已到达访问历史的起点。", fg=typer.colors.YELLOW, err=True)
             except Exception as e:
+                logger.error("后退操作失败", exc_info=True)
                 typer.secho(f"❌ 后退操作失败: {e}", fg=typer.colors.RED, err=True)
                 ctx.exit(1)
 
@@ -227,5 +228,6 @@ def register(app: typer.Typer):
                 else:
                     typer.secho("⚠️  已到达访问历史的终点。", fg=typer.colors.YELLOW, err=True)
             except Exception as e:
+                logger.error("前进操作失败", exc_info=True)
                 typer.secho(f"❌ 前进操作失败: {e}", fg=typer.colors.RED, err=True)
                 ctx.exit(1)

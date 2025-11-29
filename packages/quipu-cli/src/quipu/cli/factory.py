@@ -36,6 +36,7 @@ def create_engine(work_dir: Path, lazy: bool = False) -> Engine:
     project_root = find_git_repository_root(work_dir) or work_dir
     config = ConfigManager(project_root)
     storage_type = config.get("storage.type", "git_object")
+    logger.debug(f"Engine factory configured with storage type: '{storage_type}'")
     git_db = GitDB(project_root)
     db_manager = None
 
