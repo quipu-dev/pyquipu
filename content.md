@@ -1,65 +1,66 @@
-分析正确。测试失败的原因在于 `test_log_output` 的断言逻辑与 `log` 命令的实际输出顺序不匹配。
+好的，测试已通过。我们现在将把 `query` 和 `show` 命令的重构工作，连同对测试的修复，一并提交，以固化这次的成果。
 
-### 错误分析
-1.  **应用逻辑**: `quipu log` 命令的核心功能是按**时间倒序**（最新的在前）显示历史记录。
-2.  **测试逻辑**: 在 `test_log_output` 中，我们先创建了 `node1`，然后创建了 `node2`。因此，`node2` 的时间戳更新，是列表中的最新节点。
-3.  **冲突点**: 当 `log` 命令执行时，它会首先打印 `node2` 的信息，然后才是 `node1`。然而，测试中的断言 `assert "Node 1" in mock_bus.data.call_args_list[0].args[0]` 错误地假设了第一个被打印的（`call_args_list[0]`）是 `node1`。
-
-AssertionError 清楚地显示了这一点：断言期望在第一个输出中找到 "Node 1"，但实际上第一个输出是关于 "Node 2" 的。
-
-### 解决方案
-我们需要修正测试用例中的断言，使其与 `log` 命令的正确行为（时间倒序）保持一致。即，第一个 `bus.data` 调用应该包含 "Node 2" 的信息，第二个调用才包含 "Node 1" 的。
-
-我将生成一个计划来修正这个测试。
-
-## [WIP] fix(tests): 修正 log 命令测试中错误的顺序断言
-
-### 错误分析
-测试用例 `test_log_output` 对 `quipu log` 命令的输出顺序做出了错误的假设。`log` 命令按时间倒序显示节点，即最新的节点会最先显示。测试代码创建了 `node1` 然后是 `node2`，因此 `node2` 是最新的。测试断言却期望 `node1` 出现在第一个输出中，导致了 `AssertionError`。
+## [COMMIT] refactor(cli): 迁移 query 和 show 命令至 MessageBus
 
 ### 用户需求
-修正 `tests/cli/test_query_commands.py` 中的 `test_log_output` 函数，使其断言顺序与 `log` 命令的实际输出顺序（最新的在前）相符。
+将 `quipu query` 和 `quipu show` 两个子命令的输出逻辑，从硬编码的 `typer` 调用迁移到 `MessageBus` 系统。此过程包括分离数据流 (`stdout`) 和元信息流 (`stderr`)，更新消息资源文件，并重构相关测试以使用模拟技术进行意图验证。
 
 ### 评论
-这是一个典型的测试与实现逻辑未对齐的问题。修正这个测试不仅能让测试套件通过，还能让测试用例更准确地反映其所测试的应用功能的行为，提高了测试的可靠性。
+这次重构是 `MessageBus` 推广计划中的一次成功迭代。它不仅推进了代码库的健康度，更重要的是，通过解决 `stdout`/`stderr` 的分离问题，让 `Quipu` 的核心查询功能成为了一个“行为良好”的 Unix 命令行公民，极大地增强了其在自动化脚本和管道操作中的实用性。修复测试逻辑中的顺序错误也证明了新测试模式的价值——它迫使我们更精确地定义和验证应用的行为。
 
 ### 目标
-1.  修改 `test_log_output` 中的断言，验证 `mock_bus.data.call_args_list[0]` 包含 `Node 2` 的摘要。
-2.  验证 `mock_bus.data.call_args_list[1]` 包含 `Node 1` 的摘要。
+1.  **命令重构**：`query.py` 和 `show.py` 已完全使用 `MessageBus` 进行输出，代码意图更加清晰。
+2.  **流分离**：成功将数据输出 (`bus.data()`) 定向到 `stdout`，元信息 (`bus.info()`, `bus.error()`) 定向到 `stderr`。
+3.  **内容外部化**：所有相关的消息文本都已提取到 `locales/zh/cli.json`。
+4.  **测试健壮性**：`test_query_commands.py` 已完全重构为使用模拟 `bus` 的方式，并且修复了一个关键的逻辑顺序断言，使测试与实现行为精确对齐。
 
 ### 基本原理
-通过调整测试断言的顺序，我们使测试的期望与 `log` 命令的 спецификация (specification) 和实现保持一致。这是确保测试既能发现回归错误，又不会因为对正确行为的误解而产生误报（false positives/negatives）的关键。
+我们继续遵循“依赖倒置”原则，将输出实现从命令逻辑中解耦。关键的实践是区分了两种输出类型：**数据**和**元信息**。通过分别调用 `bus.data()` 和 `bus.info()` 等方法，`MessageBus` 的 `TyperRenderer` 能够智能地将它们路由到正确的输出流（`stdout` 和 `stderr`）。
+
+在测试中，我们通过模拟 `bus` 对象，可以精确断言 `data` 方法被哪些内容调用，`info` 方法被哪个消息 ID 调用，从而在不依赖具体输出格式的情况下，验证了命令的逻辑正确性，包括数据输出的顺序。
 
 ### 标签
-#intent/fix #flow/ready #priority/high #comp/tests #scope/core #ai/instruct #task/domain/ui #task/object/message-bus #task/action/implementation #task/state/continue
+#intent/refine #flow/ready #priority/high #comp/cli #comp/tests #concept/ui #scope/dx #scope/ux #ai/instruct #task/domain/ui #task/object/message-bus #task/action/implementation #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 修正 `test_query_commands.py` 中的断言
+#### Acts 1: 将所有相关的变更添加到暂存区
 
-我们将直接修正 `test_log_output` 中对 `mock_bus.data.call_args_list` 的检查顺序。
+我们将所有修改过的文件添加到 Git 暂存区。
 
 ~~~~~act
-patch_file
+git_add
+packages/quipu-cli/src/quipu/cli/commands/query.py
+packages/quipu-cli/src/quipu/cli/commands/show.py
+locales/zh/cli.json
 tests/cli/test_query_commands.py
 ~~~~~
-~~~~~python
-    result = runner.invoke(app, ["log", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    mock_bus.info.assert_called_once_with("query.log.ui.header")
-    assert "Node 1" in mock_bus.data.call_args_list[0].args[0]
-    assert "Node 2" in mock_bus.data.call_args_list[1].args[0]
+
+#### Acts 2: 创建 Git 提交
+
+现在，我们创建一个内容详尽的提交，记录本次重构的所有工作。
+
+~~~~~act
+git_commit
 ~~~~~
-~~~~~python
-    result = runner.invoke(app, ["log", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    mock_bus.info.assert_called_once_with("query.log.ui.header")
-    # The log is in reverse chronological order, so Node 2 comes first.
-    assert "Node 2" in mock_bus.data.call_args_list[0].args[0]
-    assert "Node 1" in mock_bus.data.call_args_list[1].args[0]
+~~~~~text
+refactor(cli): migrate query and show commands to MessageBus
+
+Continues the adoption of the MessageBus architecture by refactoring the `query` and `show` commands.
+
+Key changes:
+- All user-facing output in `query.py` and `show.py` now uses the central `bus` instance.
+- Data output (e.g., node lists) is correctly routed to stdout via `bus.data()`, enabling shell piping with tools like `grep`. Metadata remains on stderr.
+- All associated message strings have been externalized to `locales/zh/cli.json`.
+- Tests in `test_query_commands.py` are refactored to use mocking.
+- Fixed an assertion order bug in `test_log_output` to correctly reflect the reverse chronological order of the `log` command, making the test more accurate.
 ~~~~~
 
 ### 下一步建议
-我们已经修正了测试用例。请重新运行测试以确认问题已解决。一旦测试通过，我将为你生成一个 `[COMMIT]` 计划，将 `query` 和 `show` 命令的重构以及本次测试修复作为一个完整的单元进行提交。
+我们已经成功重构了所有只读命令。现在是时候处理一些带有副作用但逻辑相对简单的命令了。
+
+根据我们之前制定的路线图，下一个理想的目标是 `cache` 命令 (`cache sync` 和 `cache rebuild`)。这将让我们在处理文件系统交互（删除/创建数据库）的场景下，继续应用和巩固 `MessageBus` 的重构模式。
+
+如果你同意，我将开始准备重构 `cache` 命令的计划。
