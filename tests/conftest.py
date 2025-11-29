@@ -1,32 +1,41 @@
 import pytest
+import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
-from quipu.acts.basic import register as register_basic_acts
 
-# 使用 TYPE_CHECKING 块来辅助静态分析工具，而不在运行时导入
-if TYPE_CHECKING:
-    from quipu.runtime.executor import Executor
-
-
-@pytest.fixture
-def isolated_vault(tmp_path: Path) -> Path:
-    """
-    创建一个临时的隔离工作区。
-    """
-    vault = tmp_path / "vault"
-    vault.mkdir()
-    return vault
+from quipu.engine.state_machine import Engine
+from quipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
+from quipu.engine.git_db import GitDB
+from typer.testing import CliRunner
 
 
 @pytest.fixture
-def executor(isolated_vault: Path) -> "Executor":
-    """
-    返回一个绑定到临时工作区的执行器实例，并预装了基础 Acts。
-    测试期间默认开启 YOLO 模式，跳过交互确认。
-    """
-    # 将导入操作延迟到 fixture 函数内部执行
-    from quipu.runtime.executor import Executor
+def runner() -> CliRunner:
+    """提供一个可复用的 CliRunner 实例。"""
+    return CliRunner()
 
-    exc = Executor(root_dir=isolated_vault, yolo=True)
-    register_basic_acts(exc)
-    return exc
+
+@pytest.fixture
+def git_workspace(tmp_path: Path) -> Path:
+    """
+    提供一个已初始化 Git 的干净工作区路径。
+    这是最基础的环境 fixture。
+    """
+    repo_path = tmp_path / "test_repo"
+    repo_path.mkdir()
+    subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=repo_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=repo_path, check=True)
+    return repo_path
+
+
+@pytest.fixture
+def engine_instance(git_workspace: Path) -> Engine:
+    """
+    提供一个绑定到 git_workspace 的、功能完备的 Engine 实例。
+    这是最常用的 fixture，用于所有需要 Engine 核心逻辑的测试。
+    """
+    git_db = GitDB(git_workspace)
+    reader = GitObjectHistoryReader(git_db)
+    writer = GitObjectHistoryWriter(git_db)
+    engine = Engine(root_dir=git_workspace, db=git_db, reader=reader, writer=writer)
+    return engine

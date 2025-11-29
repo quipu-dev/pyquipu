@@ -12,20 +12,12 @@ from quipu.cli.main import app
 
 
 @pytest.fixture
-def nav_workspace(tmp_path):
+def nav_workspace(engine_instance: Engine):
     """
     创建一个包含 Git 仓库和 Engine 实例的测试环境。
     """
-    repo_path = tmp_path / "nav_repo"
-    repo_path.mkdir()
-    subprocess.run(["git", "init"], cwd=repo_path, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=repo_path, check=True)
-    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=repo_path, check=True)
-
-    git_db = GitDB(repo_path)
-    reader = GitObjectHistoryReader(git_db)
-    writer = GitObjectHistoryWriter(git_db)
-    engine = Engine(repo_path, db=git_db, reader=reader, writer=writer)
+    engine = engine_instance
+    repo_path = engine.root_dir
 
     # Helper to create distinct states
     def create_state(content: str) -> str:
@@ -33,11 +25,6 @@ def nav_workspace(tmp_path):
         return engine.git_db.get_tree_hash()
 
     return engine, create_state
-
-
-@pytest.fixture
-def runner():
-    return CliRunner()
 
 
 # --- 1. Unit Tests (Engine Logic) ---

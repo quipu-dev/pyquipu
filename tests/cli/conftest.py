@@ -1,36 +1,12 @@
 import pytest
-import subprocess
-from pathlib import Path
-from typer.testing import CliRunner
-
 from quipu.engine.state_machine import Engine
-from quipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
-from quipu.engine.git_db import GitDB
 
-
-@pytest.fixture
-def runner():
-    return CliRunner()
-
+# runner fixture is now in the root conftest.py, so it's removed from here.
 
 @pytest.fixture
-def quipu_workspace(tmp_path):
+def quipu_workspace(engine_instance: Engine):
     """
-    创建一个包含 Git 仓库并初始化了 Quipu Engine 的测试环境。
+    为 CLI 测试提供 Engine 实例及其工作目录，保持原有返回结构以兼容现有测试。
     返回: (work_dir_path, git_db, engine)
     """
-    work_dir = tmp_path / "ws"
-    work_dir.mkdir()
-
-    # 初始化 Git
-    subprocess.run(["git", "init"], cwd=work_dir, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=work_dir, check=True)
-    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=work_dir, check=True)
-
-    # 初始化 Engine 组件
-    git_db = GitDB(work_dir)
-    reader = GitObjectHistoryReader(git_db)
-    writer = GitObjectHistoryWriter(git_db)
-    engine = Engine(work_dir, db=git_db, reader=reader, writer=writer)
-
-    return work_dir, git_db, engine
+    return engine_instance.root_dir, engine_instance.git_db, engine_instance
