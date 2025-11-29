@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] refactor(runtime): 将 quipu-runtime 的输出迁移到 MessageBus", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764418345.359756, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor(common): 实现分层消息域并重构 runtime 消息", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764418699.4758558, "duration_ms": 0}}
