@@ -23,7 +23,7 @@ class TestReadActs:
         search_func(ctx, ["SECRET_KEY"])
 
         mock_runtime_bus.info.assert_any_call("acts.read.info.usePythonSearch")
-        
+
         # 验证数据输出
         assert mock_runtime_bus.data.called
         data_out = mock_runtime_bus.data.call_args[0][0]
@@ -39,7 +39,7 @@ class TestReadActs:
         search_func(ctx, ["println!"])
 
         mock_runtime_bus.info.assert_any_call("acts.read.info.useRipgrep")
-        
+
         assert mock_runtime_bus.data.called
         data_out = mock_runtime_bus.data.call_args[0][0]
         assert "main.rs" in data_out
@@ -66,11 +66,11 @@ class TestReadActs:
     def test_search_no_match(self, executor: Executor, isolated_vault: Path, monkeypatch, mock_runtime_bus):
         monkeypatch.setattr(shutil, "which", lambda x: None)
         (isolated_vault / "file.txt").write_text("some content", encoding="utf-8")
-        
+
         search_func, _, _ = executor._acts["search_files"]
         ctx = ActContext(executor)
         search_func(ctx, ["non_existent_pattern"])
-        
+
         mock_runtime_bus.info.assert_called_with("acts.read.info.noMatchPython")
 
     def test_search_binary_file_resilience(self, executor: Executor, isolated_vault: Path, monkeypatch):

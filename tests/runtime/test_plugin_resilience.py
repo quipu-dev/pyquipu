@@ -37,7 +37,7 @@ class TestPluginResilience:
         mock_runtime_bus.error.assert_called_with(
             "runtime.plugin.error.loadFailed", plugin_name="bad_syntax.py", error=ANY
         )
-        
+
         num_acts_after = len(executor.get_registered_acts())
         assert num_acts_after == num_acts_before, "不应注册任何新 Act"
         assert "write_file" in executor.get_registered_acts(), "核心 Act 应该仍然存在"

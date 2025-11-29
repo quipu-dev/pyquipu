@@ -29,7 +29,7 @@ def register(executor):
 
         # 3. 验证是否注册成功
         assert "hello_world" in executor._acts
-        
+
         # 验证消息
         mock_runtime_bus.info.assert_called_with("runtime.plugin.info.loading", plugin_dir=custom_plugin_dir)
 
