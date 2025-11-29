@@ -19,9 +19,7 @@ EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 # --- Git-based Test Helpers ---
 
 
-def create_plan_node_with_change(
-    engine: Engine, parent_hash: str, file_name: str, content: str, message: str
-) -> str:
+def create_plan_node_with_change(engine: Engine, parent_hash: str, file_name: str, content: str, message: str) -> str:
     """
     Creates a file change in the workspace and generates a new Plan node.
     Returns the output_tree hash of the new node.

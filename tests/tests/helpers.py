@@ -17,9 +17,7 @@ EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 # --- Git-based Test Helpers ---
 
 
-def create_plan_node_with_change(
-    engine: Engine, parent_hash: str, file_name: str, content: str, message: str
-) -> str:
+def create_plan_node_with_change(engine: Engine, parent_hash: str, file_name: str, content: str, message: str) -> str:
     """
     Creates a file change in the workspace and generates a new Plan node.
     Returns the output_tree hash of the new node.
@@ -93,7 +91,7 @@ class InMemoryDB:
         old_files, new_files = set(old_vfs.keys()), set(new_vfs.keys())
         added, deleted = new_files - old_files, old_files - new_files
         common = old_files & new_files
-        changes = [( "A", f) for f in added]
+        changes = [("A", f) for f in added]
         changes.extend(("D", f) for f in deleted)
         changes.extend(("M", f) for f in common if old_vfs[f] != new_vfs[f])
         return sorted(changes)
@@ -110,9 +108,7 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
     def __init__(self, db: InMemoryDB):
         self.db = db
 
-    def create_node(
-        self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any
-    ) -> QuipuNode:
+    def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any) -> QuipuNode:
         fake_commit_hash = hashlib.sha1(f"{output_tree}{datetime.now().timestamp()}".encode()).hexdigest()
         node = QuipuNode(
             commit_hash=fake_commit_hash,
