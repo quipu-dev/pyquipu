@@ -67,7 +67,7 @@ class TyperRenderer:
         typer.secho(message, fg=typer.colors.RED, err=True)
 
     def data(self, data_string: str) -> None:
-        typer.echo(data_string, err=False) # Explicitly to stdout
+        typer.echo(data_string, err=False)  # Explicitly to stdout
 
 
 class MessageBus:
@@ -84,7 +84,7 @@ class MessageBus:
         except KeyError as e:
             message = f"<Formatting error for '{msg_id}': missing key {e}>"
             logger.warning(message)
-        
+
         render_method = getattr(self._renderer, level)
         render_method(message)
 

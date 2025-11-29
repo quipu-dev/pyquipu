@@ -63,7 +63,7 @@ def test_log_json_output(runner, quipu_workspace, monkeypatch):
     result = runner.invoke(app, ["log", "--json", "-w", str(work_dir)])
     assert result.exit_code == 0
     mock_bus.data.assert_called_once()
-    
+
     # Verify the data passed to bus.data is valid JSON with expected content
     json_data = json.loads(mock_bus.data.call_args.args[0])
     assert isinstance(json_data, list)
@@ -95,7 +95,7 @@ def test_log_json_empty(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
     monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
-    
+
     result = runner.invoke(app, ["log", "--json", "-w", str(work_dir)])
     assert result.exit_code == 0
     mock_bus.data.assert_called_once_with("[]")

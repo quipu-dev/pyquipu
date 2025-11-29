@@ -204,7 +204,7 @@ def register(app: typer.Typer):
                     raise typer.Abort()
                 shutil.rmtree(output_dir)
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             bus.info("export.info.starting", count=len(nodes_to_export), path=output_dir)
 
             # 预计算文件名和节点集合以供导航栏使用

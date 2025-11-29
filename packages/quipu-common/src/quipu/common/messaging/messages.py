@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def find_locales_dir() -> Path | None:
     """
     Find the 'locales' directory, searching upwards from this file.
@@ -16,6 +17,6 @@ def find_locales_dir() -> Path | None:
         if locales_path.is_dir():
             logger.debug(f"Found locales directory at: {locales_path}")
             return locales_path
-    
+
     logger.warning("Could not find the 'locales' directory.")
     return None

@@ -25,9 +25,7 @@ def test_save_with_changes(runner, quipu_workspace, monkeypatch):
 
     result = runner.invoke(app, ["save", "My Snapshot", "-w", str(work_dir)])
     assert result.exit_code == 0
-    mock_bus.success.assert_called_once_with(
-        "workspace.save.success", short_hash=mock.ANY, msg_suffix=" (My Snapshot)"
-    )
+    mock_bus.success.assert_called_once_with("workspace.save.success", short_hash=mock.ANY, msg_suffix=" (My Snapshot)")
 
 
 def test_discard_changes(runner, quipu_workspace, monkeypatch):

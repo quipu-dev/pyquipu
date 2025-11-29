@@ -83,10 +83,10 @@ def test_export_basic(runner, populated_history, monkeypatch):
     monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir)])
-    
+
     assert result.exit_code == 0
     mock_bus.success.assert_called_once_with("export.success.dir")
-    
+
     assert output_dir.exists()
     files = list(output_dir.glob("*.md"))
     assert len(files) == 6
@@ -104,7 +104,7 @@ def test_export_filtering(runner, populated_history, monkeypatch):
     monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "-n", "2"])
-    
+
     assert result.exit_code == 0
     mock_bus.success.assert_called_once_with("export.success.dir")
     assert len(list(output_dir.glob("*.md"))) == 2
@@ -124,10 +124,10 @@ def test_export_edge_cases(runner, quipu_workspace, monkeypatch):
     # No matching nodes
     (work_dir / "f").touch()
     engine.capture_drift(engine.git_db.get_tree_hash())
-    
+
     # Reset mock for second call
     mock_bus.reset_mock()
-    
+
     result = runner.invoke(app, ["export", "-w", str(work_dir), "--since", "2099-01-01 00:00"])
     assert result.exit_code == 0
     mock_bus.info.assert_called_with("export.info.noMatchingNodes")
@@ -162,11 +162,11 @@ def test_export_zip(runner, populated_history, monkeypatch):
     monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--zip"])
-    
+
     assert result.exit_code == 0
     mock_bus.info.assert_any_call("export.info.zipping")
     mock_bus.success.assert_called_with("export.success.zip", path=ANY)
-    
+
     zip_path = output_dir.with_suffix(".zip")
     assert not output_dir.exists() and zip_path.exists()
     with zipfile.ZipFile(zip_path, "r") as zf:

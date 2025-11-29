@@ -157,15 +157,21 @@ def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: boo
 
     except OperationCancelledError as e:
         logger.info(f"🚫 操作已取消: {e}")
-        return QuipuResult(success=False, exit_code=2, message="run.error.cancelled", msg_kwargs={"error": str(e)}, error=e)
+        return QuipuResult(
+            success=False, exit_code=2, message="run.error.cancelled", msg_kwargs={"error": str(e)}, error=e
+        )
 
     except CoreExecutionError as e:
         logger.error(f"❌ 操作失败: {e}")
-        return QuipuResult(success=False, exit_code=1, message="run.error.execution", msg_kwargs={"error": str(e)}, error=e)
+        return QuipuResult(
+            success=False, exit_code=1, message="run.error.execution", msg_kwargs={"error": str(e)}, error=e
+        )
 
     except Exception as e:
         logger.error(f"运行时错误: {e}", exc_info=True)
-        return QuipuResult(success=False, exit_code=1, message="run.error.system", msg_kwargs={"error": str(e)}, error=e)
+        return QuipuResult(
+            success=False, exit_code=1, message="run.error.system", msg_kwargs={"error": str(e)}, error=e
+        )
     finally:
         # 确保无论成功或失败，引擎资源都被关闭
         if app and hasattr(app, "engine") and app.engine:
