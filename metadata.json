@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: Standardize on a robust TTY prompt for all user confirmations", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764395960.3530269, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 添加交互式管道输入的回归测试", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764396508.935335, "duration_ms": 0}}

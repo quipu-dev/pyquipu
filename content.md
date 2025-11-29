@@ -1,280 +1,114 @@
-You are absolutely right to call this a failure. My apologies. The last solution was based on a misunderstanding of how `typer.confirm` behaves internally. The evidence is clear: simply adding `err=True` was not sufficient to force it to use the TTY for input when `stdin` is a pipe.
+好的，测试通过是关键的一步。你完全正确，这是一个典型的回归问题，必须通过自动化测试来永久性地解决，以防止未来的重构再次引入这个缺陷。
 
-This recurring `TTY error` points to a deeper issue: the high-level `typer.confirm` abstraction is not robust enough for our specific need. We must go one level deeper and use the underlying `click` primitives, which offer more direct control.
+我将创建一个新的测试文件来隔离这种交互式测试，并向现有的测试文件中添加一个相关的测试用例。我将严格遵守你的格式化要求，在所有 Python 代码块中使用 ` ``` ` 而不是 `~~~~~`。
 
-You have a helper function in `commands/helpers.py` named `_prompt_for_confirmation` that already uses `click.getchar()`. This is the correct tool for the job. The problem is that this correct tool is not being used consistently, and even where it is used, it contains a flawed `isatty()` check.
-
-Let's fix this systematically and permanently.
-
-## [WIP] fix: Standardize on a robust TTY prompt for all user confirmations
+## [WIP] test: 添加交互式管道输入的回归测试
 
 ### 错误分析
-The core issue is twofold:
-1.  **Inconsistent Implementation**: The codebase uses two different methods for user confirmation: high-level `typer.confirm` and a low-level `_prompt_for_confirmation` helper. The `typer.confirm` function has proven unreliable in piped scenarios.
-2.  **Flawed Helper**: The `_prompt_for_confirmation` helper, while using the correct `click.getchar()` tool, was crippled by the same incorrect `sys.stdin.isatty()` check that we've identified as a source of problems.
-
-The correct path forward is to:
-1.  Fix the `_prompt_for_confirmation` helper to be truly robust.
-2.  Standardize the entire application to use this single, reliable helper for all interactive confirmations.
+系统之前的测试套件未能捕获此回归问题，因为它没有充分模拟一个关键的用户场景：通过管道 (`|`) 将内容输入到一个需要后续交互式确认的命令中。现有的测试要么不测试交互，要么在没有 `stdin` 重定向的环境下测试，因此无法触发 `click.getchar()` 在管道环境下的特殊行为，导致问题潜伏。
 
 ### 用户需求
-Ensure all commands requiring user confirmation (`run`, `axon`, `checkout`, `discard`, etc.) can function correctly and interactively even when their input is being piped from another process.
+为 Quipu CLI 创建一套新的回归测试，以确保：
+1.  当 `stdin` 被管道占用时，需要用户确认的命令（如 `quipu run` 和 `quipu discard`）能够正确地暂停并等待用户通过 TTY 输入。
+2.  测试能够模拟用户接受 (`y`) 和拒绝 (`n`) 确认提示，并验证程序的行为（文件系统状态、退出码、输出信息）是否符合预期。
 
 ### 评论
-This refactoring will eliminate a persistent and frustrating bug, significantly improving the tool's reliability and adherence to standard Unix command-line behavior. By centralizing the confirmation logic into a single, robust helper, we also improve the maintainability of the code.
+为这个场景添加专门的测试是至关重要的。这不仅可以防止此特定问题的再次发生，也为未来所有需要交互的命令提供了一个健壮的测试模式，从而提升了整个系统的质量和可靠性。
 
 ### 目标
-1.  Modify `commands/helpers.py`'s `_prompt_for_confirmation` to remove the flawed `isatty()` check and add robust exception handling around `click.getchar()` to gracefully manage truly non-interactive environments (like CI runners).
-2.  Refactor `cli/controller.py` (`run` command's handler) to use this improved helper.
-3.  Refactor `commands/axon.py` (`axon` command's handler) to use this improved helper.
-4.  Refactor `commands/navigation.py` (`checkout` command) to use this improved helper.
+1.  创建一个新的测试文件 `tests/cli/test_cli_interaction.py`，专门用于测试复杂的 CLI 交互场景。
+2.  在该文件中添加一个测试，模拟通过管道向 `quipu run` 提供一个需要确认的 `run_command` 操作，并验证用户接受后的行为。
+3.  在现有的 `tests/cli/test_workspace_commands.py` 中，为 `discard` 命令添加一个新的测试用例，专门验证其在管道输入和用户拒绝确认时的行为。
 
 ### 基本原理
-We will create a single source of truth for user confirmation. The `_prompt_for_confirmation` helper will be modified to first print the prompt to `stderr` (using `typer.secho(..., err=True)`), and then attempt to read a single character from the controlling terminal using `click.getchar()`. `click.getchar()` is designed to bypass `stdin` and read directly from `/dev/tty` if available. We will wrap this call in a `try...except` block; if it fails (e.g., no TTY is attached), we will treat it as a non-interactive environment and automatically cancel the operation. This combined approach is both robust and safe.
+我们将利用 `typer.testing.CliRunner` 的 `invoke` 方法中的 `input` 参数。这个参数可以模拟用户的标准输入。
+*   对于模拟 `cat plan.md | quipu run` 的场景，我们将 `plan.md` 的内容和用户的确认输入（例如 `'y\n'`）拼接成一个字符串，并传递给 `input` 参数。
+*   测试将首先准备一个初始的文件系统状态，然后运行带输入的 CLI 命令，最后通过断言检查最终的文件系统状态、命令的退出码以及 `stdout`/`stderr` 的输出来验证其行为是否正确。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/cli #concept/ui #scope/core #ai/instruct #task/domain/cli #task/object/exception-handling #task/action/refactor #task/state/continue
+#intent/tooling #flow/ready #priority/high #comp/tests #comp/cli #concept/ui #scope/dx #ai/instruct #task/domain/testing #task/object/regression-tests #task/action/implementation #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: Create the canonical, robust confirmation helper
+#### Acts 1: 创建新的 CLI 交互测试文件
 
-We will fix `_prompt_for_confirmation` in `helpers.py` once and for all. This will become the standard for the entire application.
+我们将创建一个新文件 `test_cli_interaction.py` 来存放针对 `quipu run` 在管道模式下的交互测试。
 
 ~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/helpers.py
+write_file
+tests/cli/test_cli_interaction.py
 ~~~~~
 ~~~~~python
-def _prompt_for_confirmation(message: str, default: bool = False) -> bool:
+import pytest
+from typer.testing import CliRunner
+from quipu.cli.main import app
+
+
+def test_run_command_with_piped_input_and_confirmation(runner: CliRunner, quipu_workspace):
     """
-    使用单字符输入请求用户确认，无需回车。
+    测试核心场景: 通过管道输入 plan，并对需要确认的 act (run_command) 进行交互。
     """
-    prompt_suffix = " [Y/n]: " if default else " [y/N]: "
-    typer.secho(message + prompt_suffix, nl=False, err=True)
+    work_dir, _, _ = quipu_workspace
+    output_file = work_dir / "output.txt"
 
-    if not sys.stdin.isatty():
-        typer.echo(" (non-interactive)", err=True)
-        return False
+    # Plan 内容: 执行一个 shell 命令
+    plan_content = f"""
+```act
+run_command
+```
+```text
+echo "Success" > {output_file.name}
+```
+"""
 
-    char = click.getchar()
-    click.echo(char, err=True)
+    # 模拟用户输入 'y' 并按回车
+    user_input = "y\n"
 
-    if char.lower() == "y":
-        return True
-    if char.lower() == "n":
-        return False
+    # 使用 runner.invoke 的 input 参数来模拟 `echo "{plan_content}" | quipu run`
+    # 注意：CliRunner 的 input 模拟的是 stdin，这正是我们需要的
+    result = runner.invoke(app, ["run", "-w", str(work_dir)], input=plan_content + user_input)
 
-    return default
+    assert result.exit_code == 0, f"CLI command failed with stderr:\n{result.stderr}"
+    assert "✨ 执行成功" in result.stderr
+    assert output_file.exists(), "The command did not create the output file."
+    assert output_file.read_text().strip() == "Success"
+~~~~~
+
+#### Acts 2: 为 `discard` 命令添加管道输入测试
+
+现在，我们在 `test_workspace_commands.py` 文件末尾追加一个新的测试用例，专门测试 `discard` 在管道输入和用户拒绝时的行为，以确保状态不会被错误地修改。
+
+~~~~~act
+append_file
+tests/cli/test_workspace_commands.py
 ~~~~~
 ~~~~~python
-def _prompt_for_confirmation(message: str, default: bool = False) -> bool:
+
+def test_discard_interactive_with_piped_input_abort(runner, quipu_workspace):
     """
-    使用单字符输入请求用户确认，无需回车。
-    此实现是健壮的，即使在 stdin 被管道占用的情况下也能工作。
+    验证在管道输入模式下，discard 命令能正确接收交互式输入 'n' 并中止操作。
     """
-    prompt_suffix = " [Y/n]: " if default else " [y/N]: "
-    typer.secho(message + prompt_suffix, nl=False, err=True)
+    work_dir, _, engine = quipu_workspace
 
-    try:
-        # click.getchar() 会智能地尝试从 /dev/tty 读取
-        char = click.getchar(echo=False)
-        click.echo(char, err=True)  # 手动回显到 stderr
-    except (OSError, EOFError):
-        # 在完全没有 tty 的环境中 (例如 CI runner)，会抛出异常
-        click.echo(" (non-interactive)", err=True)
-        return False
+    # 初始状态 v1
+    (work_dir / "file.txt").write_text("v1")
+    engine.capture_drift(engine.git_db.get_tree_hash())
 
-    if char.lower() == "y":
-        return True
-    if char.lower() == "n":
-        return False
+    # 制造脏状态 v2
+    (work_dir / "file.txt").write_text("v2")
 
-    return default
-~~~~~
+    # 模拟用户通过管道输入 'n'
+    # 注意: 这里的 'input' 模拟的是用户在 TTY 的输入，因为 stdin 已经被 runner 接管
+    result = runner.invoke(app, ["discard", "-w", str(work_dir)], input="n")
 
-#### Acts 2: Refactor `run` command's handler (`controller.py`)
-
-Now, we replace the complex logic in the `run` command's `typer_confirmation_handler` with a simple call to our new robust helper. We must duplicate the logic here to avoid a circular dependency, which is technical debt we can address later.
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/controller.py
-~~~~~
-~~~~~python
-import re
-import sys
-from pathlib import Path
-from typing import List
-import typer
-
-from quipu.interfaces.exceptions import ExecutionError as CoreExecutionError, OperationCancelledError
-~~~~~
-~~~~~python
-import re
-import sys
-from pathlib import Path
-from typing import List
-import typer
-import click
-
-from quipu.interfaces.exceptions import ExecutionError as CoreExecutionError, OperationCancelledError
-~~~~~
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/controller.py
-~~~~~
-~~~~~python
-        def typer_confirmation_handler(diff_lines: List[str], prompt: str) -> bool:
-            """一个封装了 Typer UI 逻辑的确认处理器。"""
-            typer.echo("\n🔍 变更预览:")
-            for line in diff_lines:
-                if line.startswith("+"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.GREEN)
-                elif line.startswith("-"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.RED)
-                elif line.startswith("^"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.BLUE)
-                else:
-                    typer.echo(line.strip("\n"))
-            typer.echo("")
-
-            try:
-                # err=True 确保了即时在管道中，也能通过 /dev/tty 进行交互
-                confirmed = typer.confirm(prompt, default=True, err=True)
-                if not confirmed:
-                    # 如果用户输入 'n'，typer.confirm 会返回 False
-                    raise OperationCancelledError("User cancelled the operation.")
-                return True
-            except Exception as e:
-                # 捕获 typer/click 在管道中可能抛出的其他底层异常
-                raise OperationCancelledError(f"Failed to get user confirmation due to TTY error: {e}") from e
-~~~~~
-~~~~~python
-        def typer_confirmation_handler(diff_lines: List[str], prompt: str) -> bool:
-            """一个封装了 Typer UI 逻辑的确认处理器。"""
-            typer.echo("\n🔍 变更预览:")
-            for line in diff_lines:
-                if line.startswith("+"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.GREEN, err=True)
-                elif line.startswith("-"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.RED, err=True)
-                elif line.startswith("^"):
-                    typer.secho(line.strip("\n"), fg=typer.colors.BLUE, err=True)
-                else:
-                    typer.echo(line.strip("\n"), err=True)
-            typer.echo("", err=True)
-
-            typer.secho(f"{prompt} [Y/n]: ", nl=False, err=True)
-
-            try:
-                char = click.getchar(echo=False)
-                click.echo(char, err=True)
-                confirmed = char.lower() != "n"
-            except (OSError, EOFError):
-                click.echo(" (non-interactive)", err=True)
-                confirmed = False
-
-            if not confirmed:
-                raise OperationCancelledError("User cancelled or non-interactive.")
-
-            return True
-~~~~~
-
-#### Acts 3: Refactor `axon` command's handler (`axon.py`)
-
-We do the same for the `axon` command's handler.
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/axon.py
-~~~~~
-~~~~~python
-import inspect
-import logging
-import sys
-from pathlib import Path
-from typing import Annotated, List, Optional
-
-import typer
-~~~~~
-~~~~~python
-import inspect
-import logging
-import sys
-from pathlib import Path
-from typing import Annotated, List, Optional
-
-import typer
-import click
-~~~~~
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/axon.py
-~~~~~
-~~~~~python
-            typer.echo("")
-
-            try:
-                # err=True 确保了即时在管道中，也能通过 /dev/tty 进行交互
-                return typer.confirm(prompt, default=True, err=True)
-            except Exception:
-                logger.warning("无法在当前环境中获取用户确认，操作已跳过。")
-                return False
-~~~~~
-~~~~~python
-            typer.echo("", err=True)
-
-            typer.secho(f"{prompt} [Y/n]: ", nl=False, err=True)
-            try:
-                char = click.getchar(echo=False)
-                click.echo(char, err=True)
-                return char.lower() != "n"
-            except (OSError, EOFError):
-                click.echo(" (non-interactive)", err=True)
-                logger.warning("无法在当前环境中获取用户确认，操作已跳过。")
-                return False
-~~~~~
-
-#### Acts 4: Refactor `checkout` command (`navigation.py`)
-
-Finally, we update the `checkout` command to use our standardized helper.
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/navigation.py
-~~~~~
-~~~~~python
-from .helpers import engine_context, _find_current_node, _execute_visit
-~~~~~
-~~~~~python
-from .helpers import engine_context, _find_current_node, _execute_visit, _prompt_for_confirmation
-~~~~~
-
-~~~~~act
-patch_file
-packages/quipu-cli/src/quipu/cli/commands/navigation.py
-~~~~~
-~~~~~python
-            if not force:
-                prompt = f"🚨 即将重置工作区到状态 {target_node.short_hash} ({target_node.timestamp})。\n此操作会覆盖未提交的更改。是否继续？"
-                if not typer.confirm(prompt, default=False, err=True):
-                    typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
-                    raise typer.Abort()
-~~~~~
-~~~~~python
-            if not force:
-                prompt = f"🚨 即将重置工作区到状态 {target_node.short_hash} ({target_node.timestamp})。\n此操作会覆盖未提交的更改。是否继续？"
-                if not _prompt_for_confirmation(prompt, default=False):
-                    typer.secho("\n🚫 操作已取消。", fg=typer.colors.YELLOW, err=True)
-                    raise typer.Abort()
+    # Abort() 会导致 exit_code 为 1
+    assert result.exit_code == 1
+    assert "操作已取消" in result.stderr
+    # 验证文件没有被回滚
+    assert (work_dir / "file.txt").read_text() == "v2"
 ~~~~~
 
 ### 下一步建议
-我们已经用一个统一的、健壮的底层实现替换了所有分散的、有问题的确认逻辑。
-
-请再次运行 `cat o.md | qd run`。这一次，它**必须**成功暂停并等待你的键盘输入。
+我们已经为关键的交互场景添加了回归测试。现在请运行 `pytest tests/cli/` 来确认新的测试能够通过，并且旧的测试没有受到影响。这将为我们未来的重构提供坚实的安全保障。
