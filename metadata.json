@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] style: 使用 ruff 格式化全库代码", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764416361.890305, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修正 locales/zh/cli.json 中的 JSON 语法错误", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764416456.7605286, "duration_ms": 0}}
