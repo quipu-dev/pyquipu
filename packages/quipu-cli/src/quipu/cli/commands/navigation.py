@@ -27,7 +27,7 @@ def register(app: typer.Typer):
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
 
-            matches = [node for output_tree, node in graph.items() if output_tree.startswith(hash_prefix)]
+            matches = [node for node in graph.values() if node.output_tree.startswith(hash_prefix)]
             if not matches:
                 typer.secho(
                     f"❌ 错误: 未找到 output_tree 哈希前缀为 '{hash_prefix}' 的历史节点。",

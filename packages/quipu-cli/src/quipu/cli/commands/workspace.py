@@ -63,7 +63,14 @@ def register(app: typer.Typer):
                 ctx.exit(1)
 
             target_tree_hash = engine._read_head()
-            if not target_tree_hash or target_tree_hash not in graph:
+            latest_node = None
+            if target_tree_hash:
+                for node in graph.values():
+                    if node.output_tree == target_tree_hash:
+                        latest_node = node
+                        break
+            
+            if not latest_node:
                 latest_node = max(graph.values(), key=lambda n: n.timestamp)
                 target_tree_hash = latest_node.output_tree
                 typer.secho(
@@ -71,8 +78,6 @@ def register(app: typer.Typer):
                     fg=typer.colors.YELLOW,
                     err=True,
                 )
-            else:
-                latest_node = graph[target_tree_hash]
 
             current_hash = engine.git_db.get_tree_hash()
             if current_hash == target_tree_hash:

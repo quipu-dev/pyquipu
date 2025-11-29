@@ -236,13 +236,9 @@ class Engine:
                 logger.error(f"❌ 自动数据补水失败: {e}", exc_info=True)
 
         all_nodes = self.reader.load_all_nodes()
-        final_graph: Dict[str, QuipuNode] = {}
-        for node in all_nodes:
-            if node.output_tree not in final_graph or node.timestamp > final_graph[node.output_tree].timestamp:
-                final_graph[node.output_tree] = node
-        self.history_graph = final_graph
+        self.history_graph = {node.commit_hash: node for node in all_nodes}
         if all_nodes:
-            logger.info(f"从存储中加载了 {len(all_nodes)} 个历史事件，形成 {len(final_graph)} 个唯一状态节点。")
+            logger.info(f"从存储中加载了 {len(all_nodes)} 个历史事件，形成 {len(self.history_graph)} 个唯一状态节点。")
 
         current_hash = self.git_db.get_tree_hash()
         EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
@@ -251,8 +247,15 @@ class Engine:
             self.current_node = None
             return "CLEAN"
 
-        if current_hash in self.history_graph:
-            self.current_node = self.history_graph[current_hash]
+        # Find node by iterating since keys are now commit hashes
+        found_node = None
+        for node in self.history_graph.values():
+            if node.output_tree == current_hash:
+                found_node = node
+                break
+        
+        if found_node:
+            self.current_node = found_node
             logger.info(f"✅ 状态对齐：当前工作区匹配节点 {self.current_node.short_hash}")
             self._write_head(current_hash)
             return "CLEAN"
@@ -312,7 +315,7 @@ class Engine:
             owner_id=user_id,
         )
 
-        self.history_graph[current_hash] = new_node
+        self.history_graph[new_node.commit_hash] = new_node
         self.current_node = new_node
         self._write_head(current_hash)
         self._append_nav(current_hash)
@@ -339,7 +342,7 @@ class Engine:
             owner_id=user_id,
         )
 
-        self.history_graph[output_tree] = new_node
+        self.history_graph[new_node.commit_hash] = new_node
         self.current_node = new_node
         self._write_head(output_tree)
         self._append_nav(output_tree)
@@ -350,6 +353,9 @@ class Engine:
     def checkout(self, target_hash: str):
         self.git_db.checkout_tree(target_hash)
         self._write_head(target_hash)
-        if target_hash in self.history_graph:
-            self.current_node = self.history_graph[target_hash]
+        self.current_node = None
+        for node in self.history_graph.values():
+            if node.output_tree == target_hash:
+                self.current_node = node
+                break
         logger.info(f"🔄 状态已切换至: {target_hash[:7]}")
