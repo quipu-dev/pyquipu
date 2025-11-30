@@ -1,98 +1,51 @@
-分析正确。由于 `create_node` 现在使用 `git mktree` 建立指向 `output_tree` 的强引用，Git 要求这个 `output_tree` 必须是对象数据库中真实存在的对象。
+好的，我们已经完成了核心架构的修复和相关测试的更新。现在，我们将这些变更作为一个原子提交，永久性地解决数据丢失和同步问题。
 
-测试 `test_parent_linking_with_gap` 之前使用 `"a" * 40` 这种伪造的哈希值作为 `output_tree`。在旧逻辑中（仅写入文本 Trailer），这是允许的；但在新逻辑中（写入 Tree Entry），这会导致 `fatal: entry 'snapshot' object ... is unavailable` 错误。
-
-既然你决定放弃旧数据的迁移，我们现在的首要任务就是修复这个测试，使其符合新的架构约束。
-
-## [WIP] fix: 修正测试用例以使用有效的 Git Tree 对象
-
-### 错误分析
-测试 `tests/engine/test_git_reader.py::TestGitObjectHistoryReader::test_parent_linking_with_gap` 失败。
-原因：测试代码向 `create_node` 传递了不存在的伪造哈希值 (`"a" * 40`)。
-新引入的强引用机制 (`snapshot` 子树) 依赖 `git mktree`，该命令会校验子对象是否存在于 Git 对象库中。
+## [COMMIT] fix(engine): 建立节点与快照的强引用以防 GC 回收
 
 ### 用户需求
-修复测试用例，在调用 `create_node` 前先创建真实有效的 Tree 对象，确保 `git mktree` 能够成功执行。
+Quipu 历史节点仅通过 Commit Message 中的文本 Trailer 弱引用工作区快照 (`output_tree`)，这导致快照可能被 `git gc` 错误地回收，并且 `quipu sync` 无法正确传输快照数据。需要建立一个 Git 原生的强引用来解决此问题。
+
+### 评论
+这是一个至关重要的架构修复，它确保了 Quipu 历史记录的物理完整性和多设备同步的可靠性。通过将工作区快照作为 `snapshot` 子树嵌入，我们利用了 Git 自身的可达性算法来保护数据，这是最健壮的解决方案。
 
 ### 目标
-修改 `test_parent_linking_with_gap`：
-1.  使用 `hash_object` 和 `mktree` 预先创建有效的 Tree 对象。
-2.  将这些有效 Tree 的哈希传递给 `create_node`。
+1.  已修改 `GitObjectHistoryWriter`，在创建节点时，将其 `output_tree` 作为 `snapshot` 子树强链接到节点的存储树中。
+2.  已更新受影响的测试用例 (`test_parent_linking_with_gap`)，使其使用有效的 Git Tree 对象，以通过 `git mktree` 的正确性校验。
+3.  创建一个 Git 提交来固化此修复。
 
 ### 基本原理
-通过构建真实的 Git 对象来满足 `GitObjectHistoryWriter` 的严从性检查，保持测试逻辑不变（验证图谱断裂后的重连行为），但修正其输入数据。
+通过在节点的存储树中添加一个 `040000 tree <hash> snapshot` 条目，我们构建了一条从 Quipu Ref 到工作区快照的完整可达路径 (`Ref -> Commit -> Storage Tree -> snapshot -> Workspace Tree`)。这使得 Git 的垃圾回收和数据传输协议能够正确识别并处理工作区快照，从而解决了数据丢失和同步失败的根本问题。
 
 ### 标签
-#intent/fix #flow/ready #priority/medium #comp/tests #concept/state #scope/core #ai/instruct #task/domain/storage #task/object/git-backend #task/action/structural-linking #task/state/end #task/status/completed
+#intent/fix #flow/ready #priority/critical #comp/engine #comp/tests #concept/state #concept/sync #scope/core #ai/instruct #task/domain/storage #task/object/git-backend #task/action/structural-linking #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 修正测试用例
+#### Acts 1: 暂存并提交修复
 
-我们将修改 `tests/engine/test_git_reader.py`，为 `node_a` 和 `node_c` 生成真实的 Tree 对象。
+我们将相关的代码和测试文件添加到暂存区，并创建一个描述详尽的 Git 提交。
 
 ~~~~~act
-patch_file
+git_add
+packages/quipu-engine/src/pyquipu/engine/git_object_storage.py
 tests/engine/test_git_reader.py
-~~~~~
-~~~~~python
-    def test_parent_linking_with_gap(self, reader_setup):
-        """测试：如果父 Commit 是损坏的节点，子节点应断开链接并视为新的根"""
-        reader, writer, git_db, _ = reader_setup
-
-        h0 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
-        # 1. Create a valid node A
-        node_a = writer.create_node("plan", h0, "a" * 40, "A", start_time=1000)
-
-        # 2. Manually create a corrupted commit B, parented to A
-~~~~~
-~~~~~python
-    def test_parent_linking_with_gap(self, reader_setup):
-        """测试：如果父 Commit 是损坏的节点，子节点应断开链接并视为新的根"""
-        reader, writer, git_db, _ = reader_setup
-
-        h0 = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-
-        # Helper to create a valid tree object in the ODB
-        def make_valid_tree(content: bytes) -> str:
-            blob = git_db.hash_object(content)
-            return git_db.mktree(f"100644 blob {blob}\tfile")
-
-        tree_a = make_valid_tree(b"state_a")
-        tree_c = make_valid_tree(b"state_c")
-
-        # 1. Create a valid node A
-        node_a = writer.create_node("plan", h0, tree_a, "A", start_time=1000)
-
-        # 2. Manually create a corrupted commit B, parented to A
 ~~~~~
 
 ~~~~~act
-patch_file
-tests/engine/test_git_reader.py
+git_commit
 ~~~~~
-~~~~~python
-        # 3. Create a valid node C, whose logical parent (by input_tree) is A,
-        # but whose topological parent in Git is the bad commit B.
-        # The writer will link C to A based on input_tree. The reader must correctly
-        # parse this graph despite the corrupted intermediary.
-        writer.create_node("plan", node_a.output_tree, "c" * 40, "C", start_time=3000)
+~~~~~text
+fix(engine): Establish strong reference to prevent snapshot GC
 
-        nodes = reader.load_all_nodes()
+Previously, a Quipu history node only referenced its corresponding workspace state (output_tree) via a text-based trailer in the commit message. This constituted a weak reference that was invisible to Git's core algorithms.
+
+This led to two critical issues:
+1.  **Data Loss**: `git gc` could mistakenly garbage-collect unreferenced workspace tree objects, leading to permanent data loss.
+2.  **Sync Failure**: `quipu sync` would only transfer the Quipu node metadata (commits) but not the actual workspace snapshots, as they were not part of the reachable object graph.
+
+This commit fixes the issue by establishing a strong, Git-native reference. The `output_tree` is now included as a `snapshot` subtree within the Quipu node's own storage tree. This ensures that as long as the Quipu commit is reachable, its associated workspace snapshot is also reachable, protecting it from GC and enabling reliable synchronization.
+
+Additionally, a related test (`test_parent_linking_with_gap`) has been updated. The test previously used invalid dummy hashes, which are no longer permissible due to the stricter object validation performed by `git mktree` as part of this fix.
 ~~~~~
-~~~~~python
-        # 3. Create a valid node C, whose logical parent (by input_tree) is A,
-        # but whose topological parent in Git is the bad commit B.
-        # The writer will link C to A based on input_tree. The reader must correctly
-        # parse this graph despite the corrupted intermediary.
-        writer.create_node("plan", node_a.output_tree, tree_c, "C", start_time=3000)
-
-        nodes = reader.load_all_nodes()
-~~~~~
-
-### 下一步建议
-测试修复后，建议运行 `pytest tests/engine/test_git_reader.py` 确认通过。
-至此，关于**强引用连接**的核心修复与测试调整已全部完成。你可以放心地继续使用 Quipu，哪怕在多设备同步的场景下，状态快照也将是安全且完整的。
