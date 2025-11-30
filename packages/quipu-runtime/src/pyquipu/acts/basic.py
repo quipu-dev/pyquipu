@@ -48,7 +48,7 @@ def _echo(ctx: ActContext, args: List[str]):
     Args: [content]
     """
     if len(args) < 1:
-        ctx.fail("echo 需要至少一个参数: [content]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="echo", count=1, signature="[content]"))
 
     bus.data(args[0])
 
@@ -59,7 +59,7 @@ def _write_file(ctx: ActContext, args: List[str]):
     Args: [path, content]
     """
     if len(args) < 2:
-        ctx.fail("write_file 需要至少两个参数: [path, content]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="write_file", count=2, signature="[path, content]"))
 
     raw_path = args[0]
     content = args[1]
@@ -79,9 +79,9 @@ def _write_file(ctx: ActContext, args: List[str]):
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(content, encoding="utf-8")
     except PermissionError:
-        ctx.fail(f"写入文件失败: 对 '{raw_path}' 的访问权限不足。")
+        ctx.fail(bus.get("acts.basic.error.writePermission", path=raw_path))
     except Exception as e:
-        ctx.fail(f"写入文件时发生未知错误: {e}")
+        ctx.fail(bus.get("acts.basic.error.writeUnknown", error=e))
 
     bus.success("acts.basic.success.fileWritten", path=target_path.relative_to(ctx.root_dir))
 
@@ -92,21 +92,23 @@ def _patch_file(ctx: ActContext, args: List[str]):
     Args: [path, old_string, new_string]
     """
     if len(args) < 3:
-        ctx.fail("patch_file 需要至少三个参数: [path, old_string, new_string]")
+        ctx.fail(
+            bus.get("acts.error.missingArgs", act_name="patch_file", count=3, signature="[path, old_string, new_string]")
+        )
 
     raw_path, old_str, new_str = args[0], args[1], args[2]
     target_path = ctx.resolve_path(raw_path)
 
     if not target_path.exists():
-        ctx.fail(f"文件未找到: {raw_path}")
+        ctx.fail(bus.get("acts.basic.error.fileNotFound", path=raw_path))
 
     try:
         content = target_path.read_text(encoding="utf-8")
     except Exception as e:
-        ctx.fail(f"读取文件 {raw_path} 失败: {e}")
+        ctx.fail(bus.get("acts.basic.error.readFailed", path=raw_path, error=e))
 
     if old_str not in content:
-        ctx.fail(f"在文件 {raw_path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。")
+        ctx.fail(bus.get("acts.basic.error.patchContentMismatch", path=raw_path))
 
     new_content = content.replace(old_str, new_str, 1)
 
@@ -115,9 +117,9 @@ def _patch_file(ctx: ActContext, args: List[str]):
     try:
         target_path.write_text(new_content, encoding="utf-8")
     except PermissionError:
-        ctx.fail(f"替换文件内容失败: 对 '{raw_path}' 的访问权限不足。")
+        ctx.fail(bus.get("acts.basic.error.patchPermission", path=raw_path))
     except Exception as e:
-        ctx.fail(f"更新文件时发生未知错误: {e}")
+        ctx.fail(bus.get("acts.basic.error.patchUnknown", error=e))
 
     bus.success("acts.basic.success.filePatched", path=target_path.relative_to(ctx.root_dir))
 
@@ -128,13 +130,13 @@ def _append_file(ctx: ActContext, args: List[str]):
     Args: [path, content]
     """
     if len(args) < 2:
-        ctx.fail("append_file 需要至少两个参数: [path, content]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="append_file", count=2, signature="[path, content]"))
 
     raw_path, content_to_append = args[0], args[1]
     target_path = ctx.resolve_path(raw_path)
 
     if not target_path.exists():
-        ctx.fail(f"文件不存在，无法追加: {raw_path}")
+        ctx.fail(bus.get("acts.basic.error.fileNotFound", path=raw_path))
 
     old_content = ""
     try:
@@ -150,8 +152,8 @@ def _append_file(ctx: ActContext, args: List[str]):
         with open(target_path, "a", encoding="utf-8") as f:
             f.write(content_to_append)
     except PermissionError:
-        ctx.fail(f"追加文件内容失败: 对 '{raw_path}' 的访问权限不足。")
+        ctx.fail(bus.get("acts.basic.error.appendPermission", path=raw_path))
     except Exception as e:
-        ctx.fail(f"追加文件时发生未知错误: {e}")
+        ctx.fail(bus.get("acts.basic.error.appendUnknown", error=e))
 
     bus.success("acts.basic.success.fileAppended", path=target_path.relative_to(ctx.root_dir))

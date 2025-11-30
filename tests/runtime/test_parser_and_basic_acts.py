@@ -7,7 +7,6 @@ from pyquipu.runtime.parser import BacktickParser, TildeParser, get_parser
 
 
 class TestParser:
-    # ... (Parser tests are unchanged)
     def test_backtick_parser(self):
         md = """
 ```act
@@ -113,10 +112,8 @@ class TestBasicActs:
         patch_file_func, _, _ = executor._acts["patch_file"]
         ctx = ActContext(executor)
 
-        with pytest.raises(ExecutionError) as excinfo:
+        with pytest.raises(ExecutionError, match="acts.basic.error.patchContentMismatch"):
             patch_file_func(ctx, ["wrong.txt", "BBB", "CCC"])
-
-        assert "未找到指定的旧文本" in str(excinfo.value)
 
     def test_append_file(self, executor: Executor, isolated_vault: Path):
         f = isolated_vault / "log.txt"
@@ -132,10 +129,8 @@ class TestBasicActs:
         append_func, _, _ = executor._acts["append_file"]
         ctx = ActContext(executor)
 
-        with pytest.raises(ExecutionError) as excinfo:
+        with pytest.raises(ExecutionError, match="acts.basic.error.fileNotFound"):
             append_func(ctx, ["ghost.txt", "content"])
-
-        assert "文件不存在" in str(excinfo.value)
 
 
 class TestHybridArgs:

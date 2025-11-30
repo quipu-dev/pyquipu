@@ -22,7 +22,7 @@ def _check_files_exist(ctx: ActContext, args: List[str]):
     说明: 检查当前工作区内是否存在指定的文件。文件名通过换行符分隔。
     """
     if len(args) < 1:
-        ctx.fail("check_files_exist 需要至少一个参数: [file_list_string]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="check_files_exist", count=1, signature="[file_list_string]"))
 
     raw_files = args[0].strip().split("\n")
     missing_files = []
@@ -37,8 +37,8 @@ def _check_files_exist(ctx: ActContext, args: List[str]):
             missing_files.append(clean_path)
 
     if missing_files:
-        msg = "❌ [Check] 以下文件在工作区中未找到:\n" + "\n".join(f"  - {f}" for f in missing_files)
-        ctx.fail(msg)
+        file_list_str = "\n".join(f"  - {f}" for f in missing_files)
+        ctx.fail(bus.get("acts.check.error.filesMissing", file_list=file_list_str))
 
     bus.success("acts.check.success.filesExist")
 
@@ -50,13 +50,15 @@ def _check_cwd_match(ctx: ActContext, args: List[str]):
     说明: 检查当前运行的工作区根目录是否与预期的绝对路径匹配。
     """
     if len(args) < 1:
-        ctx.fail("check_cwd_match 需要至少一个参数: [expected_absolute_path]")
+        ctx.fail(
+            bus.get("acts.error.missingArgs", act_name="check_cwd_match", count=1, signature="[expected_absolute_path]")
+        )
 
     expected_path_str = args[0].strip()
     current_root = ctx.root_dir.resolve()
     expected_path = Path(os.path.expanduser(expected_path_str)).resolve()
 
     if current_root != expected_path:
-        ctx.fail(f"❌ [Check] 工作区目录不匹配!\n  预期: {expected_path}\n  实际: {current_root}")
+        ctx.fail(bus.get("acts.check.error.cwdMismatch", expected=expected_path, actual=current_root))
 
     bus.success("acts.check.success.cwdMatched", path=current_root)

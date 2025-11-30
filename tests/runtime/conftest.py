@@ -10,11 +10,12 @@ from pyquipu.runtime.executor import Executor
 def mock_runtime_bus(monkeypatch):
     """
     自动 patch 所有 runtime 模块中导入的 'bus' 实例。
-
-    这是解决 'from ... import ...' 语句导致的 patch 问题的关键。
-    我们必须在每个使用 'bus' 的模块的命名空间中替换它。
     """
     m_bus = MagicMock()
+    
+    # 关键修改：让 bus.get 返回传入的 msg_id，方便测试断言语义
+    m_bus.get.side_effect = lambda msg_id, **kwargs: msg_id
+    
     patch_targets = [
         "pyquipu.runtime.executor.bus",
         "pyquipu.runtime.plugin_loader.bus",
@@ -27,7 +28,7 @@ def mock_runtime_bus(monkeypatch):
         "pyquipu.acts.shell.bus",
     ]
     for target in patch_targets:
-        monkeypatch.setattr(target, m_bus, raising=False)  # raising=False 避免模块不存在时报错
+        monkeypatch.setattr(target, m_bus, raising=False)
     return m_bus
 
 
@@ -39,9 +40,7 @@ def executor(tmp_path: Path) -> Executor:
     - 自动注册基础 acts。
     - 默认以非交互模式 (yolo=True) 运行。
     """
-    # yolo=True 避免在测试中出现交互式提示，这对于非 CLI 测试至关重要
     instance = Executor(root_dir=tmp_path, yolo=True)
-    # 自动注册基础指令，因为大多数测试都依赖它们
     register_basic_acts(instance)
     return instance
 
@@ -50,6 +49,5 @@ def executor(tmp_path: Path) -> Executor:
 def isolated_vault(executor: Executor) -> Path:
     """
     提供 Executor 实例的根工作目录。
-    这是一个便利性的 fixture，用于需要直接操作文件系统的测试。
     """
     return executor.root_dir

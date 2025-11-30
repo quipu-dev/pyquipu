@@ -50,7 +50,7 @@ def _search_files(ctx: ActContext, args: List[str]):
 
     search_path = ctx.resolve_path(parsed_args.path)
     if not search_path.exists():
-        ctx.fail(f"搜索路径不存在: {search_path}")
+        ctx.fail(bus.get("acts.read.error.pathNotFound", path=search_path))
 
     bus.info("acts.read.info.searching", pattern=parsed_args.pattern, path=search_path)
 
@@ -75,7 +75,7 @@ def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
     try:
         regex = re.compile(pattern_str)
     except re.error as e:
-        ctx.fail(f"无效的正则表达式: {pattern_str} ({e})")
+        ctx.fail(bus.get("acts.read.error.invalidRegex", pattern=pattern_str, error=e))
 
     matches = []
     for root, dirs, files in os.walk(start_path):
@@ -87,7 +87,6 @@ def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):
                     for i, line in enumerate(f, 1):
                         if regex.search(line):
                             clean_line = line.strip()
-                            # 关键修复：路径始终相对于项目根目录，以保证输出一致性
                             relative_path = file_path.relative_to(ctx.root_dir)
                             matches.append(f"{relative_path}:{i}:{clean_line[:200]}")
             except (UnicodeDecodeError, PermissionError):
@@ -105,22 +104,22 @@ def _read_file(ctx: ActContext, args: List[str]):
     Args: [path]
     """
     if not args:
-        ctx.fail("read_file 需要一个参数: [path]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="read_file", count=1, signature="[path]"))
 
     target_path = ctx.resolve_path(args[0])
     if not target_path.exists():
-        ctx.fail(f"文件不存在: {args[0]}")
+        ctx.fail(bus.get("acts.read.error.targetNotFound", path=args[0]))
     if target_path.is_dir():
-        ctx.fail(f"这是一个目录，请使用 list_files: {args[0]}")
+        ctx.fail(bus.get("acts.read.error.targetIsDir", path=args[0]))
 
     try:
         content = target_path.read_text(encoding="utf-8")
         bus.info("acts.read.info.readingFile", filename=target_path.name)
         bus.data(content)
     except UnicodeDecodeError:
-        bus.error("acts.read.error.readFailed", filename=args[0])
+        bus.error("acts.read.error.binaryOrEncoding", filename=args[0])
     except Exception as e:
-        ctx.fail(f"读取文件失败: {e}")
+        ctx.fail(bus.get("acts.read.error.readFailed", error=e))
 
 
 def _list_files(ctx: ActContext, args: List[str]):
@@ -139,12 +138,11 @@ def _list_files(ctx: ActContext, args: List[str]):
 
     target_dir = ctx.resolve_path(parsed_args.path)
     if not target_dir.is_dir():
-        ctx.fail(f"目录不存在或不是目录: {target_dir}")
+        ctx.fail(bus.get("acts.read.error.dirNotFound", path=target_dir))
 
     output = []
     if parsed_args.tree:
         bus.info("acts.read.info.listingTree", path=target_dir)
-        # Simplified tree implementation
         for path_object in sorted(target_dir.rglob("*")):
             if ".git" in path_object.parts or ".quipu" in path_object.parts:
                 continue

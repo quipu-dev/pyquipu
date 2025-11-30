@@ -20,14 +20,14 @@ def _move_file(ctx: ActContext, args: List[str]):
     Args: [src_path, dest_path]
     """
     if len(args) < 2:
-        ctx.fail("move_file 需要两个参数: [src, dest]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="move_file", count=2, signature="[src, dest]"))
 
     src_raw, dest_raw = args[0], args[1]
     src_path = ctx.resolve_path(src_raw)
     dest_path = ctx.resolve_path(dest_raw)
 
     if not src_path.exists():
-        ctx.fail(f"源文件不存在: {src_raw}")
+        ctx.fail(bus.get("acts.refactor.error.srcNotFound", path=src_raw))
 
     msg = f"Move: {src_raw} -> {dest_raw}"
     ctx.request_confirmation(src_path, "Source Exists", msg)
@@ -36,9 +36,9 @@ def _move_file(ctx: ActContext, args: List[str]):
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src_path), str(dest_path))
     except PermissionError:
-        ctx.fail(f"移动/重命名失败: 权限不足。源: '{src_raw}', 目标: '{dest_raw}'")
+        ctx.fail(bus.get("acts.refactor.error.movePermission", src=src_raw, dest=dest_raw))
     except Exception as e:
-        ctx.fail(f"移动/重命名时发生未知错误: {e}")
+        ctx.fail(bus.get("acts.refactor.error.moveUnknown", error=e))
     bus.success("acts.refactor.success.moved", source=src_raw, destination=dest_raw)
 
 
@@ -48,7 +48,7 @@ def _delete_file(ctx: ActContext, args: List[str]):
     Args: [path]
     """
     if len(args) < 1:
-        ctx.fail("delete_file 需要一个参数: [path]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="delete_file", count=1, signature="[path]"))
 
     raw_path = args[0]
     target_path = ctx.resolve_path(raw_path)
@@ -68,8 +68,8 @@ def _delete_file(ctx: ActContext, args: List[str]):
         else:
             target_path.unlink()
     except PermissionError:
-        ctx.fail(f"删除失败: 对 '{raw_path}' 的访问权限不足。")
+        ctx.fail(bus.get("acts.refactor.error.deletePermission", path=raw_path))
     except Exception as e:
-        ctx.fail(f"删除时发生未知错误: {e}")
+        ctx.fail(bus.get("acts.refactor.error.deleteUnknown", error=e))
 
     bus.success("acts.refactor.success.deleted", path=raw_path)

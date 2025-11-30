@@ -20,7 +20,7 @@ def _log_thought(ctx: ActContext, args: List[str]):
     说明: 将思维过程追加到 .quipu/memory.md 文件中，用于长期记忆。
     """
     if len(args) < 1:
-        ctx.fail("log_thought 需要内容参数")
+        ctx.fail(bus.get("acts.memory.error.missingContent"))
 
     content = args[0]
 
@@ -36,6 +36,6 @@ def _log_thought(ctx: ActContext, args: List[str]):
         with open(memory_file, "a", encoding="utf-8") as f:
             f.write(entry)
     except Exception as e:
-        ctx.fail(f"无法写入记忆文件: {e}")
+        ctx.fail(bus.get("acts.memory.error.writeFailed", error=e))
 
     bus.success("acts.memory.success.thoughtLogged")

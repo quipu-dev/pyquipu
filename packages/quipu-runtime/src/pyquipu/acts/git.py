@@ -19,7 +19,6 @@ def register(executor: Executor):
 
 def _summarize_commit(args: List[str], contexts: List[str]) -> str:
     msg = contexts[0] if contexts else "No message"
-    # Keep it short
     summary = (msg[:50] + "...") if len(msg) > 50 else msg
     return f"Git Commit: {summary}"
 
@@ -36,11 +35,9 @@ def _run_git_cmd(ctx: ActContext, cmd_args: List[str]) -> str:
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.strip()
-        # 使用 ctx.fail 来抛出标准化的异常
-        ctx.fail(f"Git 命令执行失败: git {' '.join(cmd_args)}\n错误信息: {error_msg}")
+        ctx.fail(bus.get("acts.git.error.cmdFailed", args=" ".join(cmd_args), error=error_msg))
     except FileNotFoundError:
-        ctx.fail("未找到 git 命令，请确保系统已安装 Git。")
-    # 确保函数总有返回值，即使 ctx.fail 会抛异常
+        ctx.fail(bus.get("acts.git.error.gitNotFound"))
     return ""
 
 
@@ -79,7 +76,7 @@ def _git_commit(ctx: ActContext, args: List[str]):
     Args: [message]
     """
     if len(args) < 1:
-        ctx.fail("git_commit 需要至少一个参数: [message]")
+        ctx.fail(bus.get("acts.error.missingArgs", act_name="git_commit", count=1, signature="[message]"))
 
     message = args[0]
 

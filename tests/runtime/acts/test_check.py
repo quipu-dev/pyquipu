@@ -29,14 +29,11 @@ class TestCheckActs:
         (isolated_vault / "exists.txt").touch()
         file_list = "exists.txt\nmissing.txt"
 
-        with pytest.raises(ExecutionError) as excinfo:
+        # 断言 msg_id
+        with pytest.raises(ExecutionError, match="acts.check.error.filesMissing"):
             func, _, _ = executor._acts["check_files_exist"]
             ctx = ActContext(executor)
             func(ctx, [file_list])
-
-        msg = str(excinfo.value)
-        assert "missing.txt" in msg
-        assert "exists.txt" not in msg
 
     def test_check_cwd_match_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):
         real_path = str(isolated_vault.resolve())
@@ -49,9 +46,7 @@ class TestCheckActs:
     def test_check_cwd_match_fail(self, executor: Executor):
         wrong_path = "/this/path/does/not/exist"
 
-        with pytest.raises(ExecutionError) as excinfo:
+        with pytest.raises(ExecutionError, match="acts.check.error.cwdMismatch"):
             func, _, _ = executor._acts["check_cwd_match"]
             ctx = ActContext(executor)
             func(ctx, [wrong_path])
-
-        assert "工作区目录不匹配" in str(excinfo.value)

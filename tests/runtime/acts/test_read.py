@@ -90,3 +90,16 @@ class TestReadActs:
         with pytest.raises(ExecutionError) as exc:
             search_func(ctx, ["pattern", "--unknown-flag"])
         assert "参数解析错误" in str(exc.value)
+
+    def test_read_file_not_found(self, executor: Executor):
+        func, _, _ = executor._acts["read_file"]
+        ctx = ActContext(executor)
+        with pytest.raises(ExecutionError, match="acts.read.error.targetNotFound"):
+            func(ctx, ["ghost.txt"])
+
+    def test_read_file_is_dir(self, executor: Executor, isolated_vault: Path):
+        (isolated_vault / "subdir").mkdir()
+        func, _, _ = executor._acts["read_file"]
+        ctx = ActContext(executor)
+        with pytest.raises(ExecutionError, match="acts.read.error.targetIsDir"):
+            func(ctx, ["subdir"])
