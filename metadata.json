@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(deps): 将最低 Python 版本要求提升至 3.10", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764477266.9301734, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "change ruff version Capture: M pyproject.toml", "type": "capture", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764477340.3828638, "duration_ms": 0}}
