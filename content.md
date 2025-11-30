@@ -1,52 +1,214 @@
-好的，我们已经完成了代码修复。现在是时候将这个变更作为一个原子提交固化到版本历史中了。
+好的，我将创建一个计划来修复这些由 `ruff` 报告的代码风格和未使用的变量问题。
 
-我将为你生成一个 `[COMMIT]` 计划，其中包含 `git add` 和 `git commit` 指令。
+这个计划将通过一系列 `patch_file` 操作来精确地修正每个文件中的问题，确保代码库的整洁和一致性。
 
-## [COMMIT] fix(cli): define logger instances in command modules
+## [WIP] style: 修复 ruff 报告的 linting 错误
 
 ### 用户需求
-需要将修复了 `ruff` 报告的 `F821 Undefined name 'logger'` 错误的变更提交到版本库中。
+根据 `ruff` 的输出，修复项目中存在的代码风格问题，主要包括行太长 (E501) 和未使用的变量 (F841, F811)。
 
 ### 评论
-这是一个简单的代码质量和一致性修复。通过确保所有模块都遵循标准的日志记录器初始化模式，我们提高了代码的健壮性和可维护性，并消除了 linter 警告。
+这是一次常规的代码健康度维护。通过修复这些 linting 问题，可以提升代码的可读性，并消除潜在的逻辑错误（例如，由于未使用的变量赋值而掩盖了函数没有按预期返回的问题）。
 
 ### 目标
-1.  将 `helpers.py` 和 `navigation.py` 的修改添加到 Git 暂存区。
-2.  创建一个符合 Conventional Commits 规范的 Git 提交，清晰地记录此次修复。
+1.  修正所有 `E501` (Line too long) 错误，将过长的代码行进行格式化换行。
+2.  移除所有 `F841` (Local variable ... is assigned to but never used) 错误中不必要的变量赋值。
+3.  修复 `F811` (Redefinition of unused ...) 错误，移除不必要的 `import`。
+4.  确保所有修改后，测试套件依然能成功通过。
 
 ### 基本原理
-此次变更通过在 `helpers.py` 和 `navigation.py` 模块顶部添加标准的 `logging.getLogger(__name__)` 调用，解决了 `logger` 对象未定义的问题。这使得异常处理块中的 `logger.error` 调用能够按预期工作，为开发者提供详细的调试信息，同时不影响面向用户的 `bus.error` 消息。
+我们将使用 `patch_file` 指令，为 `ruff` 报告的每个问题提供精确的、上下文感知的修复。对于未使用的变量，我们将只移除赋值操作，保留有副作用的函数调用。对于过长的代码行，我们将通过添加换行符来重新格式化代码，使其符合 120 个字符的行长度限制。
 
 ### 标签
-#intent/fix #flow/ready #priority/medium #comp/cli #scope/dx #ai/instruct #task/domain/cli #task/object/linter-errors #task/action/fix #task/state/end #task/status/completed
+#intent/tune #flow/ready #priority/medium #comp/runtime #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/linting #task/action/fix #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 提交修复
+#### Acts 1: 修复 `quipu-runtime` 中的超长行
 
-现在，我们将修改后的文件添加到暂存区，并创建一个内容详尽的提交。
+我们将 `executor.py` 中过长的 f-string 日志消息拆分为两行。
 
 ~~~~~act
-git_add
-packages/quipu-cli/src/pyquipu/cli/commands/helpers.py
-packages/quipu-cli/src/pyquipu/cli/commands/navigation.py
+patch_file
+packages/quipu-runtime/src/pyquipu/runtime/executor.py
+~~~~~
+~~~~~python
+                    if block_contexts:
+                        logger.debug(
+                            f"ℹ️  [{act_name} - Exclusive] Inline args detected, ignoring {len(block_contexts)} subsequent Block(s)."
+                        )
+~~~~~
+~~~~~python
+                    if block_contexts:
+                        logger.debug(
+                            f"ℹ️  [{act_name} - Exclusive] Inline args detected,"
+                            f" ignoring {len(block_contexts)} subsequent Block(s)."
+                        )
+~~~~~
+
+#### Acts 2: 修复 CLI 测试中的未使用变量
+
+在 `test_query_commands.py` 中，移除对 `engine.capture_drift` 结果的不必要赋值。
+
+~~~~~act
+patch_file
+tests/cli/test_query_commands.py
+~~~~~
+~~~~~python
+    (work_dir / "f1").touch()
+    node1 = engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
+    (work_dir / "f2").touch()
+    node2 = engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 2")
+~~~~~
+~~~~~python
+    (work_dir / "f1").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
+    (work_dir / "f2").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 2")
+~~~~~
+
+#### Acts 3: 修复 Engine SQLite 测试中的未使用变量
+
+在 `test_reader.py` 中，移除对 `git_writer.create_node` 结果的不必要赋值。
+
+~~~~~act
+patch_file
+tests/engine/sqlite/test_reader.py
+~~~~~
+~~~~~python
+        (repo / "a.txt").touch()
+        hash_a = git_db.get_tree_hash()
+        node_a_git = git_writer.create_node("plan", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", hash_a, "Content A")
+
+        (repo / "b.txt").touch()
+        hash_b = git_db.get_tree_hash()
+        node_b_git = git_writer.create_node("plan", hash_a, hash_b, "Content B")
+~~~~~
+~~~~~python
+        (repo / "a.txt").touch()
+        hash_a = git_db.get_tree_hash()
+        git_writer.create_node("plan", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", hash_a, "Content A")
+
+        (repo / "b.txt").touch()
+        hash_b = git_db.get_tree_hash()
+        git_writer.create_node("plan", hash_a, hash_b, "Content B")
+~~~~~
+
+#### Acts 4: 修复 Engine SQLite 测试中的超长行
+
+在 `test_reader_integrity.py` 中，将过长的 SQL `INSERT` 语句换行以符合长度限制。
+
+~~~~~act
+patch_file
+tests/engine/sqlite/test_reader_integrity.py
+~~~~~
+~~~~~python
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO nodes (commit_hash, output_tree, node_type, timestamp, summary, generator_id, meta_json, plan_md_cache)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (commit_hash, output_tree, "capture", time.time(), "Corrupted Self-Loop Node", "manual", "{}", None),
+        )
+~~~~~
+~~~~~python
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO nodes (
+                commit_hash, output_tree, node_type, timestamp, summary,
+                generator_id, meta_json, plan_md_cache
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (commit_hash, output_tree, "capture", time.time(), "Corrupted Self-Loop Node", "manual", "{}", None),
+        )
+~~~~~
+
+#### Acts 5: 修复 Engine Git 测试中的未使用变量
+
+在 `test_git_reader.py` 中，移除对 `writer.create_node` 结果的不必要赋值。
+
+~~~~~act
+patch_file
+tests/engine/test_git_reader.py
+~~~~~
+~~~~~python
+        (repo / "base").touch()
+        hash_a = git_db.get_tree_hash()
+        node_a = writer.create_node("plan", h0, hash_a, "Plan A", start_time=1000)
+        time.sleep(0.01)
+~~~~~
+~~~~~python
+        (repo / "base").touch()
+        hash_a = git_db.get_tree_hash()
+        writer.create_node("plan", h0, hash_a, "Plan A", start_time=1000)
+        time.sleep(0.01)
+~~~~~
+
+#### Acts 6: 修复集成测试中的导入和未使用变量
+
+在 `test_sync_modes.py` 中，修复 `F811` 错误，移除不必要的 `sync_test_environment` 导入；同时修复 `F841` 错误，移除未使用的 `user_a_id` 变量。
+
+~~~~~act
+patch_file
+tests/integration/test_sync_modes.py
+~~~~~
+~~~~~python
+from .test_sync_workflow import (  # noqa: F401, sync_test_environment  # noqa: F401, sync_test_environment
+    run_git_command,
+    sync_test_environment,
+)
+~~~~~
+~~~~~python
+from .test_sync_workflow import (  # noqa: F401
+    run_git_command,
+)
 ~~~~~
 
 ~~~~~act
-git_commit
+patch_file
+tests/integration/test_sync_modes.py
 ~~~~~
-~~~~~text
-fix(cli): define logger instances in command modules
+~~~~~python
+    def test_push_force_mode(self, sync_test_environment):
+        """User A force-pushes, deleting a stale ref on the remote."""
+        remote_path, user_a_path, _ = sync_test_environment
+        user_a_id = get_user_id_from_email("user.a@example.com")
 
-Resolves `F821 Undefined name 'logger'` errors reported by ruff in `helpers.py` and `navigation.py`.
+        # User A creates two nodes and pushes
+~~~~~
+~~~~~python
+    def test_push_force_mode(self, sync_test_environment):
+        """User A force-pushes, deleting a stale ref on the remote."""
+        remote_path, user_a_path, _ = sync_test_environment
 
-These modules used `logger.error` in their exception handling blocks without previously importing the `logging` module and instantiating a module-level logger.
+        # User A creates two nodes and pushes
+~~~~~
 
-This commit adds the standard `logger = logging.getLogger(__name__)` definition to the top of each affected file, aligning them with the established pattern used across the rest of the `commands` package and ensuring proper logging functionality.
+#### Acts 7: 修复集成测试中的未使用变量
+
+在 `test_sync_workflow.py` 中，移除未使用的 `remote_refs_before` 变量。
+
+~~~~~act
+patch_file
+tests/integration/test_sync_workflow.py
+~~~~~
+~~~~~python
+        # Sync to ensure remote has it
+        runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
+        remote_refs_before = run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
+        assert "plan3" in str(run_git_command(user_a_path, ["log", "--all"]))  # Verify creation
+~~~~~
+~~~~~python
+        # Sync to ensure remote has it
+        runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--remote", "origin"])
+        run_git_command(remote_path, ["for-each-ref", f"refs/quipu/users/{user_a_id}"])
+        assert "plan3" in str(run_git_command(user_a_path, ["log", "--all"]))  # Verify creation
 ~~~~~
 
 ### 下一步建议
-- **继续修复**: 我们可以继续处理 `ruff` 报告的其他类型的问题，例如 `E501 Line too long`，以进一步提升代码库的质量。
-- **功能开发**: 所有 linter 问题都已解决，代码库处于一个干净的状态，适合继续进行新功能的开发。
+在应用这些修复后，建议重新运行 `ruff check .` 以确认所有已报告的问题都已解决。之后，可以运行完整的测试套件 (`pytest`) 以确保这些风格修复没有引入任何回归性错误。
