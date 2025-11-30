@@ -20,12 +20,12 @@ def history_with_redundant_refs(engine_instance: Engine):
     # root
     (ws / "file.txt").write_text("v0")
     h0 = engine.git_db.get_tree_hash()
-    n_root = engine.capture_drift(h0, "root")
+    engine.capture_drift(h0, "root")
 
     # n1
     (ws / "file.txt").write_text("v1")
     h1 = engine.git_db.get_tree_hash()
-    n1 = engine.capture_drift(h1, "n1")
+    engine.capture_drift(h1, "n1")
 
     # n2 (branch point)
     (ws / "file.txt").write_text("v2")

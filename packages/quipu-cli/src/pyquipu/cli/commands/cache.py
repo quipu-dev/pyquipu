@@ -7,7 +7,6 @@ from pyquipu.common.messaging import bus
 
 from ..config import DEFAULT_WORK_DIR
 from ..logger_config import setup_logging
-from ..ui_utils import prompt_for_confirmation
 from .helpers import engine_context
 
 logger = logging.getLogger(__name__)
@@ -75,10 +74,10 @@ def cache_prune_refs(
     只保留分支末端 (Leaves)，删除中间节点的引用。
     """
     setup_logging()
-    
+
     with engine_context(work_dir) as engine:
         bus.info("cache.prune.info.scanning")
-        
+
         # 1. 获取所有本地 heads
         local_heads = engine.git_db.get_all_ref_heads("refs/quipu/local/heads/")
         if not local_heads:
@@ -86,10 +85,10 @@ def cache_prune_refs(
             return
 
         head_commits = {h[0] for h in local_heads}
-        
+
         # 2. 批量获取这些 commit 的内容以解析 parent
         commits_content = engine.git_db.batch_cat_file(list(head_commits))
-        
+
         parents_of_heads = set()
         for c_hash, content in commits_content.items():
             text = content.decode("utf-8", errors="ignore")
@@ -98,11 +97,11 @@ def cache_prune_refs(
                     p_hash = line.split()[1]
                     parents_of_heads.add(p_hash)
                 elif line == "":
-                    break 
-        
+                    break
+
         # 3. 计算交集：既是 Head 又是某个 Head 的 Parent -> 冗余
         redundant_commits = head_commits.intersection(parents_of_heads)
-        
+
         if not redundant_commits:
             bus.success("cache.prune.info.noRedundant")
             return
@@ -112,29 +111,13 @@ def cache_prune_refs(
         for c_hash, ref_name in local_heads:
             if c_hash in redundant_commits:
                 refs_to_delete.append(ref_name)
-        
+
         bus.info("cache.prune.info.found", count=len(refs_to_delete), total=len(local_heads))
-        
+
         deleted_count = 0
         for ref in refs_to_delete:
             engine.git_db.delete_ref(ref)
             deleted_count += 1
-            
+
         bus.success("cache.prune.success", count=deleted_count)
         return
-
-    if not force:
-        prompt = f"🚨 即将删除并重建数据库 {db_path}。\n此操作不可逆。是否继续？"
-        if not prompt_for_confirmation(prompt, default=False):
-            bus.warning("common.prompt.cancel")
-            raise typer.Abort()
-
-    try:
-        db_path.unlink()
-        bus.info("cache.rebuild.info.deleting")
-    except (OSError, PermissionError) as e:
-        logger.error(f"删除旧数据库文件 '{db_path}' 失败", exc_info=True)
-        bus.error("cache.rebuild.error.deleteFailed", error=str(e))
-        ctx.exit(1)
-
-    cache_sync(ctx, work_dir)

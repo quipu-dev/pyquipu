@@ -466,7 +466,7 @@ class GitObjectHistoryWriter(HistoryWriter):
         parent_commit = kwargs.get("parent_commit_hash")
         if not parent_commit:
             parent_commit = self.git_db.get_commit_by_output_tree(input_tree)
-            
+
         parents = [parent_commit] if parent_commit else None
 
         if not parent_commit and input_tree != "4b825dc642cb6eb9a060e54bf8d69288fbee4904":
