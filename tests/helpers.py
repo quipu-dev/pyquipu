@@ -90,7 +90,9 @@ class InMemoryDB:
             self.snapshots[tree_hash] = self.vfs.copy()
         return tree_hash
 
-    def checkout_tree(self, tree_hash: str):
+    def checkout_tree(self, new_tree_hash: str, old_tree_hash: Optional[str] = None):
+        # InMemoryDB 总是执行“瞬间切换”，不需要模拟 diff 优化逻辑
+        tree_hash = new_tree_hash
         if tree_hash not in self.snapshots:
             raise FileNotFoundError(f"In-memory snapshot not found for hash: {tree_hash}")
         self.vfs = self.snapshots[tree_hash].copy()

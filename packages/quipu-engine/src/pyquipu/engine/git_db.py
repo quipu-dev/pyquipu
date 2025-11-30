@@ -225,22 +225,24 @@ class GitDB:
                 changes.append((status, path))
         return changes
 
-    def checkout_tree(self, tree_hash: str):
+    def checkout_tree(self, new_tree_hash: str, old_tree_hash: Optional[str] = None):
         """
         将工作区强制重置为目标 Tree 的状态。
-        这是一个底层方法，上层应确保工作区的未提交更改已被处理。
+        使用 read-tree --reset -u 实现高性能的增量更新。
         """
-        bus.info("engine.git.info.checkoutStarted", short_hash=tree_hash[:7])
+        bus.info("engine.git.info.checkoutStarted", short_hash=new_tree_hash[:7])
 
-        # 1. 使用 read-tree 更新索引，这是一个安全的操作
-        self._run(["read-tree", tree_hash])
+        # 1. 高性能检出核心
+        # --reset: 类似于 git reset --hard，强制覆盖本地未提交的变更，解决 "not uptodate" 冲突。
+        # -u: 更新工作区文件。Git 会自动对比当前索引，只对发生变更的文件执行 I/O (更新 mtime)。
+        # 这就是我们要的 "tree-vs-tree" 优化，不需要手动传入 old_tree_hash，因为当前索引就是 old_tree。
+        logger.debug(f"执行优化的强制检出: -> {new_tree_hash[:7]}")
+        self._run(["read-tree", "--reset", "-u", new_tree_hash])
 
-        # 2. 从更新后的索引检出文件，-a (all) -f (force)
-        self._run(["checkout-index", "-a", "-f"])
-
-        # 3. 清理工作区中多余的文件和目录
+        # 2. 清理工作区中多余的文件和目录
+        # read-tree -u 会删除旧树中有但新树中没有的文件。
+        # 但它不会删除 "未追踪 (Untracked)" 的新文件。我们需要用 clean 来处理它们。
         # -d: 目录, -f: 强制
-        # 移除了 -x 参数，以尊重 .gitignore 规则
         # -e .quipu: 排除 .quipu 目录，防止自毁
         self._run(["clean", "-df", "-e", ".quipu"])
 

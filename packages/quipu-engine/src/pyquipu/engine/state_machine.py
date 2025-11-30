@@ -363,7 +363,12 @@ class Engine:
         return new_node
 
     def checkout(self, target_hash: str):
-        self.git_db.checkout_tree(target_hash)
+        # 获取切换前的 tree hash 作为 "old_tree"
+        current_head_hash = self._read_head()
+
+        # 调用已优化的 checkout_tree 方法
+        self.git_db.checkout_tree(new_tree_hash=target_hash, old_tree_hash=current_head_hash)
+
         self._write_head(target_hash)
         self.current_node = None
         for node in self.history_graph.values():
