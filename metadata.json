@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] feat(cli): 为 log 和 export 添加 --reachable-only 过滤", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764506799.945726, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] feat(cli): 为 log 和 export 添加过滤功能", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764506975.5324805, "duration_ms": 0}}
