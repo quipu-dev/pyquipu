@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] perf: 将可达性与时间过滤逻辑下沉至存储层", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764507898.8348546, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修复因接口变更导致的 datetime 导入缺失", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764507982.933085, "duration_ms": 0}}
