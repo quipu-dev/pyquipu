@@ -1,101 +1,92 @@
-分析正确。这是一个典型的回归错误，问题出在 `quipu save` 命令确定其父节点的方式上。
+这是一个非常敏锐的观察，完全正确。
 
-错误分析
+你的分析比我最初的提案更深刻。你说得对，我提出的那个简单的“连续 `save`”测试存在一个缺陷：**它无法区分“正确遵循 HEAD 指针”和“错误地回退到最新节点恰好是同一个节点”这两种情况。**
 
-根本原因在于 `pyquipu/engine/state_machine.py` 中的 `capture_drift` 方法在逻辑上犯了一个“苹果与橘子”的比较错误。
+在 `save -> save` 的线性场景中，`HEAD` 指针指向的节点 *恰好* 也是时间上最新的节点。因此，即使我的修复存在问题，那个有缺陷的“自动回退”机制也可能会意外地选择正确的父节点，从而导致一个**假阳性 (false positive)** 的测试结果。
 
-1.  **.quipu/HEAD 文件**: 这个文件存储的是上一次操作完成后的 **Tree Hash** (例如 `b09d442...`)。
-2.  **Engine 的历史图谱**: `engine.history_graph` 是一个字典，它的键 (key) 是 **Commit Hash** (例如 `fbff7e4...`)。
-3.  **错误的逻辑**: 当前的代码在 `capture_drift` 中读取了 `HEAD` 文件里的 **Tree Hash**，然后直接用这个 **Tree Hash** 去检查它是否存在于 `history_graph` 的 **键** 中。
+你提出的测试方案（A -> B -> checkout A -> C）则完美地解决了这个问题。它通过 `checkout` 操作，**人为地制造了“HEAD 指向的节点 (A)”和“时间上最新的节点 (B)”之间的不一致**。在这种情况下，只有正确读取并遵循 `HEAD` 指针的逻辑才能通过测试。这是一个健壮得多的回归测试。
 
-这是出问题的代码行：
-```python
-# pyquipu/engine/state_machine.py
+我将废弃我之前的计划，并根据你更优越的逻辑生成一个新的、更严格的测试计划。
 
-def capture_drift(...):
-    # ...
-    head_hash = self._read_head()  # head_hash 是一个 Tree Hash
-    if head_hash and head_hash in self.history_graph: # 错误：用 Tree Hash 在 Commit Hash 字典里查找
-        input_hash = head_hash
-    elif self.history_graph:
-        # ... 触发了这里的 fallback 逻辑
-        logger.warning(f"⚠️  丢失 HEAD 指针...") 
-```
-这个 `if` 条件永远不会为 `True`，因为 Tree Hash 和 Commit Hash 是两种完全不同的哈希值。因此，程序总会错误地进入 `elif` 分支，报告“丢失 HEAD 指针”，并回退到使用时间戳最新的节点作为父节点，而不是遵循 `HEAD` 指针的指示。
-
-解决方案
-
-正确的做法是，我们应该遍历 `history_graph` 中的所有节点 (values)，找到那个 `output_tree` 属性与 `HEAD` 文件内容（Tree Hash）相匹配的节点。一旦找到这个节点，它就是当前状态正确的父节点。
-
-我将修改 `capture_drift` 方法来执行正确的查找逻辑。同时，我将改进那条警告日志，使其在 `HEAD` 文件中的哈希确实无效时提供更精确的信息。
-
-## [WIP] fix(engine): 修正 HEAD 指针的父节点查找逻辑
-
-### 错误分析
-`quipu save` 命令在连续执行时，第二次执行会错误地报告“丢失 HEAD 指针”。根本原因在于 `state_machine.py` 的 `capture_drift` 方法中，将从 `.quipu/HEAD` 文件读取的 Tree Hash 直接用于在以 Commit Hash 为键的历史图谱字典中进行查找。由于哈希类型不匹配，查找必然失败，导致程序错误地回退到“寻找最新节点”的逻辑，而不是使用 `HEAD` 指向的正确父节点。
+## [WIP] test: 增加 HEAD 指针在非线性历史中的回归测试
 
 ### 用户需求
-连续执行 `quipu save` 时，第二次 `save` 操作必须正确地将第一次 `save` 产生的状态作为其父状态，而不应报告“丢失 HEAD 指针”并错误地回退。
+在 `test_head_tracking.py` 中添加一个更严格的回归测试。该测试需要验证当 `.quipu/HEAD` 指针指向一个非最新的历史节点时，`engine.capture_drift`（`quipu save` 的核心）依然能够正确地选择 `HEAD` 指向的节点作为父节点，而不是错误地回退到时间上最新的节点。
 
 ### 评论
-这是一个关键的回归 Bug，影响了 `quipu save` 命令的核心功能和数据一致性。修复此问题对于保证历史图谱的拓扑结构正确性至关重要。
+这个测试用例通过创建一个分支场景（或称之为“分离 HEAD”场景），能够精确地验证 `capture_drift` 是否真正依赖 `HEAD` 文件作为其父节点来源的唯一真相，从而彻底杜绝“丢失 HEAD 指针”的回归 Bug。
 
 ### 目标
-1.  修改 `capture_drift` 方法，使其通过遍历 `history_graph` 的值来查找与 `HEAD` Tree Hash 匹配的节点。
-2.  使用找到的节点作为新创建的 `capture` 节点的父节点。
-3.  改进警告日志，使其在 `HEAD` 指针确实无效时能提供更明确的上下文。
+1.  在 `TestHeadTracking` 中添加一个名为 `test_capture_drift_on_detached_head` 的新测试。
+2.  测试步骤：
+    a. 创建一个线性历史 `A -> B`，此时 B 是最新节点。
+    b. 执行 `checkout` 操作，将工作区和 `HEAD` 指针都重置到较旧的节点 `A`。
+    c. 在此基础上创建一个新的文件变更 `C`。
+    d. 调用 `capture_drift` 捕获变更，生成节点 `C`。
+3.  断言：
+    a. 节点 `C` 的父节点是节点 `A` (`C.input_tree == A.output_tree`)。
+    b. 明确断言节点 `C` 的父节点**不是**节点 `B`，以确保回退逻辑没有被触发。
 
 ### 基本原理
-我们将从 `.quipu/HEAD` 读取 Tree Hash，然后使用 `next()` 和一个生成器表达式在 `engine.history_graph.values()` 中高效地查找 `output_tree` 属性与该 Tree Hash 匹配的 `QuipuNode`。如果找到，就使用它的 `output_tree` 作为 `input_hash`。如果找不到（例如 `HEAD` 文件损坏或指向一个不存在的状态），才执行现有的回退逻辑。
+此测试的核心在于 `engine.checkout(hash_a)` 这一步。它同时修改了物理工作区和逻辑 `HEAD` 指针，造成了 `HEAD` 指向的 `A` 和历史顶端的 `B` 之间的分离。这为 `capture_drift` 的父节点选择逻辑创造了一个明确的、无歧义的测试条件。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/engine #concept/state #concept/history #scope/core #ai/instruct #task/domain/storage #task/object/head-pointer #task/action/bug-fix #task/state/begin
+#intent/tooling #flow/ready #priority/critical #comp/tests #comp/engine #concept/state #concept/history #concept/navigation #scope/core #ai/instruct #task/domain/storage #task/object/head-pointer #task/action/bug-fix #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 修正 `capture_drift` 中的父节点查找逻辑
+#### Acts 1: 向 `test_head_tracking.py` 添加更严格的回归测试
 
-我们将 `patch` `state_machine.py` 文件，替换掉错误的 `in` 检查，改为正确的遍历查找。
+我们将追加一个新的、更强大的测试用例到 `TestHeadTracking` 类。
 
 ~~~~~act
 patch_file
-packages/quipu-engine/src/pyquipu/engine/state_machine.py
+tests/engine/test_head_tracking.py
 ~~~~~
 ~~~~~python
-        genesis_hash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-        input_hash = genesis_hash
-        head_hash = self._read_head()
-        if head_hash and head_hash in self.history_graph:
-            input_hash = head_hash
-        elif self.history_graph:
-            last_node = max(self.history_graph.values(), key=lambda node: node.timestamp)
-            input_hash = last_node.output_tree
-            logger.warning(f"⚠️  丢失 HEAD 指针，自动回退到最新历史节点: {input_hash[:7]}")
+        # 5. Assert Logical State (HEAD)
+        assert engine._read_head() == hash_a
 ~~~~~
 ~~~~~python
-        genesis_hash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-        input_hash = genesis_hash
-        head_tree_hash = self._read_head()
-        parent_node = None
+        # 5. Assert Logical State (HEAD)
+        assert engine._read_head() == hash_a
 
-        if head_tree_hash:
-            # 正确的逻辑：遍历节点，用 output_tree 匹配 head 的 tree hash
-            parent_node = next(
-                (node for node in self.history_graph.values() if node.output_tree == head_tree_hash), None
-            )
+    def test_capture_drift_on_detached_head(self, engine_with_repo):
+        """
+        A more robust regression test. Ensures capture_drift uses the HEAD
+        pointer even when it's not pointing to the latest node in history.
+        """
+        engine = engine_with_repo
+        engine.align()
 
-        if parent_node:
-            input_hash = parent_node.output_tree
-        elif self.history_graph:
-            # 只有当 HEAD 指针无效或丢失时，才执行回退逻辑
-            last_node = max(self.history_graph.values(), key=lambda node: node.timestamp)
-            input_hash = last_node.output_tree
-            logger.warning(
-                f"⚠️  HEAD 指针 '{head_tree_hash[:7] if head_tree_hash else 'N/A'}' 无效或丢失，自动回退到最新历史节点: {input_hash[:7]}"
-            )
+        # 1. Create linear history A -> B
+        (engine.root_dir / "f.txt").write_text("state A")
+        hash_a = engine.git_db.get_tree_hash()
+        engine.create_plan_node("genesis", hash_a, "State A")
+
+        (engine.root_dir / "f.txt").write_text("state B")
+        hash_b = engine.git_db.get_tree_hash()
+        engine.create_plan_node(hash_a, hash_b, "State B")
+        engine.align()  # History graph is now loaded, B is the latest node
+
+        # 2. Checkout to the older node A. This moves the HEAD pointer.
+        engine.checkout(hash_a)
+        assert engine._read_head() == hash_a
+
+        # 3. Create a new change (State C) based on State A
+        (engine.root_dir / "f.txt").write_text("state C")
+        hash_c = engine.git_db.get_tree_hash()
+
+        # 4. Capture the drift. This should create Node C parented to A.
+        node_c = engine.capture_drift(hash_c, message="State C")
+
+        # 5. Assertions
+        # The parent MUST be A, not B. This proves the logic reads HEAD
+        # and doesn't just fall back to the "latest" node.
+        assert node_c.input_tree == hash_a
+        assert node_c.input_tree != hash_b
+        assert node_c.output_tree == hash_c
+        assert engine._read_head() == hash_c
 ~~~~~
-
-### 下一步建议
-- **添加回归测试**：在 `tests/engine/test_head_tracking.py` 中添加一个专门的测试用例，模拟“连续执行两次 `save`”的场景，并断言第二次 `save` 创建的节点的 `input_tree` 哈希值等于第一次 `save` 的 `output_tree` 哈希值。这将防止此问题在未来再次出现。
