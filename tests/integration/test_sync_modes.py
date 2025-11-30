@@ -7,7 +7,7 @@ from pyquipu.cli.main import app
 from pyquipu.common.identity import get_user_id_from_email
 
 # Reuse the runner and helpers from the existing test file
-from .test_sync_workflow import run_git_command, sync_test_environment  # noqa: F401, sync_test_environment
+from .test_sync_workflow import run_git_command, sync_test_environment  # noqa: F401, sync_test_environment  # noqa: F401, sync_test_environment
 
 runner = CliRunner()
 
