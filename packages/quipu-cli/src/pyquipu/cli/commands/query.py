@@ -50,7 +50,9 @@ def register(app: typer.Typer):
         limit: Annotated[Optional[int], typer.Option("--limit", "-n", help="限制显示的节点数量。")] = None,
         since: Annotated[Optional[str], typer.Option("--since", help="起始时间戳 (YYYY-MM-DD HH:MM)。")] = None,
         until: Annotated[Optional[str], typer.Option("--until", help="截止时间戳 (YYYY-MM-DD HH:MM)。")] = None,
-        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅显示与当前工作区状态直接相关的节点。")] = False,
+        reachable_only: Annotated[
+            bool, typer.Option("--reachable-only", help="仅显示与当前工作区状态直接相关的节点。")
+        ] = False,
         json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
     ):
         """

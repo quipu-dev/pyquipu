@@ -1,9 +1,6 @@
 import logging
 import re
 import shutil
-import logging
-import re
-import shutil
 from pathlib import Path
 from typing import Annotated, Dict, List, Optional, Set
 
@@ -157,7 +154,9 @@ def register(app: typer.Typer):
                 "--hide-link-type", help="禁用特定类型的导航链接 (可多次使用: summary, branch, parent, child)"
             ),
         ] = None,
-        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅导出与当前工作区状态直接相关的节点。")] = False,
+        reachable_only: Annotated[
+            bool, typer.Option("--reachable-only", help="仅导出与当前工作区状态直接相关的节点。")
+        ] = False,
     ):
         """将 Quipu 历史记录导出为一组人类可读的 Markdown 文件。"""
         hidden_types = set(hide_link_type) if hide_link_type else set()
