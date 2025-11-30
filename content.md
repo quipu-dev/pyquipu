@@ -1,54 +1,60 @@
-好的，我将创建一个 `[WIP]` 计划，用于创建一个测试提交。
+好的，问题分析如下：
 
-这个提交的唯一目的就是将我们刚刚创建的 `ci.yml` 文件推送到仓库，从而触发 GitHub Actions 工作流，让我们能够实时观察它是否按预期运行。
+**错误分析**
+测试 `test_sync_modes.py` 失败的根本原因是 `pytest` 找不到名为 `sync_test_environment` 的 fixture。
 
-## [WIP] test: 触发 CI 工作流以验证配置
+通过对比 `ruff` 处理前后的文件内容，可以发现 `ruff` 在自动格式化时，将 `from .test_sync_workflow import run_git_command, sync_test_environment` 这一行中的 `sync_test_environment` 移除了。
+
+`ruff` 这样做是因为它没有检测到 `sync_test_environment` 在代码中被直接调用（它被 `pytest` 的 fixture 机制隐式使用），因此错误地将其判断为“未使用的导入” (F401 - unused import) 并自动删除。
+
+**解决方案**
+解决方案是在导入语句的末尾添加 `# noqa: F401` 注释。这个注释会明确地告诉 `ruff` 及其他 linter 工具：“忽略此行上的 F401 (未使用导入) 警告，不要移除它”。这是一种标准的、用于处理此类 linter 误判的最佳实践。
+
+我将生成一个计划来执行这个修复。
+
+## [WIP] fix(tests): 恢复被 ruff 误删的 sync_test_environment fixture 导入
+
+### 错误分析
+`tests/integration/test_sync_modes.py` 中的测试用例因找不到 `sync_test_environment` fixture 而失败。这是由于 `ruff` 在代码格式化过程中，错误地将这个被 `pytest` 隐式使用的 fixture 识别为“未使用的导入”并将其自动移除。
 
 ### 用户需求
-需要创建一个临时的 Git 提交，将新添加的 `.github/workflows/ci.yml` 文件纳入版本控制。此操作的主要目的是触发 GitHub Actions，以便验证 CI 流程是否能被正确解析并成功运行。
+修复 `test_sync_modes.py` 文件，使其能够重新正确导入 `sync_test_environment` fixture，并防止 `ruff` 在未来的格式化操作中再次将其移除。
 
 ### 评论
-这是一个在设置 CI/CD 时的标准验证步骤。通过一个专门的、意图明确的测试提交，我们可以隔离地验证工作流配置的语法正确性和基础功能的连通性，而无需将其与主要的功能变更混在一起。
+这是一个典型的静态分析工具与 `pytest` fixture 依赖注入机制之间的冲突。通过使用 `# noqa: F401` 注释，我们可以为 linter 提供额外的信息，从而保护这些隐式依赖，确保测试代码的健壮性和可维护性。
 
 ### 目标
-1.  将 `.github/workflows/ci.yml` 文件添加到 Git 暂存区。
-2.  创建一个临时的、描述清晰的 Git 提交。
+1.  修改 `tests/integration/test_sync_modes.py` 中的导入语句。
+2.  重新导入 `sync_test_environment` fixture。
+3.  在导入行末尾添加 `# noqa: F401` 注释以防止 `ruff` 再次移除它。
 
 ### 基本原理
-CI/CD 的配置文件（如 YAML）可能包含细微的语法错误或逻辑问题，这些问题通常只有在实际的 CI 环境中运行时才能被发现。因此，一个专门用于触发 CI 的提交是最低成本、最高效的验证方法。
+我们将使用 `patch_file` 指令，精确定位到 `from .test_sync_workflow import ...` 这一行，并将其替换为包含了 `sync_test_environment` 和 `noqa` 注释的正确版本。这是一种最小化、最精确的修复方式。
 
 ### 标签
-#intent/tooling #flow/ready #priority/high #comp/build #scope/dx #ai/instruct #task/domain/tooling #task/object/ci-workflow #task/action/creation #task/state/continue
+#intent/fix #flow/ready #priority/high #comp/tests #scope/dx #ai/instruct #task/domain/testing #task/object/test-fixture #task/action/bug-fix #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 创建测试提交
+#### Acts 1: 恢复 fixture 导入并添加 noqa 注释
 
-我们将把新的 CI 配置文件添加到暂存区，并创建一个用于触发工作流的提交。
-
-~~~~~act
-git_add
-.github/workflows/ci.yml
-~~~~~
+我们将修复 `test_sync_modes.py` 中的导入语句，确保 `sync_test_environment` 被正确导入且不会被 `ruff` 再次移除。
 
 ~~~~~act
-git_commit
+patch_file
+tests/integration/test_sync_modes.py
 ~~~~~
-~~~~~text
-test: trigger CI workflow to validate configuration
-
-This is a temporary commit intended solely to trigger the initial run of the newly added GitHub Actions CI workflow.
-
-Its purpose is to verify:
-- The YAML syntax of `ci.yml` is valid.
-- The workflow triggers correctly on push.
-- The initial steps (checkout, setup-python, install-uv) execute successfully.
+~~~~~python
+# Reuse the runner and helpers from the existing test file
+from .test_sync_workflow import run_git_command
+~~~~~
+~~~~~python
+# Reuse the runner and helpers from the existing test file
+from .test_sync_workflow import run_git_command, sync_test_environment  # noqa: F401
 ~~~~~
 
 ### 下一步建议
-- **监控 CI 运行**: 在执行此计划并推送后，请立即前往你 GitHub 仓库的 "Actions" 标签页，观察工作流的运行状态。
-- **分析结果**:
-    -   如果工作流成功（显示绿色对勾），则证明我们的 CI 配置是有效的。你可以继续开发，并在完成所有相关工作后，将这个临时提交与最终的功能提交合并（squash）。
-    -   如果工作流失败（显示红色叉号），请点击进入查看日志，根据错误信息来调试和修正 `ci.yml` 文件。
+- **执行测试**: 运行 `pytest tests/integration/test_sync_modes.py` 来确认所有测试现在都可以成功通过。
+- **全局检查**: 可以考虑在整个 `tests/` 目录下搜索其他可能被 `ruff` 误删的 fixture 导入，并统一添加 `# noqa: F401` 注释，以提高整个测试套件的稳定性。
