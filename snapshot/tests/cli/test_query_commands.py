@@ -129,3 +129,36 @@ def test_log_filtering(runner, quipu_workspace, monkeypatch):
     result = runner.invoke(app, ["log", "--since", "2099-01-01 00:00", "-w", str(work_dir)])
     assert result.exit_code == 0
     mock_bus.info.assert_called_with("query.info.noResults")
+
+
+def test_log_reachable_only(runner, quipu_workspace, monkeypatch):
+    """Test --reachable-only filtering for the log command."""
+    work_dir, _, engine = quipu_workspace
+    mock_bus = MagicMock()
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
+
+    # History: root -> A -> B (HEAD)
+    #               \\-> C (unreachable)
+    (work_dir / "f_a").touch()
+    h_a = engine.git_db.get_tree_hash()
+    node_a = engine.capture_drift(h_a, "Node A")
+
+    (work_dir / "f_b").touch()
+    h_b = engine.git_db.get_tree_hash()
+    engine.capture_drift(h_b, "Node B")
+
+    engine.visit(node_a.output_tree)
+    (work_dir / "f_c").touch()
+    h_c = engine.git_db.get_tree_hash()
+    engine.capture_drift(h_c, "Node C")
+
+    # Checkout back to B to set it as current HEAD
+    engine.visit(h_b)
+
+    result = runner.invoke(app, ["log", "--reachable-only", "-w", str(work_dir)])
+    assert result.exit_code == 0
+
+    output = "".join(call.args[0] for call in mock_bus.data.call_args_list)
+    assert "Node B" in output  # HEAD is reachable
+    assert "Node A" in output  # Ancestor is reachable
+    assert "Node C" not in output  # Unrelated branch is not reachable

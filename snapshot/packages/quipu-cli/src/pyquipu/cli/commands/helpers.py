@@ -73,3 +73,19 @@ def filter_nodes(
     if limit is not None and limit > 0:
         filtered = filtered[:limit]
     return filtered
+
+
+def filter_reachable_nodes(engine: Engine, nodes: List[QuipuNode]) -> List[QuipuNode]:
+    """仅保留与当前工作区状态直接相关的节点（祖先和后代）。"""
+    current_node = _find_current_node(engine, engine.history_graph)
+    if not current_node:
+        # 如果工作区是脏的，无法确定起点，返回所有节点
+        return nodes
+
+    current_hash = current_node.output_tree
+    ancestors = engine.reader.get_ancestor_output_trees(current_hash)
+    descendants = engine.reader.get_descendant_output_trees(current_hash)
+    reachable_set = ancestors.union(descendants)
+    reachable_set.add(current_hash)
+
+    return [node for node in nodes if node.output_tree in reachable_set]

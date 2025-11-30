@@ -229,3 +229,27 @@ def test_export_hide_multiple_link_types(runner, history_for_all_links, monkeypa
     content = target_file.read_text()
     assert "↑ [总结节点]" not in content and "→ [子节点]" not in content
     assert "↓ [上一分支点]" in content and "← [父节点]" in content
+
+
+def test_export_reachable_only(runner, populated_history, monkeypatch):
+    """测试 --reachable-only 选项是否能过滤掉无关分支。"""
+    engine = populated_history
+    output_dir = engine.root_dir / ".quipu" / "test_export_reachable"
+    mock_bus = MagicMock()
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
+
+    # The fixture leaves HEAD on branch B. We'll checkout a node on branch A.
+    summary_node = next(n for n in engine.history_graph.values() if n.summary == "Summary Node")
+    engine.visit(summary_node.output_tree)
+
+    result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--reachable-only"])
+    assert result.exit_code == 0
+
+    files = list(output_dir.glob("*.md"))
+    # Branch A path: Root -> Linear 1 -> Branch Point -> Branch A -> Summary (5 nodes)
+    # Branch B is now unreachable and should be excluded.
+    assert len(files) == 5
+
+    filenames = {f.name for f in files}
+    assert not any("Branch_B_change" in name for name in filenames)
+    assert any("Branch_A_change" in name for name in filenames)

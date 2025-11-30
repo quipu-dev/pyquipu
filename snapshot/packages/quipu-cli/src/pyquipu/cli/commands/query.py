@@ -9,7 +9,7 @@ from pyquipu.common.messaging import bus
 from pyquipu.interfaces.models import QuipuNode
 
 from ..config import DEFAULT_WORK_DIR
-from .helpers import engine_context, filter_nodes
+from .helpers import engine_context, filter_nodes, filter_reachable_nodes
 
 
 def _nodes_to_json_str(nodes: List[QuipuNode]) -> str:
@@ -50,6 +50,7 @@ def register(app: typer.Typer):
         limit: Annotated[Optional[int], typer.Option("--limit", "-n", help="限制显示的节点数量。")] = None,
         since: Annotated[Optional[str], typer.Option("--since", help="起始时间戳 (YYYY-MM-DD HH:MM)。")] = None,
         until: Annotated[Optional[str], typer.Option("--until", help="截止时间戳 (YYYY-MM-DD HH:MM)。")] = None,
+        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅显示与当前工作区状态直接相关的节点。")] = False,
         json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
     ):
         """
@@ -65,9 +66,13 @@ def register(app: typer.Typer):
                     bus.info("query.info.emptyHistory")
                 raise typer.Exit(0)
 
-            all_nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
+            nodes_to_process = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
+
+            if reachable_only:
+                nodes_to_process = filter_reachable_nodes(engine, nodes_to_process)
+
             try:
-                nodes = filter_nodes(all_nodes, limit, since, until)
+                nodes = filter_nodes(nodes_to_process, limit, since, until)
             except typer.BadParameter as e:
                 bus.error("common.error.invalidConfig", error=str(e))
                 ctx.exit(1)

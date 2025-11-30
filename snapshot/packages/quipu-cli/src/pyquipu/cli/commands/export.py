@@ -15,7 +15,7 @@ from pyquipu.interfaces.models import QuipuNode
 
 from ..config import DEFAULT_WORK_DIR
 from ..ui_utils import prompt_for_confirmation
-from .helpers import engine_context, filter_nodes
+from .helpers import engine_context, filter_nodes, filter_reachable_nodes
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +157,7 @@ def register(app: typer.Typer):
                 "--hide-link-type", help="禁用特定类型的导航链接 (可多次使用: summary, branch, parent, child)"
             ),
         ] = None,
+        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅导出与当前工作区状态直接相关的节点。")] = False,
     ):
         """将 Quipu 历史记录导出为一组人类可读的 Markdown 文件。"""
         hidden_types = set(hide_link_type) if hide_link_type else set()
@@ -166,11 +167,15 @@ def register(app: typer.Typer):
                 bus.info("export.info.emptyHistory")
                 ctx.exit(0)
 
-            all_nodes = sorted(engine.history_graph.values(), key=lambda n: n.timestamp, reverse=True)
+            nodes_to_process = sorted(engine.history_graph.values(), key=lambda n: n.timestamp, reverse=True)
+
+            if reachable_only:
+                nodes_to_process = filter_reachable_nodes(engine, nodes_to_process)
+
             try:
                 # filter_nodes returns preserving input order (reverse chrono),
                 # but export expects chronological order for file generation/processing
-                filtered = filter_nodes(all_nodes, limit, since, until)
+                filtered = filter_nodes(nodes_to_process, limit, since, until)
                 nodes_to_export = list(reversed(filtered))
             except typer.BadParameter as e:
                 bus.error("export.error.badParam", error=str(e))

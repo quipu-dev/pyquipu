@@ -1,95 +1,41 @@
-好的，我理解了你的需求。你需要为 `quipu log` 命令添加与 `quipu export` 类似的过滤功能（如 `since`, `until`, `limit`），并且严格遵循 DRY（Don't Repeat Yourself）原则，将通过重构将共用的过滤逻辑提取出来。
+好的，我们继续。为 `log` 和 `export` 命令添加 `--reachable-only` 参数，并再次遵循 DRY 原则，将核心逻辑提取到 `helpers.py` 中。
 
-这是一个典型的重构加新功能的任务。
+这个功能需要我们确定当前的工作区状态 (HEAD)，然后从历史图谱中找出所有与 HEAD 直接相关的祖先和后代节点。
 
-## [WIP] feat(cli): 为 log 命令实现筛选逻辑并重构公共代码
+## [WIP] feat(cli): 为 log 和 export 添加 --reachable-only 过滤
 
 ### 用户需求
-1.  **功能增强**: `quipu log` 命令需要支持按时间范围 (`--since`, `--until`) 和数量 (`--limit`) 过滤输出结果。
-2.  **代码质量**: 遵循 DRY 原则，避免在 `log` 和 `export` 命令之间复制粘贴过滤逻辑。需将原有的 `_filter_nodes` 逻辑提取为公共组件。
+为 `quipu log` 和 `quipu export` 命令添加一个新的布尔选项 `--reachable-only`。当启用此选项时，命令应只输出/导出那些与当前工作区状态 (HEAD) 在历史图谱上直接连通的节点（即祖先和后代）。
 
 ### 评论
-这是一个非常合理的改进。`log` 命令作为查看历史的主要入口，随着历史记录的增长，缺乏过滤功能会使其可用性降低。同时，将过滤逻辑集中管理可以确保两个命令在处理时间戳格式和边界条件时行为一致。
+这是一个高级功能，极大地提升了历史图谱的可读性。当项目历史变得复杂、分支繁多时，用户往往只关心当前工作路径的演进历史。这个功能可以有效地“剪枝”，隐藏掉不相关的实验性分支，让输出聚焦于主线故事。
 
 ### 目标
-1.  在 `packages/quipu-cli/src/pyquipu/cli/commands/helpers.py` 中实现通用的 `filter_nodes` 函数。
-2.  重构 `export.py`，移除其私有的 `_filter_nodes`，改为调用公共辅助函数。
-3.  修改 `query.py` 中的 `log` 命令，添加参数并集成过滤逻辑。
-4.  更新测试以验证 `log` 命令的过滤功能。
+1.  在 `helpers.py` 中创建一个新的辅助函数 `filter_reachable_nodes`，封装计算和过滤可达节点的逻辑。
+2.  在 `export.py` 中添加 `--reachable-only` 选项，并调用新的辅助函数。
+3.  在 `query.py` 中为 `log` 命令添加 `--reachable-only` 选项，并调用新的辅助函数。
+4.  为 `export` 和 `log` 命令添加新的测试用例，验证该功能的正确性。
 
 ### 基本原理
-我们将把原本紧耦合在 `export.py` 中的过滤逻辑（时间解析、列表切片）剥离出来。需要注意的是，`export` 命令为了按时间正序生成文件/导航，原逻辑在过滤后进行了 `reversed()` 操作。而 `log` 命令通常期望逆序（最新在前）。因此，公共的 `filter_nodes` 函数应只负责“过滤”，不负责“排序”，排序逻辑由调用者根据业务需求决定。
+1.  **确定“当前”**: 首先，我们需要找到代表当前工作区状态的 `QuipuNode`。
+2.  **计算可达集**: 利用 `HistoryReader` 提供的 `get_ancestor_output_trees` 和 `get_descendant_output_trees` 方法，我们可以高效地获取与当前节点相关的所有祖先和后代节点的 `output_tree` 哈希。将这两部分哈希与当前节点自身的哈希合并，就得到了完整的“可达哈希集合”。
+3.  **过滤**: 遍历所有待处理的节点列表，只保留那些 `output_tree` 哈希存在于“可达哈希集合”中的节点。
 
 ### 标签
-#intent/build #intent/refine #flow/ready #priority/medium #comp/cli #concept/history #scope/ux #scope/dx #ai/instruct #task/domain/cli #task/object/log-command #task/action/refactor #task/state/begin
+#intent/build #flow/ready #priority/high #comp/cli #comp/engine #concept/history #scope/ux #ai/instruct #task/domain/cli #task/object/log-command #task/action/feature-enhancement #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 提取公共过滤逻辑到 `helpers.py`
+#### Acts 1: 在 `helpers.py` 中实现可达性过滤
 
-我们将把过滤逻辑移动到 `helpers.py`。这需要引入 `datetime` 和 `typer` 等依赖。
+我们将创建 `filter_reachable_nodes` 函数。它需要 `engine` 实例来访问图谱和当前状态。
 
 ~~~~~act
-write_file packages/quipu-cli/src/pyquipu/cli/commands/helpers.py
+patch_file packages/quipu-cli/src/pyquipu/cli/commands/helpers.py
 ~~~~~
 ~~~~~python
-import logging
-from contextlib import contextmanager
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Generator, List, Optional
-
-import typer
-from pyquipu.common.messaging import bus
-from pyquipu.engine.state_machine import Engine
-from pyquipu.interfaces.models import QuipuNode
-
-from ..factory import create_engine
-from ..logger_config import setup_logging
-
-logger = logging.getLogger(__name__)
-
-
-@contextmanager
-def engine_context(work_dir: Path) -> Generator[Engine, None, None]:
-    """Context manager to set up logging, create, and automatically close a Quipu engine."""
-    setup_logging()
-    engine = None
-    try:
-        engine = create_engine(work_dir)
-        yield engine
-    finally:
-        if engine:
-            engine.close()
-
-
-def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:
-    """在图中查找与当前工作区状态匹配的节点"""
-    current_hash = engine.git_db.get_tree_hash()
-    # 修复：直接从 graph 中通过 output_tree hash 查找
-    for node in graph.values():
-        if node.output_tree == current_hash:
-            return node
-
-    bus.warning("navigation.warning.workspaceDirty")
-    bus.info("navigation.info.saveHint")
-    return None
-
-
-def _execute_visit(ctx: typer.Context, engine: Engine, target_hash: str, msg_id: str, **kwargs):
-    """辅助函数：执行 engine.visit 并处理结果"""
-    bus.info(msg_id, **kwargs)
-    try:
-        engine.visit(target_hash)
-        bus.success("navigation.success.visit", short_hash=target_hash[:7])
-    except Exception as e:
-        logger.error(f"导航操作失败 (目标哈希: {target_hash[:12]})", exc_info=True)
-        bus.error("navigation.error.generic", error=str(e))
-        ctx.exit(1)
-
-
 def filter_nodes(
     nodes: List[QuipuNode], limit: Optional[int], since: Optional[str], until: Optional[str]
 ) -> List[QuipuNode]:
@@ -111,55 +57,8 @@ def filter_nodes(
         filtered = filtered[:limit]
     return filtered
 ~~~~~
-
-#### Acts 2: 重构 `export.py` 使用公共逻辑
-
-我们需要删除本地的 `_filter_nodes` 并导入新的 helper。注意保持原有的 `reversed` 逻辑，因为 `filter_nodes` 现在返回输入顺序（通常是逆序），而 `export` 需要正序处理。
-
-~~~~~act
-patch_file packages/quipu-cli/src/pyquipu/cli/commands/export.py
-~~~~~
 ~~~~~python
-from datetime import datetime
-from pathlib import Path
-from typing import Annotated, Dict, List, Optional, Set
-
-import typer
-import yaml
-from pyquipu.common.messaging import bus
-from pyquipu.engine.state_machine import Engine
-from pyquipu.interfaces.models import QuipuNode
-
-from ..config import DEFAULT_WORK_DIR
-from ..ui_utils import prompt_for_confirmation
-from .helpers import engine_context
-~~~~~
-~~~~~python
-import logging
-import re
-import shutil
-from pathlib import Path
-from typing import Annotated, Dict, List, Optional, Set
-
-import typer
-import yaml
-from pyquipu.common.messaging import bus
-from pyquipu.engine.state_machine import Engine
-from pyquipu.interfaces.models import QuipuNode
-
-from ..config import DEFAULT_WORK_DIR
-from ..ui_utils import prompt_for_confirmation
-from .helpers import engine_context, filter_nodes
-~~~~~
-
-~~~~~act
-patch_file packages/quipu-cli/src/pyquipu/cli/commands/export.py
-~~~~~
-~~~~~python
-    return f"---\n{yaml_str}---"
-
-
-def _filter_nodes(
+def filter_nodes(
     nodes: List[QuipuNode], limit: Optional[int], since: Optional[str], until: Optional[str]
 ) -> List[QuipuNode]:
     """根据时间戳和数量过滤节点列表。"""
@@ -178,32 +77,60 @@ def _filter_nodes(
             raise typer.BadParameter("无效的 'until' 时间戳格式。请使用 'YYYY-MM-DD HH:MM'。")
     if limit is not None and limit > 0:
         filtered = filtered[:limit]
-    return list(reversed(filtered))
+    return filtered
 
 
-def _generate_navbar(
-    current_node: QuipuNode,
+def filter_reachable_nodes(engine: Engine, nodes: List[QuipuNode]) -> List[QuipuNode]:
+    """仅保留与当前工作区状态直接相关的节点（祖先和后代）。"""
+    current_node = _find_current_node(engine, engine.history_graph)
+    if not current_node:
+        # 如果工作区是脏的，无法确定起点，返回所有节点
+        return nodes
+
+    current_hash = current_node.output_tree
+    ancestors = engine.reader.get_ancestor_output_trees(current_hash)
+    descendants = engine.reader.get_descendant_output_trees(current_hash)
+    reachable_set = ancestors.union(descendants)
+    reachable_set.add(current_hash)
+
+    return [node for node in nodes if node.output_tree in reachable_set]
+~~~~~
+
+#### Acts 2: 为 `export` 命令集成可达性过滤
+
+~~~~~act
+patch_file packages/quipu-cli/src/pyquipu/cli/commands/export.py
 ~~~~~
 ~~~~~python
-    return f"---\n{yaml_str}---"
-
-
-def _generate_navbar(
-    current_node: QuipuNode,
+from ..config import DEFAULT_WORK_DIR
+from ..ui_utils import prompt_for_confirmation
+from .helpers import engine_context, filter_nodes
+~~~~~
+~~~~~python
+from ..config import DEFAULT_WORK_DIR
+from ..ui_utils import prompt_for_confirmation
+from .helpers import engine_context, filter_nodes, filter_reachable_nodes
 ~~~~~
 
 ~~~~~act
 patch_file packages/quipu-cli/src/pyquipu/cli/commands/export.py
 ~~~~~
 ~~~~~python
-            all_nodes = sorted(engine.history_graph.values(), key=lambda n: n.timestamp, reverse=True)
-            try:
-                nodes_to_export = _filter_nodes(all_nodes, limit, since, until)
-            except typer.BadParameter as e:
-                bus.error("export.error.badParam", error=str(e))
-                ctx.exit(1)
-~~~~~
-~~~~~python
+        hide_link_type: Annotated[
+            Optional[List[str]],
+            typer.Option(
+                "--hide-link-type", help="禁用特定类型的导航链接 (可多次使用: summary, branch, parent, child)"
+            ),
+        ] = None,
+    ):
+        """将 Quipu 历史记录导出为一组人类可读的 Markdown 文件。"""
+        hidden_types = set(hide_link_type) if hide_link_type else set()
+
+        with engine_context(work_dir) as engine:
+            if not engine.history_graph:
+                bus.info("export.info.emptyHistory")
+                ctx.exit(0)
+
             all_nodes = sorted(engine.history_graph.values(), key=lambda n: n.timestamp, reverse=True)
             try:
                 # filter_nodes returns preserving input order (reverse chrono),
@@ -214,69 +141,56 @@ patch_file packages/quipu-cli/src/pyquipu/cli/commands/export.py
                 bus.error("export.error.badParam", error=str(e))
                 ctx.exit(1)
 ~~~~~
+~~~~~python
+        hide_link_type: Annotated[
+            Optional[List[str]],
+            typer.Option(
+                "--hide-link-type", help="禁用特定类型的导航链接 (可多次使用: summary, branch, parent, child)"
+            ),
+        ] = None,
+        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅导出与当前工作区状态直接相关的节点。")] = False,
+    ):
+        """将 Quipu 历史记录导出为一组人类可读的 Markdown 文件。"""
+        hidden_types = set(hide_link_type) if hide_link_type else set()
 
-#### Acts 3: 更新 `query.py` 以支持过滤
+        with engine_context(work_dir) as engine:
+            if not engine.history_graph:
+                bus.info("export.info.emptyHistory")
+                ctx.exit(0)
 
-在 `log` 命令中添加参数并调用 `filter_nodes`。
+            nodes_to_process = sorted(engine.history_graph.values(), key=lambda n: n.timestamp, reverse=True)
+
+            if reachable_only:
+                nodes_to_process = filter_reachable_nodes(engine, nodes_to_process)
+
+            try:
+                # filter_nodes returns preserving input order (reverse chrono),
+                # but export expects chronological order for file generation/processing
+                filtered = filter_nodes(nodes_to_process, limit, since, until)
+                nodes_to_export = list(reversed(filtered))
+            except typer.BadParameter as e:
+                bus.error("export.error.badParam", error=str(e))
+                ctx.exit(1)
+~~~~~
+
+#### Acts 3: 为 `log` 命令集成可达性过滤
 
 ~~~~~act
 patch_file packages/quipu-cli/src/pyquipu/cli/commands/query.py
-~~~~~
-~~~~~python
-from ..config import DEFAULT_WORK_DIR
-from .helpers import engine_context
 ~~~~~
 ~~~~~python
 from ..config import DEFAULT_WORK_DIR
 from .helpers import engine_context, filter_nodes
 ~~~~~
+~~~~~python
+from ..config import DEFAULT_WORK_DIR
+from .helpers import engine_context, filter_nodes, filter_reachable_nodes
+~~~~~
 
 ~~~~~act
 patch_file packages/quipu-cli/src/pyquipu/cli/commands/query.py
 ~~~~~
 ~~~~~python
-    @app.command()
-    def log(
-        work_dir: Annotated[
-            Path,
-            typer.Option(
-                "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
-            ),
-        ] = DEFAULT_WORK_DIR,
-        json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
-    ):
-        """
-        显示 Quipu 历史图谱日志。
-        """
-        with engine_context(work_dir) as engine:
-            graph = engine.history_graph
-
-            if not graph:
-                if json_output:
-                    bus.data("[]")
-                else:
-                    bus.info("query.info.emptyHistory")
-                raise typer.Exit(0)
-
-            nodes = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
-
-            if json_output:
-                bus.data(_nodes_to_json_str(nodes))
-                raise typer.Exit(0)
-
-            bus.info("query.log.ui.header")
-            for node in nodes:
-~~~~~
-~~~~~python
-    @app.command()
-    def log(
-        ctx: typer.Context,
-        work_dir: Annotated[
-            Path,
-            typer.Option(
-                "--work-dir", "-w", help="操作执行的根目录（工作区）", file_okay=False, dir_okay=True, resolve_path=True
-            ),
-        ] = DEFAULT_WORK_DIR,
         limit: Annotated[Optional[int], typer.Option("--limit", "-n", help="限制显示的节点数量。")] = None,
         since: Annotated[Optional[str], typer.Option("--since", help="起始时间戳 (YYYY-MM-DD HH:MM)。")] = None,
         until: Annotated[Optional[str], typer.Option("--until", help="截止时间戳 (YYYY-MM-DD HH:MM)。")] = None,
@@ -301,40 +215,87 @@ patch_file packages/quipu-cli/src/pyquipu/cli/commands/query.py
             except typer.BadParameter as e:
                 bus.error("common.error.invalidConfig", error=str(e))
                 ctx.exit(1)
+~~~~~
+~~~~~python
+        limit: Annotated[Optional[int], typer.Option("--limit", "-n", help="限制显示的节点数量。")] = None,
+        since: Annotated[Optional[str], typer.Option("--since", help="起始时间戳 (YYYY-MM-DD HH:MM)。")] = None,
+        until: Annotated[Optional[str], typer.Option("--until", help="截止时间戳 (YYYY-MM-DD HH:MM)。")] = None,
+        reachable_only: Annotated[bool, typer.Option("--reachable-only", help="仅显示与当前工作区状态直接相关的节点。")] = False,
+        json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
+    ):
+        """
+        显示 Quipu 历史图谱日志。
+        """
+        with engine_context(work_dir) as engine:
+            graph = engine.history_graph
 
-            if not nodes:
+            if not graph:
                 if json_output:
                     bus.data("[]")
                 else:
-                    bus.info("query.info.noResults")
+                    bus.info("query.info.emptyHistory")
                 raise typer.Exit(0)
 
-            if json_output:
-                bus.data(_nodes_to_json_str(nodes))
-                raise typer.Exit(0)
+            nodes_to_process = sorted(graph.values(), key=lambda n: n.timestamp, reverse=True)
 
-            bus.info("query.log.ui.header")
-            for node in nodes:
+            if reachable_only:
+                nodes_to_process = filter_reachable_nodes(engine, nodes_to_process)
+
+            try:
+                nodes = filter_nodes(nodes_to_process, limit, since, until)
+            except typer.BadParameter as e:
+                bus.error("common.error.invalidConfig", error=str(e))
+                ctx.exit(1)
 ~~~~~
 
-#### Acts 4: 添加测试用例
+#### Acts 4: 添加新的测试用例
 
-在 `tests/cli/test_query_commands.py` 中添加针对 `log` 过滤功能的测试。
+为 `test_export_command.py` 和 `test_query_commands.py` 添加测试。
+
+~~~~~act
+patch_file tests/cli/test_export_command.py
+~~~~~
+~~~~~python
+    target_file = next(f for name, f in files.items() if "Test_Target_Node" in name)
+    content = target_file.read_text()
+    assert "↑ [总结节点]" not in content and "→ [子节点]" not in content
+    assert "↓ [上一分支点]" in content and "← [父节点]" in content
+~~~~~
+~~~~~python
+    target_file = next(f for name, f in files.items() if "Test_Target_Node" in name)
+    content = target_file.read_text()
+    assert "↑ [总结节点]" not in content and "→ [子节点]" not in content
+    assert "↓ [上一分支点]" in content and "← [父节点]" in content
+
+
+def test_export_reachable_only(runner, populated_history, monkeypatch):
+    """测试 --reachable-only 选项是否能过滤掉无关分支。"""
+    engine = populated_history
+    output_dir = engine.root_dir / ".quipu" / "test_export_reachable"
+    mock_bus = MagicMock()
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
+
+    # The fixture leaves HEAD on branch B. We'll checkout a node on branch A.
+    summary_node = next(n for n in engine.history_graph.values() if n.summary == "Summary Node")
+    engine.visit(summary_node.output_tree)
+
+    result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--reachable-only"])
+    assert result.exit_code == 0
+
+    files = list(output_dir.glob("*.md"))
+    # Branch A path: Root -> Linear 1 -> Branch Point -> Branch A -> Summary (5 nodes)
+    # Branch B is now unreachable and should be excluded.
+    assert len(files) == 5
+
+    filenames = {f.name for f in files}
+    assert not any("Branch_B_change" in name for name in filenames)
+    assert any("Branch_A_change" in name for name in filenames)
+~~~~~
 
 ~~~~~act
 patch_file tests/cli/test_query_commands.py
 ~~~~~
 ~~~~~python
-    result = runner.invoke(app, ["log", "--json", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    mock_bus.data.assert_called_once_with("[]")
-~~~~~
-~~~~~python
-    result = runner.invoke(app, ["log", "--json", "-w", str(work_dir)])
-    assert result.exit_code == 0
-    mock_bus.data.assert_called_once_with("[]")
-
-
 def test_log_filtering(runner, quipu_workspace, monkeypatch):
     """Test limit and time filtering logic for log command."""
     work_dir, _, engine = quipu_workspace
@@ -363,8 +324,70 @@ def test_log_filtering(runner, quipu_workspace, monkeypatch):
     assert result.exit_code == 0
     mock_bus.info.assert_called_with("query.info.noResults")
 ~~~~~
+~~~~~python
+def test_log_filtering(runner, quipu_workspace, monkeypatch):
+    """Test limit and time filtering logic for log command."""
+    work_dir, _, engine = quipu_workspace
+    mock_bus = MagicMock()
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
+
+    # Create 3 nodes
+    (work_dir / "f1").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
+    (work_dir / "f2").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 2")
+    (work_dir / "f3").touch()
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 3")
+
+    # 1. Test Limit
+    result = runner.invoke(app, ["log", "-n", "1", "-w", str(work_dir)])
+    assert result.exit_code == 0
+    # Should only print header + 1 node
+    assert mock_bus.data.call_count == 1
+    assert "Node 3" in mock_bus.data.call_args_list[0].args[0]  # Newest
+
+    # 2. Test Filtering Result Empty
+    mock_bus.reset_mock()
+    # Using a future date
+    result = runner.invoke(app, ["log", "--since", "2099-01-01 00:00", "-w", str(work_dir)])
+    assert result.exit_code == 0
+    mock_bus.info.assert_called_with("query.info.noResults")
+
+
+def test_log_reachable_only(runner, quipu_workspace, monkeypatch):
+    """Test --reachable-only filtering for the log command."""
+    work_dir, _, engine = quipu_workspace
+    mock_bus = MagicMock()
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
+
+    # History: root -> A -> B (HEAD)
+    #               \\-> C (unreachable)
+    (work_dir / "f_a").touch()
+    h_a = engine.git_db.get_tree_hash()
+    node_a = engine.capture_drift(h_a, "Node A")
+
+    (work_dir / "f_b").touch()
+    h_b = engine.git_db.get_tree_hash()
+    engine.capture_drift(h_b, "Node B")
+
+    engine.visit(node_a.output_tree)
+    (work_dir / "f_c").touch()
+    h_c = engine.git_db.get_tree_hash()
+    engine.capture_drift(h_c, "Node C")
+
+    # Checkout back to B to set it as current HEAD
+    engine.visit(h_b)
+
+    result = runner.invoke(app, ["log", "--reachable-only", "-w", str(work_dir)])
+    assert result.exit_code == 0
+
+    output = "".join(call.args[0] for call in mock_bus.data.call_args_list)
+    assert "Node B" in output  # HEAD is reachable
+    assert "Node A" in output  # Ancestor is reachable
+    assert "Node C" not in output  # Unrelated branch is not reachable
+~~~~~
 
 ### 下一步建议
-现在 `log` 和 `export` 共享了过滤逻辑。可以进一步检查 `find` 命令是否也需要类似的过滤机制，或者是否需要将 `limit` 参数在 `find` 中也标准化（目前 `find` 已有 limit 参数，但可以复用 helper）。目前 `find` 的主要逻辑是基于 regex 的，与单纯的列表切片略有不同，因此保持现状是可以接受的。
-
-同时，由于 `log` 命令现在可能返回空结果（因为过滤），我们在 UI 反馈中添加了 `query.info.noResults` 的处理，这提升了用户体验。
+我们已经成功为 `log` 和 `export` 添加了强大的过滤功能，并保持了代码的整洁。下一步可以考虑：
+1.  **UI 集成**: 在 `quipu ui` 中添加一个快捷键（例如 `t` for toggle）来动态地显示/隐藏不可达的分支，这将极大地增强 TUI 的可用性。
+2.  **性能**: 对于超大规模的历史库，计算可达性可能会有性能开销。可以评估在 `SQLite` 后端预计算或缓存可达性集合的可行性。
