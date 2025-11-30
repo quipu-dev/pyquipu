@@ -18,6 +18,9 @@ def project_with_subdir(tmp_path):
     root = tmp_path / "project"
     root.mkdir()
     subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
+    # 设置 user 避免 commit 报错
+    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=root, check=True)
 
     # 2. 创建子目录和 Plan 文件
     subdir = root / "src"

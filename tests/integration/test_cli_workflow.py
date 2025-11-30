@@ -130,9 +130,13 @@ class TestCLIWrapper:
 
         # 初始化一个最小 git repo 避免 Engine 报错干扰 CLI 测试
         import subprocess
-
+    
         subprocess.run(["git", "init"], cwd=tmp_path, capture_output=True)
 
+        # 设置 user 避免 commit 报错
+        subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=tmp_path, check=True)
+    
         result = runner.invoke(app, ["run", str(plan_file), "--work-dir", str(tmp_path), "--yolo"])
 
         # 只要不是 Python traceback 导致的 Crash (exit_code != 0 and not handled) 就行

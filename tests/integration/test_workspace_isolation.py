@@ -20,6 +20,8 @@ def nested_git_project(tmp_path: Path):
     host_project = tmp_path / "host_project"
     host_project.mkdir()
     subprocess.run(["git", "init"], cwd=host_project, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=host_project, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=host_project, check=True)
 
     work_dir = host_project / "work_dir"
     work_dir.mkdir()
@@ -27,6 +29,8 @@ def nested_git_project(tmp_path: Path):
     # 而 GitDB 需要当前目录或父目录是 git 仓库。
     # 为了测试隔离性（不污染 host_project），work_dir 必须自己是一个独立的仓库。
     subprocess.run(["git", "init"], cwd=work_dir, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=work_dir, check=True)
+    subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=work_dir, check=True)
 
     return host_project, work_dir
 

@@ -12,6 +12,8 @@ class TestIdempotentNode:
         import subprocess
 
         subprocess.run(["git", "init"], cwd=workspace, capture_output=True)
+        subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=workspace, check=True)
+        subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=workspace, check=True)
 
         # 2. 先执行一个会产生变更的操作 (State A)
         plan_1 = "```act\nwrite_file a.txt\n```\n```content\nA\n```"
