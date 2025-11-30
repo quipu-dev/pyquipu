@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] style: 修正超长代码行以符合 ruff 规范", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764480753.3974216, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] chore(repo): Enforce linting rules and fix discovered bugs", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764480874.4605622, "duration_ms": 0}}
