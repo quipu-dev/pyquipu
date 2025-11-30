@@ -1,0 +1,102 @@
+name: Quipu CI
+
+# 触发条件：
+# 1. 推送到任何分支
+# 2. 创建或更新到 main 分支的 Pull Request
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  quality-checks:
+    # 在最新的 Ubuntu 环境上运行
+    runs-on: ubuntu-latest
+    
+    # 定义测试矩阵，以支持未来在多个 Python 版本上测试
+    strategy:
+      matrix:
+        python-version: ["3.11"] # 可以扩展为 ["3.10", "3.11", "3.12"]
+
+    steps:
+      # 步骤 1: 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 步骤 2: 设置 Python 环境
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 步骤 3: 安装 uv (项目的核心依赖)
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+        
+      # 步骤 4: 创建虚拟环境并安装开发依赖
+      #   这模拟了 `bootstrap.py` 中创建 dev 环境的过程
+      - name: Create venv and install dev dependencies
+        run: |
+          # 激活 uv
+          source $HOME/.cargo/env
+          # 创建虚拟环境
+          uv venv .envs/dev
+          # 安装开发和测试工具，以及所有本地包（可编辑模式）
+          uv pip install -p .envs/dev \
+            -e packages/quipu-interfaces \
+            -e packages/quipu-common \
+            -e packages/quipu-engine \
+            -e packages/quipu-runtime \
+            -e packages/quipu-cli \
+            pytest pytest-cov ruff pytest-timeout
+
+      # 步骤 5: 运行 Ruff (代码风格检查和静态分析)
+      #   使用 --check 标志，如果代码格式不正确，CI 会失败
+      - name: Run Ruff Linter and Formatter Check
+        run: |
+          source .envs/dev/bin/activate
+          ruff check .
+          ruff format --check .
+
+      # 步骤 6: 运行 Pytest
+      #   pytest 会自动读取 pyproject.toml 中的配置
+      - name: Run Pytest with Coverage
+        run: |
+          source .envs/dev/bin/activate
+          pytest
+          
+  build-wheels:
+    # 模拟 `promote` 流程，确保所有包都可以被成功打包
+    runs-on: ubuntu-latest
+    name: Verify Package Builds
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Build wheels for all packages
+        run: |
+          source $HOME/.cargo/env
+          # 创建用于存放 wheel 的目录
+          mkdir -p dist
+          # 遍历所有 packages 目录并构建 wheel
+          for pkg_dir in packages/*; do
+            if [ -d "$pkg_dir" ]; then
+              echo "Building wheel for $pkg_dir..."
+              uv build "$pkg_dir" --out-dir dist
+            fi
+          done
+
+      - name: List built wheels
+        run: ls -l dist
