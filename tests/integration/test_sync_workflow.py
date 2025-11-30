@@ -5,8 +5,8 @@ from typer.testing import CliRunner
 import yaml
 import sqlite3
 
-from quipu.cli.main import app
-from quipu.common.identity import get_user_id_from_email
+from pyquipu.cli.main import app
+from pyquipu.common.identity import get_user_id_from_email
 
 runner = CliRunner()
 

@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock
 from unittest import mock
-from quipu.cli.main import app
+from pyquipu.cli.main import app
 
 
 def test_save_clean_workspace(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     (work_dir / "file.txt").write_text("v1")
     engine.capture_drift(engine.git_db.get_tree_hash(), message="Initial")
@@ -19,7 +19,7 @@ def test_save_clean_workspace(runner, quipu_workspace, monkeypatch):
 def test_save_with_changes(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     (work_dir / "file.txt").write_text("v2")
 
@@ -31,7 +31,7 @@ def test_save_with_changes(runner, quipu_workspace, monkeypatch):
 def test_discard_changes(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     (work_dir / "file.txt").write_text("v1")
     initial_node = engine.capture_drift(engine.git_db.get_tree_hash())
@@ -46,7 +46,7 @@ def test_discard_changes(runner, quipu_workspace, monkeypatch):
 def test_discard_interactive_abort(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     (work_dir / "file.txt").write_text("v1")
     engine.capture_drift(engine.git_db.get_tree_hash())

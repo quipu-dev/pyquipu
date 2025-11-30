@@ -1,9 +1,9 @@
 import pytest
 from pathlib import Path
-from quipu.runtime.executor import Executor
-from quipu.interfaces.exceptions import ExecutionError
-from quipu.acts.check import register as register_check_acts
-from quipu.interfaces.types import ActContext
+from pyquipu.runtime.executor import Executor
+from pyquipu.interfaces.exceptions import ExecutionError
+from pyquipu.acts.check import register as register_check_acts
+from pyquipu.interfaces.types import ActContext
 
 
 class TestCheckActs:

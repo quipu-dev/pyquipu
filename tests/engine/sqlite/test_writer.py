@@ -2,8 +2,8 @@ import pytest
 import subprocess
 from pathlib import Path
 
-from quipu.cli.controller import run_quipu
-from quipu.engine.sqlite_db import DatabaseManager
+from pyquipu.cli.controller import run_quipu
+from pyquipu.engine.sqlite_db import DatabaseManager
 
 PLAN_A = """
 ```act

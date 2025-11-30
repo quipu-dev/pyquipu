@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from quipu.engine.state_machine import Engine
+from pyquipu.engine.state_machine import Engine
 from tests.helpers import InMemoryDB, InMemoryHistoryManager, EMPTY_TREE_HASH
 
 

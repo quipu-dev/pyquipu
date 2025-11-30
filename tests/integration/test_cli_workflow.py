@@ -2,11 +2,11 @@ import pytest
 import logging
 from pathlib import Path
 from typer.testing import CliRunner
-from quipu.cli.controller import run_quipu, QuipuResult
-from quipu.cli.main import app
-from quipu.interfaces.exceptions import ExecutionError
-from quipu.runtime.executor import Executor
-from quipu.acts.basic import register as register_basic
+from pyquipu.cli.controller import run_quipu, QuipuResult
+from pyquipu.cli.main import app
+from pyquipu.interfaces.exceptions import ExecutionError
+from pyquipu.runtime.executor import Executor
+from pyquipu.acts.basic import register as register_basic
 
 # --- Fixtures ---
 
@@ -49,7 +49,7 @@ def workspace(tmp_path):
 class TestController:
     def test_run_quipu_success(self, workspace):
         """测试正常执行流程"""
-        from quipu.cli.factory import create_engine
+        from pyquipu.cli.factory import create_engine
 
         plan = """
 ```act
@@ -147,7 +147,7 @@ class TestCLIWrapper:
         """测试无输入时显示用法"""
         # 1. 临时修改 run 命令模块中的默认入口文件引用，防止读取当前目录下的 o.md
         # 注意：必须 patch 'run' 模块，因为该模块通过 'from ... import' 引入了常量
-        from quipu.cli.commands import run
+        from pyquipu.cli.commands import run
 
         monkeypatch.setattr(run, "DEFAULT_ENTRY_FILE", tmp_path / "non_existent.md")
 
@@ -193,7 +193,7 @@ class TestCheckoutCLI:
         State B contains only b.txt.
         This fixture is backend-agnostic.
         """
-        from quipu.cli.factory import create_engine
+        from pyquipu.cli.factory import create_engine
 
         # State A: Create a.txt
         plan_a = "```act\nwrite_file a.txt\n```\n```content\nState A\n```"
@@ -236,7 +236,7 @@ class TestCheckoutCLI:
 
     def test_cli_checkout_with_safety_capture(self, populated_workspace):
         """Test that a dirty state is captured before checkout."""
-        from quipu.cli.factory import create_engine
+        from pyquipu.cli.factory import create_engine
 
         workspace, hash_a, hash_b = populated_workspace
 

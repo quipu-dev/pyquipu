@@ -1,5 +1,5 @@
 import pytest
-from quipu.engine.state_machine import Engine
+from pyquipu.engine.state_machine import Engine
 
 # runner fixture is now in the root conftest.py, so it's removed from here.
 

@@ -1,5 +1,5 @@
 [project]
-name = "quipu-monorepo"
+name = "pyquipu-monorepo"
 version = "0.1.0"
 description = "Quipu Development Monorepo"
 requires-python = ">=3.10"
@@ -10,7 +10,7 @@ dependencies = []
 workspace.members = ["packages/*", "packages/quipu-common"]
 
 [tool.pytest.ini_options]
-addopts = "-ra --cov=quipu --cov-report=term-missing"
+addopts = "-ra --cov=pyquipu --cov-report=term-missing"
 pythonpath = [
   "packages/quipu-interfaces/src",
   "packages/quipu-engine/src",

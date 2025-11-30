@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "quipu-engine"
+name = "pyquipu-engine"
 version = "0.1.0"
 authors = [
   { name="doucx", email="doucxldh@gmail.com" },
@@ -17,14 +17,14 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "quipu-interfaces",
-    "quipu-common",
+    "pyquipu-interfaces",
+    "pyquipu-common",
     "pyyaml>=6.0",
 ]
 
 [tool.uv.sources]
-quipu-interfaces = { workspace = true }
-quipu-common = { workspace = true }
+pyquipu-interfaces = { workspace = true }
+pyquipu-common = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = ["src"]

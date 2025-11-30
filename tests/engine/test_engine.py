@@ -2,9 +2,9 @@ import pytest
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from quipu.engine.state_machine import Engine
-from quipu.engine.git_db import GitDB
-from quipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
+from pyquipu.engine.state_machine import Engine
+from pyquipu.engine.git_db import GitDB
+from pyquipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
 
 
 def test_align_orphan_state(engine_instance: Engine):

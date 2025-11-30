@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock
-from quipu.runtime.executor import Executor
-from quipu.acts.basic import register as register_basic_acts
+from pyquipu.runtime.executor import Executor
+from pyquipu.acts.basic import register as register_basic_acts
 
 
 @pytest.fixture(autouse=True)
@@ -15,15 +15,15 @@ def mock_runtime_bus(monkeypatch):
     """
     m_bus = MagicMock()
     patch_targets = [
-        "quipu.runtime.executor.bus",
-        "quipu.runtime.plugin_loader.bus",
-        "quipu.acts.basic.bus",
-        "quipu.acts.check.bus",
-        "quipu.acts.git.bus",
-        "quipu.acts.memory.bus",
-        "quipu.acts.read.bus",
-        "quipu.acts.refactor.bus",
-        "quipu.acts.shell.bus",
+        "pyquipu.runtime.executor.bus",
+        "pyquipu.runtime.plugin_loader.bus",
+        "pyquipu.acts.basic.bus",
+        "pyquipu.acts.check.bus",
+        "pyquipu.acts.git.bus",
+        "pyquipu.acts.memory.bus",
+        "pyquipu.acts.read.bus",
+        "pyquipu.acts.refactor.bus",
+        "pyquipu.acts.shell.bus",
     ]
     for target in patch_targets:
         monkeypatch.setattr(target, m_bus, raising=False)  # raising=False 避免模块不存在时报错

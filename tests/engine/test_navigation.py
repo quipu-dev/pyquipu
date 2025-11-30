@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from quipu.engine.state_machine import Engine
+from pyquipu.engine.state_machine import Engine
 
 
 @pytest.fixture

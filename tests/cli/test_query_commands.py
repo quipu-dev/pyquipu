@@ -1,12 +1,12 @@
 import json
 from unittest.mock import MagicMock, call
-from quipu.cli.main import app
+from pyquipu.cli.main import app
 
 
 def test_log_empty(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     result = runner.invoke(app, ["log", "-w", str(work_dir)])
     assert result.exit_code == 0
@@ -16,7 +16,7 @@ def test_log_empty(runner, quipu_workspace, monkeypatch):
 def test_log_output(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     (work_dir / "f1").touch()
     node1 = engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
@@ -34,7 +34,7 @@ def test_log_output(runner, quipu_workspace, monkeypatch):
 def test_find_command(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     (work_dir / "f1").touch()
     hash_v1 = engine.git_db.get_tree_hash()
@@ -55,7 +55,7 @@ def test_find_command(runner, quipu_workspace, monkeypatch):
 def test_log_json_output(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     (work_dir / "f1").touch()
     engine.capture_drift(engine.git_db.get_tree_hash(), message="Node 1")
@@ -74,7 +74,7 @@ def test_log_json_output(runner, quipu_workspace, monkeypatch):
 def test_find_json_output(runner, quipu_workspace, monkeypatch):
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     (work_dir / "f1").touch()
     engine.capture_drift(engine.git_db.get_tree_hash(), message="Feature A")
@@ -94,7 +94,7 @@ def test_find_json_output(runner, quipu_workspace, monkeypatch):
 def test_log_json_empty(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.query.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.query.bus", mock_bus)
 
     result = runner.invoke(app, ["log", "--json", "-w", str(work_dir)])
     assert result.exit_code == 0

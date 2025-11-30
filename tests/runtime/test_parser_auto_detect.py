@@ -1,4 +1,4 @@
-from quipu.runtime.parser import detect_best_parser
+from pyquipu.runtime.parser import detect_best_parser
 
 
 class TestAutoDetect:

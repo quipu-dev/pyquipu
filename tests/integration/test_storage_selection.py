@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typer.testing import CliRunner
 
-from quipu.cli.main import app
+from pyquipu.cli.main import app
 
 # A simple plan that creates one file
 PLAN_A = """

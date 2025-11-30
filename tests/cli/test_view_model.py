@@ -3,9 +3,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Set, Any, Dict
 
-from quipu.interfaces.models import QuipuNode
-from quipu.interfaces.storage import HistoryReader
-from quipu.cli.view_model import GraphViewModel
+from pyquipu.interfaces.models import QuipuNode
+from pyquipu.interfaces.storage import HistoryReader
+from pyquipu.cli.view_model import GraphViewModel
 
 
 class MockHistoryReader(HistoryReader):

@@ -1,9 +1,9 @@
 import pytest
 import sys
 from pathlib import Path
-from quipu.runtime.executor import Executor
-from quipu.runtime.plugin_loader import load_plugins
-from quipu.cli.utils import find_git_repository_root
+from pyquipu.runtime.executor import Executor
+from pyquipu.runtime.plugin_loader import load_plugins
+from pyquipu.cli.utils import find_git_repository_root
 
 
 class TestPluginLoading:

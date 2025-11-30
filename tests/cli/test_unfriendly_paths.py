@@ -3,8 +3,8 @@ import click
 from typer.testing import CliRunner
 from unittest.mock import MagicMock, ANY, call
 
-from quipu.cli.main import app
-from quipu.engine.state_machine import Engine
+from pyquipu.cli.main import app
+from pyquipu.engine.state_machine import Engine
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def test_run_command_user_cancellation(runner: CliRunner, quipu_workspace, monke
     """
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.run.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.run.bus", mock_bus)
     output_file = work_dir / "output.txt"
     assert not output_file.exists()
 
@@ -74,7 +74,7 @@ def test_run_command_in_non_interactive_env(runner: CliRunner, quipu_workspace, 
     """
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.run.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.run.bus", mock_bus)
     output_file = work_dir / "output.txt"
     assert not output_file.exists()
 
@@ -105,7 +105,7 @@ def test_discard_user_cancellation(runner: CliRunner, dirty_workspace, monkeypat
     """不友好路径测试: 验证 `discard` 操作可以被用户取消。"""
     work_dir, _, _ = dirty_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     def mock_getchar_n(echo):
         click.echo("n", err=True)
@@ -123,7 +123,7 @@ def test_discard_in_non_interactive_env(runner: CliRunner, dirty_workspace, monk
     """不友好路径测试: 验证 `discard` 在非交互式环境中安全中止。"""
     work_dir, _, _ = dirty_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.workspace.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
 
     def mock_getchar_fail(echo):
         raise EOFError("Simulating non-interactive environment")
@@ -143,7 +143,7 @@ def test_checkout_user_cancellation(runner: CliRunner, dirty_workspace, monkeypa
     """不友好路径测试: 验证 `checkout` 操作可以被用户取消。"""
     work_dir, _, hash_a = dirty_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.navigation.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
 
     def mock_getchar_n(echo):
         click.echo("n", err=True)
@@ -165,7 +165,7 @@ def test_checkout_in_non_interactive_env(runner: CliRunner, dirty_workspace, mon
     """不友好路径测试: 验证 `checkout` 在非交互式环境中安全中止。"""
     work_dir, _, hash_a = dirty_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.navigation.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
 
     def mock_getchar_fail(echo):
         raise EOFError("Simulating non-interactive environment")

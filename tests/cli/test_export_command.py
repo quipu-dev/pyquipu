@@ -3,8 +3,8 @@ import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock, ANY
 
-from quipu.cli.main import app
-from quipu.engine.state_machine import Engine
+from pyquipu.cli.main import app
+from pyquipu.engine.state_machine import Engine
 from tests.helpers import EMPTY_TREE_HASH
 
 
@@ -80,7 +80,7 @@ def test_export_basic(runner, populated_history, monkeypatch):
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir)])
 
@@ -101,7 +101,7 @@ def test_export_filtering(runner, populated_history, monkeypatch):
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export_filter"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "-n", "2"])
 
@@ -114,7 +114,7 @@ def test_export_edge_cases(runner, quipu_workspace, monkeypatch):
     """测试边界情况。"""
     work_dir, _, engine = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     # Empty history
     result = runner.invoke(app, ["export", "-w", str(work_dir)])
@@ -137,7 +137,7 @@ def test_export_no_frontmatter(runner, populated_history, monkeypatch):
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export_no_fm"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-frontmatter", "-n", "1"])
     a_file = next(output_dir.glob("*.md"))
@@ -148,7 +148,7 @@ def test_export_no_nav(runner, populated_history, monkeypatch):
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export_no_nav"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--no-nav", "-n", "1"])
     a_file = next(output_dir.glob("*.md"))
@@ -159,7 +159,7 @@ def test_export_zip(runner, populated_history, monkeypatch):
     engine = populated_history
     output_dir = engine.root_dir / ".quipu" / "test_export_zip"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--zip"])
 
@@ -189,7 +189,7 @@ def test_export_hide_link_type(
     engine = history_for_all_links
     output_dir = engine.root_dir / ".quipu" / "test_export_hide_links"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(
         app, ["export", "-w", str(engine.root_dir), "-o", str(output_dir), "--hide-link-type", link_type_to_hide]
@@ -207,7 +207,7 @@ def test_export_hide_multiple_link_types(runner, history_for_all_links, monkeypa
     engine = history_for_all_links
     output_dir = engine.root_dir / ".quipu" / "test_export_hide_multi"
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.export.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.export.bus", mock_bus)
 
     result = runner.invoke(
         app,

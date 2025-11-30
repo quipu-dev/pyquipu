@@ -1,7 +1,7 @@
 import pytest
 import subprocess
 from pathlib import Path
-from quipu.cli.controller import run_quipu
+from pyquipu.cli.controller import run_quipu
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ class TestRootInvariance:
         assert expected_file.read_text("utf-8") == "Success from subdir"
 
         # 2. 验证 Engine 状态记录的正确性 (后端无关)
-        from quipu.cli.factory import create_engine
+        from pyquipu.cli.factory import create_engine
 
         engine = create_engine(project_root)
         nodes = engine.reader.load_all_nodes()

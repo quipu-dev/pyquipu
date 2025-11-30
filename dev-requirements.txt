@@ -1,5 +1,5 @@
--e packages/quipu-interfaces
--e packages/quipu-engine
--e packages/quipu-runtime
--e packages/quipu-cli
--e packages/quipu-common
+-e packages/pyquipu-interfaces
+-e packages/pyquipu-engine
+-e packages/pyquipu-runtime
+-e packages/pyquipu-cli
+-e packages/pyquipu-common

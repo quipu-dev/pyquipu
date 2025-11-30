@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, ANY
-from quipu.cli.main import app
+from pyquipu.cli.main import app
 
 
 @pytest.fixture
@@ -23,8 +23,8 @@ def test_cli_back_forward_flow(runner, populated_workspace, monkeypatch):
     workspace, hash_a, hash_b = populated_workspace
     mock_bus_nav = MagicMock()
     mock_bus_helper = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.navigation.bus", mock_bus_nav)
-    monkeypatch.setattr("quipu.cli.commands.helpers.bus", mock_bus_helper)
+    monkeypatch.setattr("pyquipu.cli.commands.navigation.bus", mock_bus_nav)
+    monkeypatch.setattr("pyquipu.cli.commands.helpers.bus", mock_bus_helper)
 
     # Initial state is B. Let's checkout to A.
     runner.invoke(app, ["checkout", hash_a[:7], "-w", str(workspace), "-f"])
@@ -49,7 +49,7 @@ def test_cli_back_forward_flow(runner, populated_workspace, monkeypatch):
 def test_cli_boundary_messages(runner, populated_workspace, monkeypatch):
     workspace, hash_a, hash_b = populated_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.navigation.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
 
     # Go to a known state
     runner.invoke(app, ["checkout", hash_a[:7], "-w", str(workspace), "-f"])
@@ -72,7 +72,7 @@ def test_cli_boundary_messages(runner, populated_workspace, monkeypatch):
 def test_checkout_not_found(runner, populated_workspace, monkeypatch):
     workspace, _, _ = populated_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.navigation.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
 
     result = runner.invoke(app, ["checkout", "nonexistent", "-w", str(workspace)])
     assert result.exit_code == 1

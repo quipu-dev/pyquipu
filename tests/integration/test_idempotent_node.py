@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
-from quipu.engine.state_machine import Engine
-from quipu.cli.controller import run_quipu
-from quipu.cli.controller import run_quipu
+from pyquipu.engine.state_machine import Engine
+from pyquipu.cli.controller import run_quipu
+from pyquipu.cli.controller import run_quipu
 
 
 class TestIdempotentNode:
@@ -20,7 +20,7 @@ class TestIdempotentNode:
         run_quipu(plan_1, workspace, yolo=True)
 
         # 使用正确的 Engine 设置来验证
-        from quipu.cli.factory import create_engine
+        from pyquipu.cli.factory import create_engine
 
         engine1 = create_engine(workspace)
         nodes1 = engine1.reader.load_all_nodes()

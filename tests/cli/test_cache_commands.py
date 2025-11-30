@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
-from quipu.cli.main import app
+from pyquipu.cli.main import app
 
 
 def test_cache_sync(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.cache.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.cache.bus", mock_bus)
 
     result = runner.invoke(app, ["cache", "sync", "-w", str(work_dir)])
 
@@ -17,7 +17,7 @@ def test_cache_sync(runner, quipu_workspace, monkeypatch):
 def test_cache_rebuild_no_db(runner, quipu_workspace, monkeypatch):
     work_dir, _, _ = quipu_workspace
     mock_bus = MagicMock()
-    monkeypatch.setattr("quipu.cli.commands.cache.bus", mock_bus)
+    monkeypatch.setattr("pyquipu.cli.commands.cache.bus", mock_bus)
 
     result = runner.invoke(app, ["cache", "rebuild", "-w", str(work_dir)])
 

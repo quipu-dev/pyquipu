@@ -5,7 +5,7 @@ import pytest
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock
-from quipu.engine.git_db import GitDB
+from pyquipu.engine.git_db import GitDB
 
 
 @pytest.fixture
@@ -198,7 +198,7 @@ class TestGitDBPlumbing:
     def test_checkout_tree_messaging(self, git_repo: Path, db: GitDB, monkeypatch):
         """Verify checkout_tree emits correct messages via the bus."""
         mock_bus = MagicMock()
-        monkeypatch.setattr("quipu.engine.git_db.bus", mock_bus)
+        monkeypatch.setattr("pyquipu.engine.git_db.bus", mock_bus)
 
         (git_repo / "file1.txt").write_text("v1")
         hash_a = db.get_tree_hash()

@@ -1,7 +1,7 @@
 import pytest
 import subprocess
 from pathlib import Path
-from quipu.cli.controller import run_quipu
+from pyquipu.cli.controller import run_quipu
 
 
 @pytest.fixture

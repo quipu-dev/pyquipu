@@ -3,8 +3,8 @@ import subprocess
 from pathlib import Path
 from typer.testing import CliRunner
 
-from quipu.cli.main import app
-from quipu.common.identity import get_user_id_from_email
+from pyquipu.cli.main import app
+from pyquipu.common.identity import get_user_id_from_email
 
 # Reuse the runner and helpers from the existing test file
 from .test_sync_workflow import run_git_command, sync_test_environment

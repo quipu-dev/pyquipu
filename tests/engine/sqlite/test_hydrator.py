@@ -2,10 +2,10 @@ import pytest
 import subprocess
 from pathlib import Path
 
-from quipu.engine.git_db import GitDB
-from quipu.engine.sqlite_db import DatabaseManager
-from quipu.engine.hydrator import Hydrator
-from quipu.engine.git_object_storage import GitObjectHistoryWriter
+from pyquipu.engine.git_db import GitDB
+from pyquipu.engine.sqlite_db import DatabaseManager
+from pyquipu.engine.hydrator import Hydrator
+from pyquipu.engine.git_object_storage import GitObjectHistoryWriter
 
 
 @pytest.fixture

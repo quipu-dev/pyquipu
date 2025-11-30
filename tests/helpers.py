@@ -6,9 +6,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Any
 
-from quipu.engine.state_machine import Engine
-from quipu.interfaces.models import QuipuNode
-from quipu.interfaces.storage import HistoryReader, HistoryWriter
+from pyquipu.engine.state_machine import Engine
+from pyquipu.interfaces.models import QuipuNode
+from pyquipu.interfaces.storage import HistoryReader, HistoryWriter
 
 # --- Constants ---
 
