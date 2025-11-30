@@ -95,6 +95,43 @@ class TestHeadTracking:
         # 5. Assert Logical State (HEAD)
         assert engine._read_head() == hash_a
 
+    def test_capture_drift_on_detached_head(self, engine_with_repo):
+        """
+        A more robust regression test. Ensures capture_drift uses the HEAD
+        pointer even when it's not pointing to the latest node in history.
+        """
+        engine = engine_with_repo
+        engine.align()
+
+        # 1. Create linear history A -> B
+        (engine.root_dir / "f.txt").write_text("state A")
+        hash_a = engine.git_db.get_tree_hash()
+        engine.create_plan_node("genesis", hash_a, "State A")
+
+        (engine.root_dir / "f.txt").write_text("state B")
+        hash_b = engine.git_db.get_tree_hash()
+        engine.create_plan_node(hash_a, hash_b, "State B")
+        engine.align()  # History graph is now loaded, B is the latest node
+
+        # 2. Checkout to the older node A. This moves the HEAD pointer.
+        engine.checkout(hash_a)
+        assert engine._read_head() == hash_a
+
+        # 3. Create a new change (State C) based on State A
+        (engine.root_dir / "f.txt").write_text("state C")
+        hash_c = engine.git_db.get_tree_hash()
+
+        # 4. Capture the drift. This should create Node C parented to A.
+        node_c = engine.capture_drift(hash_c, message="State C")
+
+        # 5. Assertions
+        # The parent MUST be A, not B. This proves the logic reads HEAD
+        # and doesn't just fall back to the "latest" node.
+        assert node_c.input_tree == hash_a
+        assert node_c.input_tree != hash_b
+        assert node_c.output_tree == hash_c
+        assert engine._read_head() == hash_c
+
 
 class TestRootDiscovery:
     def test_find_git_repository_root(self, tmp_path):

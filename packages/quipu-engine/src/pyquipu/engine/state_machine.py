@@ -287,13 +287,24 @@ class Engine:
 
         genesis_hash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
         input_hash = genesis_hash
-        head_hash = self._read_head()
-        if head_hash and head_hash in self.history_graph:
-            input_hash = head_hash
+        head_tree_hash = self._read_head()
+        parent_node = None
+
+        if head_tree_hash:
+            # 正确的逻辑：遍历节点，用 output_tree 匹配 head 的 tree hash
+            parent_node = next(
+                (node for node in self.history_graph.values() if node.output_tree == head_tree_hash), None
+            )
+
+        if parent_node:
+            input_hash = parent_node.output_tree
         elif self.history_graph:
+            # 只有当 HEAD 指针无效或丢失时，才执行回退逻辑
             last_node = max(self.history_graph.values(), key=lambda node: node.timestamp)
             input_hash = last_node.output_tree
-            logger.warning(f"⚠️  丢失 HEAD 指针，自动回退到最新历史节点: {input_hash[:7]}")
+            logger.warning(
+                f"⚠️  HEAD 指针 '{head_tree_hash[:7] if head_tree_hash else 'N/A'}' 无效或丢失，自动回退到最新历史节点: {input_hash[:7]}"
+            )
 
         diff_summary = self.git_db.get_diff_stat(input_hash, current_hash)
         user_message_section = f"### 💬 备注:\n{message}\n\n" if message else ""
