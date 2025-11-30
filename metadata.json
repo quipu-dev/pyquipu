@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix(tests): 修正 sync_modes 测试因 ruff 自动修复导致的导入错误", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764476445.9121099, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "Capture: M bootstrap.py, M axon.py, M cache.py ... and 82 more files", "type": "capture", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764476684.9709814, "duration_ms": 0}}
