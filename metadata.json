@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] test: 触发 CI 工作流以验证配置", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764476010.2155452, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "pyquipu/engine/state_machine.py", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764478083.9669416, "duration_ms": 0}}
