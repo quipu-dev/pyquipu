@@ -1,78 +1,70 @@
-## [COMMIT] style: 使用 ruff 格式化并检查全库代码
+## [WIP] fix: 建立 Quipu 节点与工作区快照的强引用连接
 
 ### 错误分析
-无（这是一个主动的代码维护和质量保证操作）。
+当前 `GitObjectHistoryWriter` 在构建 Quipu 历史节点（Commit）时，仅将用户工作区的状态哈希 (`output_tree`) 以文本形式记录在 Commit Message 的 `Trailer` (`X-Quipu-Output-Tree`) 中。
+
+这种实现方式导致了**弱引用 (Weak Reference)** 问题：
+1.  **GC 回收风险**：Git 的底层图谱算法无法识别 Commit 与 `output_tree` 之间的依赖关系。如果 `output_tree` 没有被其他分支（如 `master`）引用，Git 的垃圾回收机制 (`git gc`) 会将其视为“不可达对象”并将其物理删除。
+2.  **同步失效**：`git push` / `git fetch` 仅传输可达对象。因此，远程同步时只会传输 Quipu 的元数据（Commit, metadata.json），而丢失实际的工作区文件快照，导致无法在远程恢复状态。
 
 ### 用户需求
-使用 `ruff` 工具对当前项目的所有代码进行格式化，然后运行 Linter 检查。只有在 Linter 检查通过的情况下，才将所有变更提交到版本控制系统。
+修改 `quipu-engine` 的写入逻辑，在创建历史节点时，建立从 Quipu Commit 到用户工作区 Tree 的**强引用 (Strong Reference)**，以防止数据被 GC 并确保同步完整性。
 
 ### 评论
-这是一个标准的、健壮的维护任务。它将代码风格统一和代码质量检查合并为一个原子操作。通过在提交前强制执行 Linter 检查，可以确保进入版本历史的代码不仅格式统一，而且没有明显的语法或逻辑错误，极大地提升了代码库的健康度。
+这是一个**严重 (Critical)** 级别的架构缺陷修复。如果不修复，Quipu 的历史记录将面临随机性的数据丢失风险，且无法支持多机协作。修复方案非常优雅：利用 Git 的 Subtree 机制，将用户工作区作为一个名为 `snapshot` 的子树挂载到 Quipu 的存储树中。
 
 ### 目标
-1.  在项目根目录下运行 `ruff format .` 来自动修复格式问题。
-2.  接着运行 `ruff check .` 来捕获任何剩余的 Linter 错误。
-3.  **如果检查失败，则中止操作，不创建提交。**
-4.  如果检查通过，则将所有变更的文件添加到 Git 暂存区。
-5.  创建一个提交以固化格式化和修正后的变更。
+1.  修改 `GitObjectHistoryWriter.create_node` 方法。
+2.  在构建 `tree_descriptor` 时，增加一行 `040000 tree {output_tree}\tsnapshot`。
+3.  确保新生成的节点在 Git 图谱层面物理连接到用户的工作区状态。
 
 ### 基本原理
-此计划利用了 `run_command` 指令的执行特性：当被调用的命令返回非零退出码时，它会抛出异常并终止整个计划的执行。我们将 `ruff check .` 放置在 `git_commit` 之前，使其成为一个“质量门禁”。只有当 `ruff check .` 成功（退出码为 0），执行流程才能继续到后面的 `git_add` 和 `git_commit` 步骤。
+通过在 Quipu 的内部存储树 (`Storage Tree`) 中添加一个指向 `output_tree` 的 `tree` 类型条目，我们构建了如下的引用链：
+`Ref` -> `Quipu Commit` -> `Storage Tree` -> `snapshot (Directory)` -> `User Workspace Tree`
+这就构成了一条标准的 Git 可达性路径，Git 的所有底层工具（GC, Prune, Push, Fetch, Fsck）都能正确处理它。
 
 ### 标签
-#intent/tune #flow/ready #priority/low
-#comp/build #concept/tooling #scope/dx
-#ai/instruct
-#task/domain/maintenance #task/object/code-style #task/action/format
-#task/state/end #task/status/completed
+#intent/fix #flow/ready #priority/critical #comp/engine #concept/state #scope/core #ai/instruct #task/domain/storage #task/object/git-backend #task/action/structural-linking #task/state/begin
 
 ---
 
 ### Script
 
-#### Acts 1: 格式化代码
+#### Acts 1: 修改 GitObjectHistoryWriter 以包含快照子树
 
-首先，我们运行格式化程序来自动修正所有样式问题。
-
-~~~~~act
-run_command
-~~~~~
-~~~~~command
-.envs/dev/bin/ruff format .
-~~~~~
-
-#### Acts 2: 检查代码质量 (Linter)
-
-接下来，我们运行 Linter 检查。**如果此命令检测到任何错误并失败，整个计划将在此处中止，不会执行后续的提交操作。**
+我们在 `packages/quipu-engine/src/pyquipu/engine/git_object_storage.py` 文件中，修改 `create_node` 方法的 `tree_descriptor` 构建逻辑。
 
 ~~~~~act
-run_command
+patch_file
+packages/quipu-engine/src/pyquipu/engine/git_object_storage.py
 ~~~~~
-~~~~~command
-.envs/dev/bin/ruff check .
+~~~~~python
+        meta_blob_hash = self.git_db.hash_object(meta_json_bytes)
+        content_blob_hash = self.git_db.hash_object(content_md_bytes)
+
+        # 使用 100444 权限 (只读文件)
+        tree_descriptor = f"100444 blob {meta_blob_hash}\tmetadata.json\n100444 blob {content_blob_hash}\tcontent.md"
+        tree_hash = self.git_db.mktree(tree_descriptor)
+
+        # 1. 确定父节点 (Topological Parent)
 ~~~~~
+~~~~~python
+        meta_blob_hash = self.git_db.hash_object(meta_json_bytes)
+        content_blob_hash = self.git_db.hash_object(content_md_bytes)
 
-#### Acts 3: 暂存并提交变更
+        # 使用 100444 权限 (只读文件)
+        # 关键修复：建立强引用！将 output_tree 作为名为 'snapshot' 的子目录挂载。
+        # 这确保了 Git 的 GC 不会回收工作区快照，且 sync 时能同步实际内容。
+        tree_descriptor = (
+            f"100444 blob {meta_blob_hash}\tmetadata.json\n"
+            f"100444 blob {content_blob_hash}\tcontent.md\n"
+            f"040000 tree {output_tree}\tsnapshot"
+        )
+        tree_hash = self.git_db.mktree(tree_descriptor)
 
-只有在上述所有检查都通过后，才会执行以下操作，将所有变更暂存并提交。
-
-~~~~~act
-git_add
-~~~~~
-~~~~~files
-.
-~~~~~
-
-~~~~~act
-git_commit
-~~~~~
-~~~~~message
-style: format code with ruff
-
-Applies standard code formatting across the entire repository using `ruff format .`.
-Also ensures all linter checks pass before committing.
+        # 1. 确定父节点 (Topological Parent)
 ~~~~~
 
 ### 下一步建议
-- **CI 检查**: 确保 CI 流程中包含 `ruff format --check` 和 `ruff check .` 步骤，以防止未来引入未格式化或不合格的代码。
-- **Pre-commit**: 考虑配置 `pre-commit` 钩子，在每次提交前自动运行这些检查，为开发者提供更即时的反馈。
+1.  **验证修复**：执行此计划后，创建一个新节点，然后运行 `git ls-tree <commit-hash>`，确认是否能看到 `snapshot` 目录。
+2.  **数据迁移 (重要)**：此修复仅保护**新创建**的节点。旧节点仍然处于危险状态。我们需要规划一个迁移任务（Refactor），编写一个脚本遍历所有旧的 Quipu 节点，如果其关联的 Tree 对象尚未被 GC，则重写这些节点以包含 `snapshot` 引用。

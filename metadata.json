@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] style: 使用 ruff 格式化并检查全库代码", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764503137.1861408, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 建立 Quipu 节点与工作区快照的强引用连接", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764504228.1009073, "duration_ms": 0}}
