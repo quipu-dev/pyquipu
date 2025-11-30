@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(core): 将 Python 包名从 'quipu' 重构为 'pyquipu'", "type": "plan", "generator": {"id": "manual", "tool": "quipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764474777.5132651, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(core): Rename Python package namespace to pyquipu", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764475076.6294925, "duration_ms": 0}}
