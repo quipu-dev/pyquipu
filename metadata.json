@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "ruff Capture: M bootstrap.py, M axon.py, M cache.py ... and 82 more files", "type": "capture", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764478953.9254165, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix(cli): 修正命令模块中未定义的 logger 引用", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764479276.5165284, "duration_ms": 0}}
