@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix(cli): 修复 TUI 异步 Worker 启动方式错误", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764553608.6218698, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix(cli): 恢复 TUI 滚动时的即时 Header 反馈", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764553730.2989273, "duration_ms": 0}}
