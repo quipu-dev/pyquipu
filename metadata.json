@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] feat(cli): 改进 TUI 交互，支持空格检出和纯内容输出", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764552122.601619, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] feat(cli): 实现防抖触发的异步内容加载以消除 TUI 闪烁", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764552813.7380426, "duration_ms": 0}}
