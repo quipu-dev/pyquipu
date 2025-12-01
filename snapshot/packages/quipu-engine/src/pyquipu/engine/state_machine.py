@@ -327,6 +327,12 @@ class Engine:
             owner_id=user_id,
         )
 
+        if new_node.parent and new_node.parent.commit_hash in self.history_graph:
+            real_parent = self.history_graph[new_node.parent.commit_hash]
+            new_node.parent = real_parent
+            if new_node not in real_parent.children:
+                real_parent.children.append(new_node)
+
         self.history_graph[new_node.commit_hash] = new_node
         self.current_node = new_node
         self._write_head(current_hash)
@@ -353,6 +359,12 @@ class Engine:
             summary_override=summary_override,
             owner_id=user_id,
         )
+
+        if new_node.parent and new_node.parent.commit_hash in self.history_graph:
+            real_parent = self.history_graph[new_node.parent.commit_hash]
+            new_node.parent = real_parent
+            if new_node not in real_parent.children:
+                real_parent.children.append(new_node)
 
         self.history_graph[new_node.commit_hash] = new_node
         self.current_node = new_node

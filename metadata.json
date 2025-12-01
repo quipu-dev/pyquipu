@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 将工作区测试转换为 CLI E2E 测试 (第四阶段)", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764571299.6231077, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修复 Engine 中新节点的父子关系链接问题", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764571750.939761, "duration_ms": 0}}
