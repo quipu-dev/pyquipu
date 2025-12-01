@@ -76,7 +76,7 @@ def install_packages(env_path: Path, editable: bool):
             for pkg_src in PACKAGES:
                 print(f"   ⚙️  编译: {pkg_src.name} -> .whl")
                 subprocess.run(
-                    ["uv", "pip", "wheel", str(pkg_src), "--wheel-dir", str(tmp_path)],
+                    ["uv", "build", str(pkg_src), "--out-dir", str(tmp_path)],
                     check=True,
                     capture_output=True,
                 )
