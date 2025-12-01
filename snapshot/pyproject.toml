@@ -7,7 +7,7 @@ dependencies = []
 
 [tool.uv]
 # 将 packages 下的所有包纳入工作区管理
-workspace.members = ["packages/*", "packages/quipu-common"]
+workspace.members = ["packages/*"]
 
 [tool.pytest.ini_options]
 addopts = "-ra --cov=pyquipu --cov-report=term-missing"
@@ -17,6 +17,7 @@ pythonpath = [
   "packages/quipu-runtime/src",
   "packages/quipu-cli/src",
   "packages/quipu-common/src",
+  "packages/quipu-application/src",
 ]
 
 [build-system]
