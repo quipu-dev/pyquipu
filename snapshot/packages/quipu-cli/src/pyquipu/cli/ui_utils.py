@@ -3,6 +3,22 @@ from typing import List, Optional
 import click
 import typer
 from pyquipu.common.messaging import bus
+from pyquipu.interfaces.exceptions import OperationCancelledError
+
+
+def confirmation_handler_for_executor(diff_lines: List[str], prompt: str) -> bool:
+    """
+    为 Executor 的确认处理器契约提供的适配器。
+    它调用统一的提示器，并在用户取消时抛出异常。
+    对于 'run' 操作，默认行为是继续，除非用户按下 'n'。
+    """
+    # 原始逻辑是 `char.lower() != "n"`，这相当于默认为 True
+    confirmed = prompt_for_confirmation(prompt=prompt, diff_lines=diff_lines, default=True)
+    if not confirmed:
+        raise OperationCancelledError("User cancelled the operation.")
+    # 执行器的处理器不使用布尔返回值，它依赖于异常。
+    # 但为保持契约一致性，我们返回 True。
+    return True
 
 
 def prompt_for_confirmation(prompt: str, diff_lines: Optional[List[str]] = None, default: bool = False) -> bool:

@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+from pyquipu.application.controller import run_quipu
 from pyquipu.common.messaging import bus
 from pyquipu.runtime.executor import Executor
 
 from ..config import DEFAULT_ENTRY_FILE, DEFAULT_WORK_DIR
-from ..controller import run_quipu
 from ..logger_config import setup_logging
+from ..ui_utils import confirmation_handler_for_executor
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +41,7 @@ def register(app: typer.Typer):
         setup_logging()
         if list_acts:
             from pyquipu.acts import register_core_acts
-
-            from ..plugin_manager import PluginManager
+            from pyquipu.application.plugin_manager import PluginManager
 
             executor = Executor(root_dir=work_dir, yolo=True)
             register_core_acts(executor)
@@ -93,7 +93,13 @@ def register(app: typer.Typer):
         logger.info(f"工作区根目录: {work_dir}")
         if yolo:
             bus.warning("run.warning.yoloEnabled")
-        result = run_quipu(content=content, work_dir=work_dir, parser_name=parser_name, yolo=yolo)
+        result = run_quipu(
+            content=content,
+            work_dir=work_dir,
+            parser_name=parser_name,
+            yolo=yolo,
+            confirmation_handler=confirmation_handler_for_executor,
+        )
 
         if result.message:
             kwargs = result.msg_kwargs or {}

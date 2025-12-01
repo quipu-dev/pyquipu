@@ -6,10 +6,10 @@ from typing import Dict, Generator, List, Optional
 
 import typer
 from pyquipu.common.messaging import bus
+from pyquipu.application.factory import create_engine
 from pyquipu.engine.state_machine import Engine
 from pyquipu.interfaces.models import QuipuNode
 
-from ..factory import create_engine
 from ..logger_config import setup_logging
 
 logger = logging.getLogger(__name__)

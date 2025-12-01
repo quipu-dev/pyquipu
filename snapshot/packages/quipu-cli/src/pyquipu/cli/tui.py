@@ -11,9 +11,9 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.coordinate import Coordinate
 from textual.timer import Timer
+from pyquipu.application.factory import create_engine
 from textual.widgets import DataTable, Footer, Header, Markdown, Static
 
-from .factory import create_engine
 from .view_model import GraphViewModel
 
 logger = logging.getLogger(__name__)

@@ -21,6 +21,7 @@ dependencies = [
     "pyquipu-engine",
     "pyquipu-runtime",
     "pyquipu-common",
+    "pyquipu-application",
     "typer>=0.9.0",
     "textual>=0.58.0",
 ]
@@ -30,6 +31,7 @@ pyquipu-interfaces = { workspace = true }
 pyquipu-engine = { workspace = true }
 pyquipu-runtime = { workspace = true }
 pyquipu-common = { workspace = true }
+pyquipu-application = { workspace = true }
 
 [project.scripts]
 quipu = "pyquipu.cli.main:app"

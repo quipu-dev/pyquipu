@@ -6,12 +6,12 @@ from typing import Annotated, Optional
 import typer
 from pyquipu.common.identity import get_user_id_from_email
 from pyquipu.common.messaging import bus
+from pyquipu.application.utils import find_git_repository_root
 from pyquipu.engine.config import ConfigManager
 from pyquipu.engine.git_db import GitDB
 
 from ..config import DEFAULT_WORK_DIR
 from ..logger_config import setup_logging
-from ..utils import find_git_repository_root
 
 
 class SyncMode(str, Enum):

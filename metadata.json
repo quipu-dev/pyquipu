@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 迁移核心逻辑到应用包并解耦 UI", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764569286.3168583, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor: 重连 CLI 并适配 Application 包", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764569378.2509105, "duration_ms": 0}}
