@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from pyquipu.application.controller import run_quipu
+from pyquipu.cli.main import app
 
 
 @pytest.fixture
@@ -15,6 +15,7 @@ def nested_git_project(tmp_path: Path):
             <-- .quipu should NOT be created here
 
             work_dir/
+                .git/ <-- Nested repo
                 <-- .quipu SHOULD be created here
     """
     host_project = tmp_path / "host_project"
@@ -25,9 +26,7 @@ def nested_git_project(tmp_path: Path):
 
     work_dir = host_project / "work_dir"
     work_dir.mkdir()
-    # 必须初始化为嵌套的 git 仓库，因为 Quipu Engine 依赖于 GitDB，
-    # 而 GitDB 需要当前目录或父目录是 git 仓库。
-    # 为了测试隔离性（不污染 host_project），work_dir 必须自己是一个独立的仓库。
+    # 初始化嵌套仓库
     subprocess.run(["git", "init"], cwd=work_dir, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=work_dir, check=True)
     subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=work_dir, check=True)
@@ -36,31 +35,34 @@ def nested_git_project(tmp_path: Path):
 
 
 class TestWorkDirIsolation:
-    def test_history_is_created_in_work_dir_not_host_project(self, nested_git_project):
+    def test_history_is_created_in_work_dir_not_host_project(self, runner, nested_git_project):
         """
-        验证：当在子目录 work_dir 中运行时，Quipu 的历史记录
+        验证：当在子目录 work_dir 中运行 CLI 时，Quipu 的历史记录
         (.quipu) 必须在该子目录中创建，而不是在包含 .git 的父目录中。
+        这确保了嵌套项目之间的隔离。
         """
         host_project, work_dir = nested_git_project
 
-        # 一个简单的 plan，用于触发历史记录的创建
-        plan_content = """
+        # 创建一个临时计划文件
+        plan_file = work_dir / "plan.md"
+        plan_file.write_text("""
 ```act
 write_file result.txt
 ```
 ```content
 isolation test
 ```
-"""
+""", encoding="utf-8")
 
-        # 关键：调用 run_quipu，将 work_dir 设置为没有 .git 的子目录
-        result = run_quipu(
-            content=plan_content, work_dir=work_dir, yolo=True, confirmation_handler=lambda *a: True
+        # 运行 CLI: quipu run plan.md -w work_dir
+        result = runner.invoke(
+            app, 
+            ["run", str(plan_file), "--work-dir", str(work_dir), "-y"]
         )
 
         # --- Assertions ---
 
-        assert result.success is True, f"Quipu run failed: {result.message}"
+        assert result.exit_code == 0, f"CLI execution failed: {result.stdout}"
 
         # 1. 验证文件操作发生在 work_dir
         assert (work_dir / "result.txt").exists()

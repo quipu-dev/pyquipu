@@ -2,31 +2,15 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from pyquipu.application.controller import run_quipu
+from pyquipu.engine.git_db import GitDB
+from pyquipu.engine.git_object_storage import GitObjectHistoryWriter
 from pyquipu.engine.sqlite_db import DatabaseManager
-
-PLAN_A = """
-```act
-write_file a.txt
-```
-```content
-File A content
-```
-"""
-
-PLAN_B = """
-```act
-write_file b.txt
-```
-```content
-File B content
-```
-"""
+from pyquipu.engine.sqlite_storage import SQLiteHistoryWriter
 
 
 @pytest.fixture
-def sqlite_workspace(tmp_path: Path) -> Path:
-    """创建一个配置为使用 SQLite 后端的 Git 工作区。"""
+def sqlite_setup(tmp_path: Path):
+    """创建一个配置为使用 SQLite 后端的 Git 环境。"""
     ws = tmp_path / "ws_sqlite"
     ws.mkdir()
 
@@ -35,69 +19,77 @@ def sqlite_workspace(tmp_path: Path) -> Path:
     subprocess.run(["git", "config", "user.email", "test@quipu.dev"], cwd=ws, check=True)
     subprocess.run(["git", "config", "user.name", "Quipu Test"], cwd=ws, check=True)
 
-    # Init Quipu config for SQLite
-    quipu_dir = ws / ".quipu"
-    quipu_dir.mkdir()
-    (quipu_dir / "config.yml").write_text("storage:\n  type: sqlite\n")
+    git_db = GitDB(ws)
+    db_manager = DatabaseManager(ws)
+    db_manager.init_schema()
+    
+    # 组装 Writer 栈：SQLiteWriter -> GitWriter -> GitDB
+    git_writer = GitObjectHistoryWriter(git_db)
+    sqlite_writer = SQLiteHistoryWriter(git_writer, db_manager)
 
-    return ws
+    return sqlite_writer, db_manager, git_db, ws
 
 
 class TestSQLiteWriterIntegration:
-    def test_dual_write_on_run_and_link(self, sqlite_workspace):
+    def test_dual_write_and_link(self, sqlite_setup):
         """
-        验证 `quipu run` 在 SQLite 模式下是否能正确地双写到 Git 和 DB，并建立父子关系。
+        验证 SQLiteHistoryWriter 是否能正确地双写到 Git 和 DB，并建立父子关系。
+        不依赖 application 层的 run_quipu。
         """
-        # Command to get all local head commit hashes
-        get_all_heads_cmd = ["git", "for-each-ref", "--format=%(objectname)", "refs/quipu/local/heads/"]
+        writer, db_manager, git_db, ws = sqlite_setup
+        
+        EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-        # --- Action 1: Create first node ---
-        result_a = run_quipu(
-            PLAN_A, work_dir=sqlite_workspace, yolo=True, confirmation_handler=lambda *a: True
+        # --- Action 1: Create first node (Node A) ---
+        # 模拟文件变更 A
+        (ws / "a.txt").write_text("File A content")
+        hash_a = git_db.get_tree_hash()
+        
+        node_a = writer.create_node(
+            node_type="plan",
+            input_tree=EMPTY_TREE,
+            output_tree=hash_a,
+            content="Plan A Content",
+            summary_override="Write: a.txt"
         )
-        assert result_a.success, f"run_quipu failed on Plan A: {result_a.message}"
+        commit_hash_a = node_a.commit_hash
 
-        # Get the state after the first run
-        heads_after_a = set(
-            subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines()
+        # --- Action 2: Create second node (Node B) ---
+        # 模拟文件变更 B
+        (ws / "b.txt").write_text("File B content")
+        hash_b = git_db.get_tree_hash()
+        
+        node_b = writer.create_node(
+            node_type="plan",
+            input_tree=hash_a,  # Parent is A
+            output_tree=hash_b,
+            content="Plan B Content",
+            summary_override="Write: b.txt"
         )
-        assert len(heads_after_a) == 1
-        commit_hash_a = heads_after_a.pop()
-
-        # --- Action 2: Create second node, which should be a child of the first ---
-        result_b = run_quipu(
-            PLAN_B, work_dir=sqlite_workspace, yolo=True, confirmation_handler=lambda *a: True
-        )
-        assert result_b.success, f"run_quipu failed on Plan B: {result_b.message}"
-
-        # Get the state after the second run and find the new commit
-        heads_before_b = {commit_hash_a}  # The set of heads before this action
-        heads_after_b = set(
-            subprocess.check_output(get_all_heads_cmd, cwd=sqlite_workspace, text=True).strip().splitlines()
-        )
-
-        new_heads = heads_after_b - heads_before_b
-        assert len(new_heads) == 1, "Expected exactly one new head to be created"
-        commit_hash_b = new_heads.pop()
-        assert commit_hash_a != commit_hash_b
+        commit_hash_b = node_b.commit_hash
 
         # --- Verification ---
-        db_path = sqlite_workspace / ".quipu" / "history.sqlite"
-        assert db_path.exists()
-        db = DatabaseManager(sqlite_workspace)
-        conn = db._get_conn()
+        
+        # 1. Verify Git plumbing
+        # 确保两个 commit 都存在
+        assert git_db.cat_file(commit_hash_a, "commit")
+        assert git_db.cat_file(commit_hash_b, "commit")
+        
+        # 2. Verify SQLite Data
+        conn = db_manager._get_conn()
 
-        # 1. Verify node B exists
+        # Check Node B metadata
         cursor_node = conn.execute("SELECT * FROM nodes WHERE commit_hash = ?", (commit_hash_b,))
         node_row = cursor_node.fetchone()
         assert node_row is not None
         assert node_row["summary"] == "Write: b.txt"
-        assert node_row["plan_md_cache"] is not None  # Should be hot-cached
+        # 验证缓存已被写入 (Hot Path)
+        assert node_row["plan_md_cache"] == "Plan B Content"
 
-        # 2. Verify the edge exists and points to node A
+        # Check Edge A -> B
         cursor_edge = conn.execute("SELECT * FROM edges WHERE child_hash = ?", (commit_hash_b,))
         edge_row = cursor_edge.fetchone()
-        assert edge_row is not None, "Edge for the second node was not created in the database."
-        assert edge_row["parent_hash"] == commit_hash_a, "The parent hash in the edge is incorrect."
+        assert edge_row is not None, "Edge for the second node was not created."
+        assert edge_row["parent_hash"] == commit_hash_a, "The edge should point to Node A."
 
-        db.close()
+        db_manager.close()

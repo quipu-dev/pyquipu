@@ -1,5 +1,4 @@
 import pytest
-from pyquipu.application.utils import find_git_repository_root
 from pyquipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
 from pyquipu.engine.state_machine import Engine
 
@@ -129,26 +128,3 @@ class TestHeadTracking:
         assert node_c.input_tree != hash_b
         assert node_c.output_tree == hash_c
         assert engine._read_head() == hash_c
-
-
-class TestRootDiscovery:
-    def test_find_git_repository_root(self, tmp_path):
-        # /project/.git
-        # /project/src/subdir
-        project = tmp_path / "project"
-        project.mkdir()
-        (project / ".git").mkdir()
-
-        subdir = project / "src" / "subdir"
-        subdir.mkdir(parents=True)
-
-        # Case 1: From subdir
-        assert find_git_repository_root(subdir) == project.resolve()
-
-        # Case 2: From root
-        assert find_git_repository_root(project) == project.resolve()
-
-        # Case 3: Outside
-        outside = tmp_path / "outside"
-        outside.mkdir()
-        assert find_git_repository_root(outside) is None
