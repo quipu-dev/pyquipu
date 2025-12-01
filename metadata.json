@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 迁移工具函数测试以符合分层架构", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764571968.325763, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(tests): 使测试架构镜像应用分层", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764572042.3800817, "duration_ms": 0}}

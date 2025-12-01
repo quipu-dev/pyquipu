@@ -1,141 +1,63 @@
-好的，分析正确。
+好的，我们已经成功完成了对测试架构的全面重构和修复。所有测试均已通过，现在是时候将这些改进作为一个原子提交，固化到版本历史中了。
 
-`tests/engine/test_head_tracking.py` 中存在对 `pyquipu.application` 的不当依赖，这违反了我们设定的“引擎层测试禁止导入应用层”的原则。
-
-`TestRootDiscovery` 这个测试类本身是用于验证 `find_git_repository_root` 工具函数的，而该函数位于 `application` 包中。因此，这个测试理应属于 `tests/application/` 目录。
-
-我将执行一次迁移，将这个测试归位，从而净化引擎层的依赖。
-
-## [WIP] refactor: 迁移工具函数测试以符合分层架构
-
-### 错误分析
-`tests/engine/test_head_tracking.py` 文件中包含了一个测试类 `TestRootDiscovery`，该类导入并测试了 `pyquipu.application.utils.find_git_repository_root` 函数。这导致了底层 `engine` 测试对高层 `application` 模块的依赖，违反了分层测试架构的约束。
+## [COMMIT] refactor(tests): 使测试架构镜像应用分层
 
 ### 用户需求
-移除 `tests/engine/` 对 `pyquipu.application` 的所有依赖，确保 `grep -r "pyquipu.application" tests/engine/` 命令无输出。
+将“测试分层与应用架构错配”的诊断方案付诸实施，并修复在此过程中发现的所有回归问题，最终将所有变更合并为一个逻辑完整的 Git 提交。
 
 ### 评论
-这是一次标准的测试重构。将测试代码迁移到与其被测代码相对应的模块化目录中，可以确保测试架构与应用架构的镜像关系，增强测试套件的可维护性和清晰度。
+这次重构意义重大。它将测试套件从一个主要由集成测试驱动的“扁平”结构，演进为一个与源代码包结构严格对应的“分层”结构。这不仅修复了当前的脆弱性问题，更为项目未来的可维护性和可扩展性奠定了坚实的基础。现在，每个组件的测试都更加内聚、快速和精确。
 
 ### 目标
-1.  在 `tests/application/` 目录下创建一个新的测试文件 `test_utils.py`。
-2.  将 `TestRootDiscovery` 测试类从 `tests/engine/test_head_tracking.py` 完整地移动到 `tests/application/test_utils.py`。
-3.  清理 `tests/engine/test_head_tracking.py` 中残留的导入语句和测试类。
+1.  **分层隔离**:
+    *   成功创建了 `tests/application/`，用于对核心业务逻辑进行快速、隔离的单元测试。
+    *   成功将 `tests/engine/` 中的测试净化，移除了对上层应用逻辑的不当依赖。
+    *   成功将 `tests/integration/` 中的测试重构为真正的端到端 (E2E) CLI 测试。
+2.  **修复 Bug**:
+    *   修复了因 Mock 假设错误导致的 `AttributeError` 和 `NameError`。
+    *   修复了 `Engine` 状态机中新节点无法正确链接到内存图谱的关键 Bug。
+3.  **持久化**: 将所有相关变更添加到一个 Git 提交中。
 
 ### 基本原理
-遵循“测试就近原则”。对 `pyquipu.application.utils` 中函数的测试，应该存在于 `tests/application/` 目录下。通过移动测试代码，我们可以解除错误的跨层依赖，使 `engine` 层的测试更加纯粹。
+通过让测试架构镜像应用架构，我们实现了“关注点分离”原则在测试领域的应用。单元测试验证“零件”是否合格，应用层测试验证“模块”组装是否正确，集成测试验证“整车”能否正常行驶。这种结构使得当一个“零件”（如 Engine 的内部实现）发生变化时，我们只需要关心其单元测试，而无需担心会引发整个测试套件的连锁失败。
 
 ### 标签
-#intent/refine #flow/ready #priority/high #comp/tests #comp/application #scope/dx #ai/instruct #task/domain/testing #task/object/test-hierarchy #task/action/refactor #task-state/continue
+#intent/refine #flow/ready #priority/high #comp/tests #comp/engine #comp/application #scope/core #ai/instruct #task/domain/testing #task/object/test-suite #task/action/refactor #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 创建应用层工具函数的测试文件
+#### Acts 1: 提交所有重构变更
 
-我们将在 `tests/application/` 目录下创建 `test_utils.py` 并将 `TestRootDiscovery` 类的代码放入其中。
-
-~~~~~act
-write_file
-tests/application/test_utils.py
-~~~~~
-~~~~~python
-from pathlib import Path
-
-from pyquipu.application.utils import find_git_repository_root
-
-
-class TestRootDiscovery:
-    def test_find_git_repository_root(self, tmp_path: Path):
-        # /project/.git
-        # /project/src/subdir
-        project = tmp_path / "project"
-        project.mkdir()
-        (project / ".git").mkdir()
-
-        subdir = project / "src" / "subdir"
-        subdir.mkdir(parents=True)
-
-        # Case 1: From subdir
-        assert find_git_repository_root(subdir) == project.resolve()
-
-        # Case 2: From root
-        assert find_git_repository_root(project) == project.resolve()
-
-        # Case 3: Outside
-        outside = tmp_path / "outside"
-        outside.mkdir()
-        assert find_git_repository_root(outside) is None
-~~~~~
-
-#### Acts 2: 清理引擎层的测试文件
-
-现在，我们从 `tests/engine/test_head_tracking.py` 中移除相关的代码。
+我们将使用 `git add .` 来暂存所有新增、修改和删除的文件，然后创建一个内容详尽的提交，清晰地记录本次重构的目的和成果。
 
 ~~~~~act
-patch_file
-tests/engine/test_head_tracking.py
-~~~~~
-~~~~~python
-import pytest
-from pyquipu.application.utils import find_git_repository_root
-from pyquipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
-from pyquipu.engine.state_machine import Engine
-
-
-class TestHeadTracking:
-~~~~~
-~~~~~python
-import pytest
-from pyquipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter
-from pyquipu.engine.state_machine import Engine
-
-
-class TestHeadTracking:
+git_add .
 ~~~~~
 
 ~~~~~act
-patch_file
-tests/engine/test_head_tracking.py
+git_commit
 ~~~~~
-~~~~~python
-        # and doesn't just fall back to the "latest" node.
-        assert node_c.input_tree == hash_a
-        assert node_c.input_tree != hash_b
-        assert node_c.output_tree == hash_c
-        assert engine._read_head() == hash_c
+~~~~~text
+refactor(tests): align test architecture with application layers
 
+This major refactoring overhauls the test suite structure to mirror the layered architecture of the application source code, addressing fragility, coupling, and imprecision in the previous test setup.
 
-class TestRootDiscovery:
-    def test_find_git_repository_root(self, tmp_path):
-        # /project/.git
-        # /project/src/subdir
-        project = tmp_path / "project"
-        project.mkdir()
-        (project / ".git").mkdir()
+Key Changes:
 
-        subdir = project / "src" / "subdir"
-        subdir.mkdir(parents=True)
+1.  **Created `tests/application/`:** A new dedicated directory for unit-testing the `pyquipu-application` package. This allows for fast, isolated testing of core business logic and orchestration without depending on real Engine or Runtime implementations.
 
-        # Case 1: From subdir
-        assert find_git_repository_root(subdir) == project.resolve()
+2.  **Migrated Controller Tests:** Moved controller logic tests from `tests/integration` to `tests/application`, replacing real dependencies with mocks. This transforms them from slow integration tests into fast unit tests.
 
-        # Case 2: From root
-        assert find_git_repository_root(project) == project.resolve()
+3.  **Purified Engine Tests:** Refactored tests in `tests/engine` to remove all dependencies on the application layer (e.g., `run_quipu`). Engine tests now correctly operate by directly calling Engine/Writer APIs, ensuring they are true unit/module tests.
 
-        # Case 3: Outside
-        outside = tmp_path / "outside"
-        outside.mkdir()
-        assert find_git_repository_root(outside) is None
-~~~~~
-~~~~~python
-        # and doesn't just fall back to the "latest" node.
-        assert node_c.input_tree == hash_a
-        assert node_c.input_tree != hash_b
-        assert node_c.output_tree == hash_c
-        assert engine._read_head() == hash_c
+4.  **Redefined Integration Tests:** Converted remaining tests in `tests/integration` to use `CliRunner`. They now serve as true End-to-End (E2E) tests, validating the application from the CLI entry point, which simulates real user interaction.
+
+5.  **Fixed Engine Bug:** Uncovered and fixed a critical bug in the `Engine` state machine where newly created nodes were not correctly linked to the in-memory graph, causing inconsistent parent-child relationships.
+
+This restructuring makes the test suite more robust, maintainable, and faster, ensuring that failures are more precisely located and easier to diagnose.
 ~~~~~
 
 ### 下一步建议
-迁移工作已完成。现在 `tests/engine/` 目录已经干净，不再依赖 `application` 层。我们可以重新运行测试套件，以验证所有测试是否仍然通过，并且依赖扫描现在应该会成功。
+测试架构重构已完成。现在，我们可以更有信心地继续进行新功能的开发或对现有模块的进一步优化，因为我们有了一个更健康、更可靠的测试安全网。
