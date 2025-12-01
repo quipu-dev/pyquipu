@@ -1,50 +1,47 @@
-## [WIP] fix(build): 修正 bootstrap 脚本中错误的 wheel 构建命令
+好的，我们已经完成了对 `bootstrap.py` 脚本的改进和修复。现在，我将创建一个 Git 提交来将这些变更固化到版本历史中。
 
-### 错误分析
-`bootstrap.py init` 命令在为 `stable` 环境构建 `wheel` 包时失败，返回 `subprocess.CalledProcessError`，错误码为 2。经分析，这是由于在上次重构中，用于构建的命令被错误地从 `uv build --out-dir <dir>` 修改为了 `uv pip wheel --wheel-dir <dir>`。`uv build` 是专门用于执行 PEP 517 构建的正确命令，而 `uv pip wheel` 在此场景下未能成功创建构建环境，导致失败。使用 `-e` 模式的 `dev` 命令因不执行严格构建而掩盖了此问题。
+## [COMMIT] feat(build): 改进 bootstrap 脚本，支持自动发现和 dev-only 更新
 
 ### 用户需求
-修复 `bootstrap.py` 脚本，使其 `init` 和 `promote` 命令能够成功为 `stable` 环境构建并安装软件包。
+需要将对 `bootstrap.py` 脚本的一系列改进（包的自动发现、新增 `dev` 更新命令、移除别名脚本生成）以及后续的构建命令修复，作为一个完整的逻辑单元提交到版本控制中。
 
 ### 评论
-这是一个典型的由不恰当的工具调用引起的回归错误。将命令修正回 `uv build` 不仅能解决当前的构建失败问题，也遵循了 `uv` 工具的最佳实践，确保了构建过程的健壮性和可预见性。
+这次提交将显著提升项目的开发者体验。通过使 `bootstrap.py` 更加自动化和灵活，开发者可以更快速地适应项目结构的变化，而无需手动维护脚本，同时也修复了一个关键的构建错误，确保了 `stable` 环境的可靠性。
 
 ### 目标
-1.  在 `bootstrap.py` 的 `install_packages` 函数中，定位错误的 `uv pip wheel` 命令。
-2.  将其替换为正确的 `uv build --out-dir <dir>` 命令。
+1.  将 `bootstrap.py` 文件的最新版本添加到 Git 暂存区。
+2.  创建一个符合 Conventional Commits 规范的 Git 提交。
 
 ### 基本原理
-恢复使用 `uv` 推荐的、专门用于从源码构建分发包的 `uv build` 命令。该命令会正确地读取 `pyproject.toml` 中的 `[build-system]` 表，设置一个临时的、隔离的构建环境，下载如 `setuptools` 等构建依赖，并执行构建后端，从而生成一个健壮的 `.whl` 文件。
+通过创建一个原子性的提交，我们将所有相关的改进和修复捆绑在一起。这使得版本历史清晰可读，便于未来追溯每次变更的完整上下文和动机。提交信息将详细描述所做的三项主要改进和一个关键修复。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/build #scope/dx #ai/instruct #task/domain/tooling #task/object/bootstrap-script #task/action/bug-fix #task/state/continue
+#intent/build #flow/ready #priority/high #comp/build #scope/dx #ai/instruct #task/domain/tooling #task/object/bootstrap-script #task/action/refactor #task/state/end #task/status/completed
 
 ---
 
 ### Script
 
-#### Acts 1: 修正 `bootstrap.py` 中的构建命令
+#### Acts 1: 提交对 bootstrap.py 的所有改进
 
-我们将使用 `patch_file` 精确地将错误的命令替换回正确的版本。
+我们将暂存 `bootstrap.py` 文件并创建一个包含详细说明的提交。
 
 ~~~~~act
-patch_file
+git_add
 bootstrap.py
 ~~~~~
-~~~~~python
-                subprocess.run(
-                    ["uv", "pip", "wheel", str(pkg_src), "--wheel-dir", str(tmp_path)],
-                    check=True,
-                    capture_output=True,
-                )
-~~~~~
-~~~~~python
-                subprocess.run(
-                    ["uv", "build", str(pkg_src), "--out-dir", str(tmp_path)],
-                    check=True,
-                    capture_output=True,
-                )
-~~~~~
 
-### 下一步建议
-现在你可以重新运行 `python bootstrap.py init` 命令。构建过程现在应该可以成功完成了。
+~~~~~act
+git_commit
+~~~~~
+~~~~~text
+feat(build): improve bootstrap script with auto-discovery and dev-only updates
+
+This commit introduces several developer experience improvements to the `bootstrap.py` script and fixes a critical build regression.
+
+Key changes:
+- **Package Auto-Discovery**: The script now automatically scans the `packages/` directory to find valid packages, removing the need to manually maintain the `PACKAGES` list.
+- **`dev` Command**: A new `python bootstrap.py dev` command has been added to only update the development environment. This allows for quick updates after adding new packages without rebuilding the entire stable environment.
+- **Removed Script Generation**: The automatic generation of `dev_setup.sh` and `dev_setup.fish` has been removed to give developers more control over their shell configurations.
+- **Fix**: Reverted the wheel-building command from `uv pip wheel` back to `uv build`. This fixes a `CalledProcessError` that occurred during the `init` and `promote` commands, ensuring the stable environment builds reliably.
+~~~~~
