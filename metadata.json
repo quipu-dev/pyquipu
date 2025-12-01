@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] test: 建立 Application 层测试基础设施 (第一阶段)", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764570350.6390655, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] test: 迁移 Controller 测试至 Application 层 (第二阶段)", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764570454.4707782, "duration_ms": 0}}
