@@ -138,7 +138,7 @@ def run_quipu(
     work_dir: Path,
     confirmation_handler: ConfirmationHandler,
     parser_name: str = "auto",
-    yolo: bool = False
+    yolo: bool = False,
 ) -> QuipuResult:
     """
     Quipu 核心业务逻辑的入口包装器。

@@ -22,7 +22,7 @@ def sqlite_setup(tmp_path: Path):
     git_db = GitDB(ws)
     db_manager = DatabaseManager(ws)
     db_manager.init_schema()
-    
+
     # 组装 Writer 栈：SQLiteWriter -> GitWriter -> GitDB
     git_writer = GitObjectHistoryWriter(git_db)
     sqlite_writer = SQLiteHistoryWriter(git_writer, db_manager)
@@ -37,20 +37,20 @@ class TestSQLiteWriterIntegration:
         不依赖 application 层的 run_quipu。
         """
         writer, db_manager, git_db, ws = sqlite_setup
-        
+
         EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
         # --- Action 1: Create first node (Node A) ---
         # 模拟文件变更 A
         (ws / "a.txt").write_text("File A content")
         hash_a = git_db.get_tree_hash()
-        
+
         node_a = writer.create_node(
             node_type="plan",
             input_tree=EMPTY_TREE,
             output_tree=hash_a,
             content="Plan A Content",
-            summary_override="Write: a.txt"
+            summary_override="Write: a.txt",
         )
         commit_hash_a = node_a.commit_hash
 
@@ -58,23 +58,23 @@ class TestSQLiteWriterIntegration:
         # 模拟文件变更 B
         (ws / "b.txt").write_text("File B content")
         hash_b = git_db.get_tree_hash()
-        
+
         node_b = writer.create_node(
             node_type="plan",
             input_tree=hash_a,  # Parent is A
             output_tree=hash_b,
             content="Plan B Content",
-            summary_override="Write: b.txt"
+            summary_override="Write: b.txt",
         )
         commit_hash_b = node_b.commit_hash
 
         # --- Verification ---
-        
+
         # 1. Verify Git plumbing
         # 确保两个 commit 都存在
         assert git_db.cat_file(commit_hash_a, "commit")
         assert git_db.cat_file(commit_hash_b, "commit")
-        
+
         # 2. Verify SQLite Data
         conn = db_manager._get_conn()
 

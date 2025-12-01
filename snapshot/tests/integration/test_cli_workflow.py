@@ -111,6 +111,7 @@ class TestCLIWrapper:
     def test_cli_save_on_clean_workspace(self, workspace):
         """测试 `save` 命令在工作区干净时的行为"""
         from unittest.mock import MagicMock
+
         mock_bus = MagicMock()
         # Mock bus to avoid dependency on specific UI text
         with pytest.MonkeyPatch.context() as m:
@@ -122,6 +123,7 @@ class TestCLIWrapper:
     def test_cli_discard_no_history(self, workspace):
         """测试 `discard` 命令在没有历史记录时的行为"""
         from unittest.mock import MagicMock
+
         mock_bus = MagicMock()
         with pytest.MonkeyPatch.context() as m:
             m.setattr("pyquipu.cli.commands.workspace.bus", mock_bus)
@@ -143,9 +145,7 @@ class TestCheckoutCLI:
 
         # State A: Create a.txt
         plan_a = "```act\nwrite_file a.txt\n```\n```content\nState A\n```"
-        run_quipu(
-            content=plan_a, work_dir=workspace, yolo=True, confirmation_handler=lambda *a: True
-        )
+        run_quipu(content=plan_a, work_dir=workspace, yolo=True, confirmation_handler=lambda *a: True)
 
         engine_after_a = create_engine(workspace)
         nodes_after_a = sorted(engine_after_a.reader.load_all_nodes(), key=lambda n: n.timestamp)
@@ -155,9 +155,7 @@ class TestCheckoutCLI:
         # Manually create State B by removing a.txt and adding b.txt
         (workspace / "a.txt").unlink()
         plan_b = "```act\nwrite_file b.txt\n```\n```content\nState B\n```"
-        run_quipu(
-            content=plan_b, work_dir=workspace, yolo=True, confirmation_handler=lambda *a: True
-        )
+        run_quipu(content=plan_b, work_dir=workspace, yolo=True, confirmation_handler=lambda *a: True)
 
         engine_after_b = create_engine(workspace)
         nodes_after_b = sorted(engine_after_b.reader.load_all_nodes(), key=lambda n: n.timestamp)
@@ -177,7 +175,7 @@ class TestCheckoutCLI:
         result = runner.invoke(app, ["checkout", hash_a[:8], "--work-dir", str(workspace), "--force"])
 
         assert result.exit_code == 0
-        # Success message check is now implicitly handled by exit code, 
+        # Success message check is now implicitly handled by exit code,
         # or we could mock bus if we want to be strict.
 
         # Post-flight check: we are now in state A
@@ -214,14 +212,15 @@ class TestCheckoutCLI:
     def test_cli_checkout_not_found(self, populated_workspace):
         """Test checkout with a non-existent hash."""
         workspace, _, _ = populated_workspace
-        
+
         # Using Mock Bus to check error message id
         from unittest.mock import MagicMock
+
         mock_bus = MagicMock()
         with pytest.MonkeyPatch.context() as m:
             m.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
             result = runner.invoke(app, ["checkout", "deadbeef", "--work-dir", str(workspace), "--force"])
-            
+
             assert result.exit_code == 1
             mock_bus.error.assert_called_with("navigation.checkout.error.notFound", hash_prefix="deadbeef")
 
@@ -230,10 +229,11 @@ class TestCheckoutCLI:
         workspace, _, hash_b = populated_workspace
 
         from unittest.mock import MagicMock
+
         mock_bus = MagicMock()
         with pytest.MonkeyPatch.context() as m:
             m.setattr("pyquipu.cli.commands.navigation.bus", mock_bus)
-            
+
             result = runner.invoke(app, ["checkout", hash_b[:8], "--work-dir", str(workspace), "--force"])
 
             assert result.exit_code == 0

@@ -45,20 +45,20 @@ class TestWorkDirIsolation:
 
         # 创建一个临时计划文件
         plan_file = work_dir / "plan.md"
-        plan_file.write_text("""
+        plan_file.write_text(
+            """
 ```act
 write_file result.txt
 ```
 ```content
 isolation test
 ```
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
 
         # 运行 CLI: quipu run plan.md -w work_dir
-        result = runner.invoke(
-            app, 
-            ["run", str(plan_file), "--work-dir", str(work_dir), "-y"]
-        )
+        result = runner.invoke(app, ["run", str(plan_file), "--work-dir", str(work_dir), "-y"])
 
         # --- Assertions ---
 

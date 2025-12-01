@@ -57,10 +57,7 @@ class TestRootInvariance:
 
         # 模拟命令: quipu run ../plan.md -w . (假设当前在 subdir)
         # 或者更直接地：quipu run /path/to/plan.md -w /path/to/subdir
-        result = runner.invoke(
-            app, 
-            ["run", str(plan_path), "--work-dir", str(subdir), "-y"]
-        )
+        result = runner.invoke(app, ["run", str(plan_path), "--work-dir", str(subdir), "-y"])
 
         # 1. 验证 CLI 执行成功
         assert result.exit_code == 0, f"CLI execution failed: {result.stdout}"
@@ -75,6 +72,6 @@ class TestRootInvariance:
         # 检查 .quipu 目录是否在 root 下创建
         assert (project_root / ".quipu").exists(), "历史记录目录应在项目根目录创建"
         assert (project_root / ".quipu" / "HEAD").exists()
-        
+
         # 确保 subdir 下没有误创建 .quipu
         assert not (subdir / ".quipu").exists(), "子目录不应包含历史记录目录"

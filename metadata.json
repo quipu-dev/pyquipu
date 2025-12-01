@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "Capture: M axon.py, M helpers.py, M remote.py ... and 3 more files", "type": "capture", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764572060.7556477, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] style: 使用 ruff 格式化并检查全库代码", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764572091.129177, "duration_ms": 0}}

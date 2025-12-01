@@ -15,13 +15,10 @@ class TestDeduplication:
         # 1. State A: Create a file
         (root_dir / "a.txt").write_text("A")
         hash_a = engine.git_db.get_tree_hash()
-        
+
         # 通过 Engine 创建第一个节点
         node_a = engine.create_plan_node(
-            input_tree=EMPTY_TREE_HASH,
-            output_tree=hash_a,
-            plan_content="Create A",
-            summary_override="Plan A"
+            input_tree=EMPTY_TREE_HASH, output_tree=hash_a, plan_content="Create A", summary_override="Plan A"
         )
 
         # 验证初始状态
@@ -34,19 +31,19 @@ class TestDeduplication:
             input_tree=hash_a,
             output_tree=hash_a,  # Same as input!
             plan_content="Read A (No Change)",
-            summary_override="Plan B (Idempotent)"
+            summary_override="Plan B (Idempotent)",
         )
 
         # 3. 验证
         # 图谱中应该有两个节点
         assert len(engine.history_graph) == 2
-        
+
         # 验证最新的节点
         assert node_b.commit_hash != node_a.commit_hash
         assert node_b.input_tree == hash_a
         assert node_b.output_tree == hash_a
         assert node_b.node_type == "plan"
-        
+
         # 验证父子关系
         assert node_b.parent == node_a
         assert node_a.children == [node_b]
