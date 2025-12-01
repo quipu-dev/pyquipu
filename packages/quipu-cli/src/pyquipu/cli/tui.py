@@ -35,7 +35,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
 
     BINDINGS = [
         Binding("q", "quit", "退出"),
-        Binding("c", "checkout_node", "检出节点"),
+        Binding("space", "checkout_node", "检出节点"),
         Binding("enter", "checkout_node", "检出节点"),
         Binding("v", "toggle_view", "切换内容视图"),
         Binding("m", "toggle_markdown", "切换 Markdown 渲染"),
@@ -149,7 +149,7 @@ class QuipuUiApp(App[Optional[UiResult]]):
     def action_dump_content(self) -> None:
         selected_node = self.view_model.get_selected_node()
         if selected_node:
-            content = self.view_model.get_content_bundle(selected_node)
+            content = self.view_model.get_public_content(selected_node)
             self.exit(result=("dump", content))
 
     def action_previous_page(self) -> None:

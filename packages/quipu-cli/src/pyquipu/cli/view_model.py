@@ -105,6 +105,12 @@ class GraphViewModel:
     def get_selected_node(self) -> Optional[QuipuNode]:
         return self.current_selected_node
 
+    def get_public_content(self, node: QuipuNode) -> str:
+        """
+        仅获取节点的公共内容 (content.md)。
+        """
+        return self.reader.get_node_content(node) or ""
+
     def previous_page(self) -> List[QuipuNode]:
         """加载上一页的数据。"""
         return self.load_page(self.current_page - 1)
