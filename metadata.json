@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] feat: 创建 pyquipu-application 包基础设施", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764568971.635381, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor: 迁移核心逻辑到应用包并解耦 UI", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764569286.3168583, "duration_ms": 0}}

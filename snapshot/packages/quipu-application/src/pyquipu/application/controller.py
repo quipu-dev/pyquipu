@@ -1,7 +1,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import List
+from typing import Callable, List
 
 from pyquipu.acts import register_core_acts
 from pyquipu.engine.state_machine import Engine
@@ -13,24 +13,13 @@ from pyquipu.runtime.parser import detect_best_parser, get_parser
 
 from .factory import create_engine
 from .plugin_manager import PluginManager
-from .ui_utils import prompt_for_confirmation
 
 logger = logging.getLogger(__name__)
 
-
-def confirmation_handler_for_executor(diff_lines: List[str], prompt: str) -> bool:
-    """
-    为 Executor 的确认处理器契约提供的适配器。
-    它调用统一的提示器，并在用户取消时抛出异常。
-    对于 'run' 操作，默认行为是继续，除非用户按下 'n'。
-    """
-    # 原始逻辑是 `char.lower() != "n"`，这相当于默认为 True
-    confirmed = prompt_for_confirmation(prompt=prompt, diff_lines=diff_lines, default=True)
-    if not confirmed:
-        raise OperationCancelledError("User cancelled the operation.")
-    # 执行器的处理器不使用布尔返回值，它依赖于异常。
-    # 但为保持契约一致性，我们返回 True。
-    return True
+# 定义 ConfirmationHandler 类型别名: (diff_lines, prompt) -> bool
+# 注意: Executor 期望如果不确认则抛出异常，或者返回 False (取决于 Executor 实现)。
+# 为了保持与 CLI 行为一致，调用方传入的 handler 应该在用户拒绝时抛出 OperationCancelledError。
+ConfirmationHandler = Callable[[List[str], str], bool]
 
 
 class QuipuApplication:
@@ -39,8 +28,9 @@ class QuipuApplication:
     负责协调 Engine, Parser, Executor。
     """
 
-    def __init__(self, work_dir: Path, yolo: bool = False):
+    def __init__(self, work_dir: Path, confirmation_handler: ConfirmationHandler, yolo: bool = False):
         self.work_dir = work_dir
+        self.confirmation_handler = confirmation_handler
         self.yolo = yolo
         self.engine: Engine = create_engine(work_dir)
         logger.info(f"Operation boundary set to: {self.work_dir}")
@@ -72,12 +62,12 @@ class QuipuApplication:
             return current_hash
 
     def _setup_executor(self) -> Executor:
-        """创建、配置并返回一个 Executor 实例，并注入 UI 依赖。"""
+        """创建、配置并返回一个 Executor 实例，并注入确认处理器。"""
 
         executor = Executor(
             root_dir=self.work_dir,
             yolo=self.yolo,
-            confirmation_handler=confirmation_handler_for_executor,
+            confirmation_handler=self.confirmation_handler,
         )
 
         # 加载核心 acts
@@ -143,7 +133,13 @@ class QuipuApplication:
         return QuipuResult(success=True, exit_code=0, message="run.success")
 
 
-def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: bool = False) -> QuipuResult:
+def run_quipu(
+    content: str,
+    work_dir: Path,
+    confirmation_handler: ConfirmationHandler,
+    parser_name: str = "auto",
+    yolo: bool = False
+) -> QuipuResult:
     """
     Quipu 核心业务逻辑的入口包装器。
 
@@ -152,7 +148,7 @@ def run_quipu(content: str, work_dir: Path, parser_name: str = "auto", yolo: boo
     """
     app = None
     try:
-        app = QuipuApplication(work_dir=work_dir, yolo=yolo)
+        app = QuipuApplication(work_dir=work_dir, confirmation_handler=confirmation_handler, yolo=yolo)
         return app.run(content=content, parser_name=parser_name)
 
     except OperationCancelledError as e:
