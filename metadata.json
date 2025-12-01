@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 修复 `cli` 包因重构造成的内部依赖损坏", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764566340.2387927, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] chore: 将 `application` 包集成到构建与安装脚本", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764566433.248886, "duration_ms": 0}}

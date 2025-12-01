@@ -16,6 +16,7 @@ PACKAGES = [
     "packages/quipu-common",
     "packages/quipu-engine",
     "packages/quipu-runtime",
+    "packages/quipu-application",
     "packages/quipu-cli",
 ]
 
