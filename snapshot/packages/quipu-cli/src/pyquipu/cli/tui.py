@@ -231,6 +231,22 @@ class QuipuUiApp(App[Optional[UiResult]]):
     def _get_node_summary(self, node: QuipuNode) -> str:
         return node.summary or "No description"
 
+    def _update_loading_preview(self):
+        """A lightweight method to only update header/placeholder text."""
+        node = self.view_model.get_selected_node()
+        if not node:
+            return
+
+        # Update header and placeholder text
+        self.query_one("#content-header", Static).update(
+            f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
+        )
+
+        # Always get the full content bundle for consistent information display.
+        # The Static widget is in markup=False mode, so it's fast and safe.
+        content_bundle = self.view_model.get_content_bundle(node)
+        self.query_one("#content-placeholder", Static).update(content_bundle)
+
     def _focus_current_node(self, table: DataTable):
         current_output_tree_hash = self.view_model.current_output_tree_hash
         logger.debug(f"DEBUG: Attempting focus. HEAD={current_output_tree_hash}")
@@ -276,22 +292,6 @@ class QuipuUiApp(App[Optional[UiResult]]):
         except Exception as e:
             logger.error(f"DEBUG: Failed to focus current node: {e}", exc_info=True)
 
-    def _update_loading_preview(self):
-        """A lightweight method to only update header/placeholder text."""
-        node = self.view_model.get_selected_node()
-        if not node:
-            return
-
-        # Update header and placeholder text
-        self.query_one("#content-header", Static).update(
-            f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
-        )
-
-        # Always get the full content bundle for consistent information display.
-        # The Static widget is in markup=False mode, so it's fast and safe.
-        content_bundle = self.view_model.get_content_bundle(node)
-        self.query_one("#content-placeholder", Static).update(content_bundle)
-
     def _set_state(self, new_state: ContentViewSate):
         # Allow re-entering SHOWING_CONTENT to force a re-render after toggling markdown
         if self.content_view_state == new_state and new_state != ContentViewSate.SHOWING_CONTENT:
@@ -313,15 +313,25 @@ class QuipuUiApp(App[Optional[UiResult]]):
             case ContentViewSate.LOADING:
                 container.set_class(True, "split-mode")
 
-                # Perform lightweight text updates
-                self._update_loading_preview()
+                # --- 1. 获取即时数据 (Get immediate data) ---
+                node = self.view_model.get_selected_node()
+                content_bundle = self.view_model.get_content_bundle(node) if node else ""
 
-                # Perform heavy, one-time visibility setup
+                if node:
+                    self.query_one("#content-header", Static).update(
+                        f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
+                    )
+
+                # --- 2. 更新并显示预览 (Update and show preview) ---
+                # 将纯文本内容更新到 Static 组件，并确保其可见
+                placeholder_widget.update(content_bundle)
                 placeholder_widget.display = True
-                markdown_widget.display = False
-                markdown_widget.update("")  # Prevent ghosting
 
-                # Start timer for next state transition
+                # 确保 Markdown 组件不可见 (后台)
+                markdown_widget.display = False
+                markdown_widget.update("")  # 清理旧内容防止鬼影
+
+                # --- 3. 启动防抖计时器 (Start debounce timer) ---
                 self.update_timer = self.set_timer(self.debounce_delay_seconds, self._on_timer_finished)
 
             case ContentViewSate.SHOWING_CONTENT:
@@ -330,16 +340,21 @@ class QuipuUiApp(App[Optional[UiResult]]):
 
                 if node:
                     content = self.view_model.get_content_bundle(node)
-                    # Update header
                     self.query_one("#content-header", Static).update(
                         f"[{node.node_type.upper()}] {node.short_hash} - {node.timestamp}"
                     )
 
                     if self.markdown_enabled:
+                        # --- 1. 在后台更新 Markdown (Update Markdown in background) ---
+                        # 关键：此时 Markdown 组件仍然是 display=False
                         markdown_widget.update(content)
-                        placeholder_widget.display = False
+
+                        # --- 2. 原子化切换视图 (Atomic switch) ---
+                        # update() 完成后，瞬时切换显隐状态
                         markdown_widget.display = True
+                        placeholder_widget.display = False
                     else:
+                        # Raw text mode
                         placeholder_widget.update(content)
                         placeholder_widget.display = True
                         markdown_widget.display = False
@@ -362,9 +377,12 @@ class QuipuUiApp(App[Optional[UiResult]]):
             self._set_state(ContentViewSate.LOADING)
 
         elif self.content_view_state == ContentViewSate.LOADING:
-            # Already loading, just do a lightweight update and restart timer
-            self._update_loading_preview()
-            self.update_timer = self.set_timer(self.debounce_delay_seconds, self._on_timer_finished)
+            # Already loading, just restart timer.
+            # The preview is already updated by the previous transition or will be updated
+            # if we trigger a new state transition. Since we are in LOADING, we might want
+            # to refresh the preview text if the user moves fast.
+            # Re-invoking _set_state(LOADING) handles the text update efficiently.
+            self._set_state(ContentViewSate.LOADING)
 
     def _on_timer_finished(self) -> None:
         """Callback for the debounce timer."""

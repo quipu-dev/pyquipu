@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(cli): 优化 TUI 内容视图的加载和渲染逻辑", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764555530.724486, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor: 优化 TUI 内容渲染的“双缓冲”机制", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1764555659.3082483, "duration_ms": 0}}
