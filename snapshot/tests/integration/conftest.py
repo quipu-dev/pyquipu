@@ -32,7 +32,7 @@ def sync_test_environment(tmp_path_factory):
     (user_a_path / "README.md").write_text("Initial commit")
     run_git_command(user_a_path, ["add", "README.md"])
     run_git_command(user_a_path, ["commit", "-m", "Initial commit"])
-    run_git_command(user_a_path, ["push", "origin", "master"])
+    run_git_command(user_a_path, ["push", "origin", "HEAD"])
     run_git_command(user_b_path, ["pull"])
 
     return remote_path, user_a_path, user_b_path
