@@ -31,7 +31,7 @@ class RegexBlockParser(BaseParser):
         # 匹配：行首 + 3个及以上字符 + 可选语言标记 + 行尾
         # capture group 1: fence (e.g. "~~~~")
         # capture group 2: lang (e.g. "python")
-        self.start_pattern = re.compile(rf"^({re.escape(fence_char)}{{3,}})(\w*)\s*$", re.MULTILINE)
+        self.start_pattern = re.compile(rf"^({re.escape(fence_char)}{{3,}})(\w*(?:\.\w+)*)\s*$", re.MULTILINE)
 
     def parse(self, text: str) -> List[Statement]:
         statements: List[Statement] = []
