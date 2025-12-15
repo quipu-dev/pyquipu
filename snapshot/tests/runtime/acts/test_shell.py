@@ -57,7 +57,7 @@ class TestShellActs:
 
     def test_run_command_stderr(self, executor: Executor, mock_runtime_bus):
         # 构造一个向 stderr 输出的命令
-        cmd = 'python3 -c "import sys; print(\'error msg\', file=sys.stderr)"'
+        cmd = "python3 -c \"import sys; print('error msg', file=sys.stderr)\""
 
         func, _, _ = executor._acts["run_command"]
         ctx = ActContext(executor)

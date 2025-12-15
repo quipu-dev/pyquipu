@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[COMMIT] feat(runtime): 支持带后缀的Markdown代码块语言标识符", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1765795365.9496088, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] style: 使用 ruff 格式化并检查全库代码", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1765795397.0503378, "duration_ms": 0}}
