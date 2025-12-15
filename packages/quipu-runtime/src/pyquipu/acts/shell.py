@@ -21,7 +21,7 @@ def _run_command(ctx: ActContext, args: List[str]):
     if len(args) < 1:
         ctx.fail(bus.get("acts.error.missingArgs", act_name="run_command", count=1, signature="[command_string]"))
 
-    command = " ".join(args)
+    command = "\n".join(args)
 
     warning_msg = f"⚠️  即将执行系统命令:\n  $ {command}\n  (CWD: {ctx.root_dir})"
     ctx.request_confirmation(ctx.root_dir, "System State", warning_msg)
