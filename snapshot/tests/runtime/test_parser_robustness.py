@@ -29,11 +29,11 @@ std::cout << "plus";
         assert len(stmts) == 1
         stmt = stmts[0]
         assert stmt["act"] == "test_act"
-        
+
         # 验证是否捕获了所有上下文块
         # 如果 regex 失败，它会跳过无法匹配的头，导致上下文丢失
         assert len(stmt["contexts"]) == 3
-        
+
         assert 'print("dot")' in stmt["contexts"][0]
         assert 'print("hyphen")' in stmt["contexts"][1]
         assert 'std::cout << "plus";' in stmt["contexts"][2]
@@ -53,7 +53,7 @@ print("space")
 """
         parser = get_parser("backtick")
         stmts = parser.parse(text)
-        
+
         assert len(stmts) == 1
         assert len(stmts[0]["contexts"]) == 1
         assert 'print("space")' in stmts[0]["contexts"][0]
@@ -71,7 +71,7 @@ starts but never ends...
 """
         parser = get_parser("backtick")
         stmts = parser.parse(text)
-        
+
         # 解析器应该能提取出第一个有效的 act
         assert len(stmts) == 1
         assert stmts[0]["act"] == "valid"

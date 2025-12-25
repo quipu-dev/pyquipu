@@ -3,9 +3,7 @@ import argparse
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
-from typing import List
 
 # 配置
 ROOT_DIR = Path(__file__).parent

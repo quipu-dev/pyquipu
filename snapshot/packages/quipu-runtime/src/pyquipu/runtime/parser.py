@@ -20,7 +20,7 @@ class BaseParser(ABC):
 class StateBlockParser(BaseParser):
     """
     基于状态机的解析器。
-    
+
     设计目标：
     1. 健壮性：支持任意语言标签（如 python.old, c++, python-new）。
     2. 原真性：绝对保留块内的所有空白和缩进（这对 patch_file 至关重要）。
@@ -36,22 +36,22 @@ class StateBlockParser(BaseParser):
 
         # keepends=True 保留换行符，确保内容原样还原
         lines = text.splitlines(keepends=True)
-        
+
         in_block = False
-        current_fence = ""     # 记录开始时的围栏字符串（不含语言标签）
+        current_fence = ""  # 记录开始时的围栏字符串（不含语言标签）
         current_lang = ""
         block_content: List[str] = []
 
         for line in lines:
             stripped_line = line.strip()
-            
+
             if not in_block:
                 # --- 状态：寻找块的开始 ---
                 # 规则：以 fence_char 开头，至少 3 个字符
                 if stripped_line.startswith(self.fence_char * 3):
                     # 分离 fence 和 language tag
                     # 例如: "~~~~ python.old" -> fence="~~~~", lang="python.old"
-                    
+
                     # 计算 fence 长度
                     fence_len = 0
                     for char in stripped_line:
@@ -59,7 +59,7 @@ class StateBlockParser(BaseParser):
                             fence_len += 1
                         else:
                             break
-                    
+
                     # 提取元数据
                     fence_str = stripped_line[:fence_len]
                     lang_str = stripped_line[fence_len:].strip()
@@ -80,10 +80,10 @@ class StateBlockParser(BaseParser):
                 if stripped_line == current_fence:
                     # 块结束
                     in_block = False
-                    
+
                     # 处理收集到的内容
                     full_content = "".join(block_content)
-                    
+
                     # 如果内容末尾有换行符（通常都有），且它是因为上一行内容自带的，我们保留。
                     # 但如果是空块，或者为了符合直觉，通常不处理。
                     # 在这里我们保持最原始的数据，但在 splitlines 时最后一行通常带有 \n。
@@ -93,7 +93,7 @@ class StateBlockParser(BaseParser):
                     # 我们这里做一个微调：如果最后一行以 \n 结尾，我们可以选择去掉它，
                     # 使得 ```text\nA\n``` 解析为 "A\n" 而不是 "A\n"。
                     # 这取决于 splitlines 的行为。
-                    
+
                     # 这里采用一个实用策略：strip 掉尾部的一个换行符。
                     if full_content.endswith("\n"):
                         full_content = full_content[:-1]
@@ -109,7 +109,7 @@ class StateBlockParser(BaseParser):
                         # 上下文块：追加到当前语句
                         if current_statement is not None:
                             current_statement["contexts"].append(full_content)
-                    
+
                     # 重置状态
                     current_fence = ""
                     current_lang = ""
