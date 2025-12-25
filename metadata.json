@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor: 实现保留原始空白的状态机解析器", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766658869.7933202, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: 修正测试用例中的解析器类型不匹配", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766658953.401484, "duration_ms": 0}}

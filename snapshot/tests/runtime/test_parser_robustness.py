@@ -51,7 +51,7 @@ test_act
 print("space")
 ```
 """
-        parser = get_parser("tilde")
+        parser = get_parser("backtick")
         stmts = parser.parse(text)
         
         assert len(stmts) == 1
@@ -69,7 +69,7 @@ valid
 ```unclosed
 starts but never ends...
 """
-        parser = get_parser("tilde")
+        parser = get_parser("backtick")
         stmts = parser.parse(text)
         
         # 解析器应该能提取出第一个有效的 act
