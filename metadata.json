@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: 采用别名模式修复元包构建问题", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766659517.5398116, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] chore(build): Simplify install script to use workspace resolver", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766659642.6562462, "duration_ms": 0}}
