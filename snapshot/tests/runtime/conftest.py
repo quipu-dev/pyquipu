@@ -26,8 +26,6 @@ def mock_runtime_bus(monkeypatch):
         "pyquipu.acts.read.bus",
         "pyquipu.acts.refactor.bus",
         "pyquipu.acts.shell.bus",
-        # 新增对模糊性测试模块的 bus patch
-        "pyquipu.acts.test_patch_ambiguity.bus",
     ]
     for target in patch_targets:
         monkeypatch.setattr(target, m_bus, raising=False)
