@@ -1,116 +1,97 @@
-你提出了一个非常关键的开发者体验 (DX) 优化点。在 Monorepo 结构中，如果不能通过一条命令建立起完整的开发环境，将会极大地增加新贡献者的上手难度和日常开发的复杂度。
+你提出了一个绝佳的问题，这正是我之前分析的疏漏之处。你的观察是完全正确的，`Cascade` 项目采用了一种更优雅、更专业的模式，我们应该效仿它。
 
-你提供的 `Cascade` 项目是一个完美的参考。它采用了标准的“伞形包 (Umbrella Package)”模式：
+非常感谢你的指正。
 
-1.  **根 `pyproject.toml` 作为入口**: 项目根目录的 `pyproject.toml` 定义了一个名为 `cascade` 的元包。
-2.  **`[dev]` 可选依赖**: 这个元包通过 `[project.optional-dependencies]` 定义了一个 `dev` 组。
-3.  **依赖聚合**: `dev` 组不仅包含了 `pytest`, `ruff` 等通用开发工具，还**显式地包含了工作区内的所有其他本地包** (如 `"cascade-application"`, `"cascade-provider-ipfs"`)。
+`Cascade` 的实现方式解析
 
-当你运行 `uv pip install -e .[dev]` 时，`uv` 会：
-1.  安装 `cascade` 这个元包。
-2.  解析 `[dev]` 组，安装所有列出的开发工具。
-3.  因为 `dev` 组也依赖于工作区内的其他包，`uv` 会自动找到这些本地包，解析它们各自的 `dependencies`，并将它们全部以可编辑模式安装。
+让我们重新审视 `Cascade` 的根 `pyproject.toml` 文件：
 
-这正是我们 `pyquipu` 项目所需要的。我们将完全复制这个模式。
+```toml
+[project]
+name = "cascade"
+...
 
-## [WIP] chore: 聚合开发依赖到根 pyproject.toml
+[tool.hatch.build.targets.wheel]
+packages = ["packages/cascade-sdk/src/cascade"]
+```
+
+这里的关键在于 `[tool.hatch.build.targets.wheel]` 部分。它并没有在根目录创建一个空的 `cascade` 文件夹，而是做了一件更聪明的事：它告诉构建工具 `hatchling`，“当你构建名为 `cascade` 的这个顶层包时，请不要在根目录寻找源码。请直接去 `packages/cascade-sdk/src/cascade` 目录，把那里的内容作为这个顶层包的源码来打包。”
+
+**换句话说，`cascade` 这个元包，其代码内容实际上是 `cascade-sdk` 这个核心包的别名或“再导出”。**
+
+这种方法的优点是：
+1.  **根目录保持干净**：不需要为了满足构建工具而创建无意义的空目录。
+2.  **语义更清晰**：顶层包 `cascade` 不再只是一个依赖容器，它直接代表了项目最核心的 SDK 部分，用户 `import cascade` 时，导入的就是 `cascade-sdk` 的内容。
+
+应用到 `pyquipu`
+
+我们完全可以也应该采用这种模式。在我们的项目中，`pyquipu-runtime` 是最核心、最可能被当作库来使用的部分。因此，我们可以将它指定为顶层 `pyquipu` 包的源码来源。
+
+我将生成一个新计划，它会撤销我之前的错误建议，并采用这种更优的策略。
+
+## [WIP] fix: 采用别名模式修复元包构建问题
+
+### 错误分析
+之前的计划错误地建议在根目录创建一个空的 `pyquipu` 目录来满足构建工具 `hatchling`。正确的、更优雅的做法是效仿 `Cascade` 项目，通过在根 `pyproject.toml` 中配置 `[tool.hatch.build.targets.wheel]`，将一个核心子包（如 `pyquipu-runtime`）的源码路径指定为顶层元包的源码来源。
 
 ### 用户需求
-修改项目配置，使得开发者可以通过在项目根目录运行 `uv pip install -e .[dev]` 一条命令，安装所有 `packages/*` 子包及其依赖，以及所有用于测试和代码检查的开发工具。
+修正项目配置，使得 `uv pip install -e .[dev]` 能够成功构建，且无需在项目根目录创建额外的、无用的源码目录。
 
 ### 评论
-这是一个至关重要的 DX 改进，它将开发环境的搭建过程从一系列零散的步骤（可能包括手动安装各个包、安装 `dev-requirements.txt`）简化为一条标准的、确定性的命令。这使得环境搭建更快、更可靠，并为自动化 CI 流程奠定了坚实的基础。
+这是一个关键的认知修正。通过将核心子包“提升”为顶层包的实现，我们不仅解决了构建问题，还优化了项目结构和语义，使其更加专业和整洁。这完美体现了从优秀项目中学习并应用最佳实践的重要性。
 
 ### 目标
-1.  修改根目录的 `pyproject.toml` 文件，使其成为一个聚合所有子包的“伞形包”。
-2.  在根 `pyproject.toml` 中定义一个 `[project.optional-dependencies]`，其中包含一个 `dev` 组。
-3.  将 `dev-requirements.txt` 中的所有内容迁移到 `dev` 组中。
-4.  将所有本地 `packages/*` 也作为依赖项添加到 `dev` 组中。
-5.  删除现在已经冗余的 `dev-requirements.txt` 文件。
+1.  **（清理）** 删除在上一计划中可能已创建的 `pyquipu` 目录。
+2.  修改根 `pyproject.toml` 文件，添加 `[tool.hatch.build.targets.wheel]` 配置。
+3.  在该配置中，将 `packages` 指向 `pyquipu-runtime` 的源码目录：`packages/quipu-runtime/src/pyquipu`。
 
 ### 基本原理
-我们将遵循 `Cascade` 项目的最佳实践。通过在根 `pyproject.toml` 中定义一个全面的 `[dev]` 依赖组，我们为 `uv` 提供了一个单一的、权威的入口点来理解整个项目的开发依赖图。这利用了 `uv` 对 monorepo 工作区的原生支持，实现了依赖的集中管理和一键安装。
+我们不再创建一个新的、空的包，而是告诉 `hatchling`：“`pyquipu` 这个包的代码，就是 `packages/quipu-runtime/src/pyquipu` 里面的代码”。这样，当 `uv` 构建 `pyquipu` 时，它会找到正确的源码并成功打包，同时 `dev` 依赖也能被正确解析和安装。
 
 ### 标签
-#intent/tooling #flow/ready #priority/high #comp/build #scope/dx #ai/instruct #task/domain/build #task/object/dependency-management #task/action/centralize #task/state/begin
+#intent/fix #flow/ready #priority/critical #comp/build #scope/dx #ai/instruct #task/domain/build #task/object/dependency-management #task/action/reconfigure #task/state/continue
 
 ---
 ### Script
 
-#### Acts 1: 改造根 pyproject.toml
+#### Acts 1: （清理）移除之前错误的目录
 
-我们将修改根 `pyproject.toml`，重命名项目，并添加包含所有开发依赖的 `[dev]` 组。
+为了确保幂等性，我们先删除上一计划可能创建的空目录。如果目录不存在，此命令也不会报错。
+
+~~~~~act
+run_command
+~~~~~
+~~~~~bash
+rm -rf pyquipu
+~~~~~
+
+#### Acts 2: 采用别名模式配置 Hatchling 构建目标
+
+现在，我们修改 `pyproject.toml`，采用 `Cascade` 的优雅模式。
 
 ~~~~~act
 patch_file
 pyproject.toml
 ~~~~~
 ~~~~~toml.old
-[project]
-name = "pyquipu-monorepo"
-version = "0.1.0"
-description = "Quipu Development Monorepo"
-requires-python = ">=3.10"
-dependencies = []
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.uv]
-# 将 packages 下的所有包纳入工作区管理
-workspace.members = ["packages/*", "packages/quipu-common"]
+[tool.ruff]
 ~~~~~
 ~~~~~toml.new
-[project]
-name = "pyquipu"
-version = "0.1.0"
-description = "Quipu Development Monorepo"
-requires-python = ">=3.10"
-dependencies = [
-    "pyquipu-application",
-    "pyquipu-cli",
-    "pyquipu-common",
-    "pyquipu-engine",
-    "pyquipu-interfaces",
-    "pyquipu-runtime",
-]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[project.optional-dependencies]
-dev = [
-    # Local workspace packages
-    "pyquipu-application",
-    "pyquipu-cli",
-    "pyquipu-common",
-    "pyquipu-engine",
-    "pyquipu-interfaces",
-    "pyquipu-runtime",
-    # Dev tools
-    "pytest",
-    "pytest-cov",
-    "pytest-timeout",
-    "ruff",
-    "pre-commit"
-]
+[tool.hatch.build.targets.wheel]
+# 告诉 hatchling，顶层 pyquipu 包的源码来自于 quipu-runtime 子包
+packages = ["packages/quipu-runtime/src/pyquipu"]
 
-[tool.uv]
-# 将 packages 下的所有包纳入工作区管理
-workspace.members = ["packages/*"]
-
-[tool.uv.sources]
-pyquipu-application = { workspace = true }
-pyquipu-cli = { workspace = true }
-pyquipu-common = { workspace = true }
-pyquipu-engine = { workspace = true }
-pyquipu-interfaces = { workspace = true }
-pyquipu-runtime = { workspace = true }
-~~~~~
-
-#### Acts 2: 删除冗余的依赖文件
-
-`dev-requirements.txt` 的职责已经被 `pyproject.toml` 完全接管，我们将其删除以避免混淆。
-
-~~~~~act
-delete_file
-dev-requirements.txt
+[tool.ruff]
 ~~~~~
 
 ### 下一步建议
 请执行此计划。
-完成后，建议在一个**干净的虚拟环境**中运行 `uv pip install -e ".[dev]"`。然后可以通过 `uv pip list` 来验证是否所有的 `pyquipu-*` 包和开发工具（如 `pytest`）都已成功安装。
+完成后，请在一个干净的虚拟环境中再次运行 `uv pip install -e ".[dev]"`。这一次，构建应该会顺利通过，并且你的项目根目录会保持干净，不会有额外的 `pyquipu` 文件夹。
