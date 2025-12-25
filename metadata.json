@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] fix: Ensure patch_file fails on ambiguous content", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766657986.8200028, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor: 采用状态机解析器以支持复杂语言标签", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1766658571.6563213, "duration_ms": 0}}

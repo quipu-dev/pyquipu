@@ -51,3 +51,8 @@ def isolated_vault(executor: Executor) -> Path:
     提供 Executor 实例的根工作目录。
     """
     return executor.root_dir
+
+
+def pytest_configure(config):
+    """注册自定义标记以消除警告"""
+    config.addinivalue_line("markers", "timeout(seconds): kill test after a certain time")
