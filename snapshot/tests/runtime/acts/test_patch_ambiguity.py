@@ -5,12 +5,9 @@ from pyquipu.runtime.executor import Executor
 
 
 class TestPatchAmbiguity:
-    def test_patch_file_modifies_first_occurrence_on_ambiguous_content(self, executor: Executor, isolated_vault):
+    def test_patch_file_fails_on_ambiguous_multiline_content(self, executor: Executor, isolated_vault):
         """
-        这个测试验证了当前 patch_file 的错误行为。
-        当存在重复内容时，它总是修改第一个，这可能不是用户的意图。
-        这个测试在当前实现下会通过，但它暴露了逻辑缺陷。
-        后续的修复会让这个测试失败，并代之以一个检查唯一性的新测试。
+        验证当一个多行的 `old_str` 在文件中有多个匹配时，操作会失败。
         """
         content = """
 def function_a():
@@ -30,31 +27,15 @@ def function_b():
     # It serves as an anchor.
     print("hello")"""
 
-        new_str = """    # This block has been modified.
-    # The anchor is now different.
-    print("world")"""
+        new_str = """    # This block has been modified."""
 
-        # 执行 patch
-        patch_func, _, _ = executor._acts["patch_file"]
-        ctx = ActContext(executor)
-        patch_func(ctx, [str(target_file), old_str, new_str])
+        with pytest.raises(ExecutionError, match="acts.basic.error.patchContentAmbiguous"):
+            patch_func, _, _ = executor._acts["patch_file"]
+            ctx = ActContext(executor)
+            patch_func(ctx, [str(target_file), old_str, new_str])
 
-        # 读取修改后的内容
-        final_content = target_file.read_text()
-
-        # 预期（错误）结果：第一个函数被修改，第二个不变
-        expected_wrong_content = """
-def function_a():
-    # This block has been modified.
-    # The anchor is now different.
-    print("world")
-
-def function_b():
-    # This is a unique block of text.
-    # It serves as an anchor.
-    print("hello")
-"""
-        assert final_content.strip() == expected_wrong_content.strip()
+        # 验证文件未被修改
+        assert target_file.read_text() == content
 
     def test_patch_file_should_fail_on_ambiguous_content(self, executor: Executor, isolated_vault):
         """

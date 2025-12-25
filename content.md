@@ -1,72 +1,163 @@
-你完全正确，我的疏忽导致了这个错误。非常抱歉！
+Excellent. We have successfully established the "Red" state of our TDD cycle. The failing test confirms the bug's existence and gives us a clear target.
 
-这个 `ImportError` 是我一手造成的。我在更新 `conftest.py` 时犯了一个根本性的错误：我试图为一个*测试文件* (`test_patch_ambiguity.py`) 创建一个模块路径补丁 (`pyquipu.acts.test_patch_ambiguity`)。
+Now, we move to the "Green" state. I will generate a plan to modify the `patch_file` implementation to perform a uniqueness check. Simultaneously, I will update the test suite to reflect this new, correct behavior, ensuring our tests accurately describe a robust system.
 
-测试文件是用来*调用*和*测试*你的应用代码的，它本身并不属于 `pyquipu.acts` 这个包。因此，Python 找不到这个模块，因为它根本就不存在于那个命名空间里。真正需要被 mock 的 `bus` 位于 `pyquipu.acts.basic` 模块中，而这个路径已经在 `patch_targets` 列表里了。我添加的那一行是多余且错误的。
-
-我将立即生成一个计划来修正这个问题。
-
-## [WIP] fix: 修复 conftest.py 中错误的 bus 补丁路径
+## [WIP] fix: Ensure patch_file fails on ambiguous content
 
 ### 错误分析
-根本原因是在 `tests/runtime/conftest.py` 文件中，为 `mock_runtime_bus` 的 `patch_targets` 列表增加了一个不存在的模块路径 `pyquipu.acts.test_patch_ambiguity.bus`。测试文件 `test_patch_ambiguity.py` 是测试代码，不属于 `pyquipu` 应用包的一部分，因此 Python 无法将其作为模块导入，导致 `ImportError`。`_patch_file` 函数实际使用的 `bus` 实例位于 `pyquipu.acts.basic` 模块，该模块已经被正确地 patch 了，因此无需任何额外配置。
+当前 `_patch_file` 的实现盲目地使用 `content.replace(old_str, new_str, 1)`，这总是替换第一个出现的匹配项，而没有检查文件中是否存在多个相同的 `old_str` 实例。这违反了补丁操作应有的确定性和安全性原则，可能导致在非预期位置进行修改。
 
 ### 用户需求
-修正上一计划引入的 `ImportError`，以便新创建的测试用例能够正常运行（并按预期失败）。
+修改 `patch_file` 的核心逻辑，使其在执行替换前，必须验证 `old_str` 在目标文件中的匹配项是否**唯一**。如果匹配项为零或多于一个，操作必须失败并报告错误，而不是进行不确定的修改。
 
 ### 评论
-这是一个典型的路径配置错误，它完全阻塞了我们的 TDD 流程。修正这个低级错误是继续进行功能修复的前提。感谢你捕捉到这个问题。
+这是一个关键的健壮性修复。强制要求补丁的唯一性可以从根本上消除一整类难以察觉的、危险的 bug。这使得 `patch_file` 成为一个更可靠、更值得信赖的自动化工具，完全符合 `d3-principle-quipu-patch-strategy-D3-P1` 的精神。
 
 ### 目标
-1.  从 `tests/runtime/conftest.py` 中的 `patch_targets` 列表中移除错误的 `pyquipu.acts.test_patch_ambiguity.bus` 条目。
+1.  修改 `packages/quipu-runtime/src/pyquipu/acts/basic.py` 中的 `_patch_file` 函数。在新逻辑中，使用 `string.count()` 方法检查 `old_str` 的出现次数。如果计数不为 `1`，则通过 `ctx.fail` 抛出相应的错误。
+2.  修改 `tests/runtime/acts/test_patch_ambiguity.py` 中先前用于暴露错误行为的测试用例。将其从一个验证“修改第一个匹配项”的测试，重构为一个验证“在内容不唯一时抛出异常”的测试，使其与我们的新逻辑保持一致。
 
 ### 基本原理
-通过移除这个无效的补丁目标，`monkeypatch` 将不再尝试加载一个不存在的模块。这将解决 `ImportError`，使 `pytest` 能够成功加载并执行测试文件。执行后，我们应该能看到由业务逻辑缺陷（而不是配置错误）引起的预期测试失败。
+我们将采用“先检查，后执行”的策略。在 `_patch_file` 函数中，通过 `content.count(old_str)` 获取匹配数。
+-   如果 `count == 0`，抛出 `patchContentMismatch` 错误。
+-   如果 `count > 1`，抛出新的 `patchContentAmbiguous` 错误。
+-   只有当 `count == 1` 时，才执行 `content.replace()` 操作。
+
+相应的，我们重构测试用例 `test_patch_file_modifies_first_occurrence_on_ambiguous_content`，将其重命名并修改其断言逻辑，以确保它能正确测试这种多行文本下的模糊匹配失败场景。
 
 ### 标签
-#intent/fix #flow/ready #priority/critical #comp/tests #concept/config #scope/dx #ai/instruct #task/domain/testing #task/object/patch-ambiguity #task/action/bug-reproduction #task/state/continue
+#intent/fix #flow/ready #priority/high #comp/runtime #comp/tests #concept/executor #scope/core #ai/instruct #task/domain/testing #task/object/patch-ambiguity #task/action/implementation #task/state/continue
 
 ---
 ### Script
 
-#### Acts 1: 移除 conftest.py 中的错误路径
+#### Acts 1: 增强 `_patch_file` 的唯一性检查
 
-我们将精确地移除导致 `ImportError` 的那一行。
+我们将在 `basic.py` 中加入 `content.count()` 逻辑，以确保补丁的唯一性。
 
 ~~~~~act
 patch_file
-tests/runtime/conftest.py
+packages/quipu-runtime/src/pyquipu/acts/basic.py
 ~~~~~
 ~~~~~python
-    patch_targets = [
-        "pyquipu.runtime.executor.bus",
-        "pyquipu.runtime.plugin_loader.bus",
-        "pyquipu.acts.basic.bus",
-        "pyquipu.acts.check.bus",
-        "pyquipu.acts.git.bus",
-        "pyquipu.acts.memory.bus",
-        "pyquipu.acts.read.bus",
-        "pyquipu.acts.refactor.bus",
-        "pyquipu.acts.shell.bus",
-        # 新增对模糊性测试模块的 bus patch
-        "pyquipu.acts.test_patch_ambiguity.bus",
-    ]
+    if old_str not in content:
+        ctx.fail(bus.get("acts.basic.error.patchContentMismatch", path=raw_path))
+
+    new_content = content.replace(old_str, new_str, 1)
 ~~~~~
 ~~~~~python
-    patch_targets = [
-        "pyquipu.runtime.executor.bus",
-        "pyquipu.runtime.plugin_loader.bus",
-        "pyquipu.acts.basic.bus",
-        "pyquipu.acts.check.bus",
-        "pyquipu.acts.git.bus",
-        "pyquipu.acts.memory.bus",
-        "pyquipu.acts.read.bus",
-        "pyquipu.acts.refactor.bus",
-        "pyquipu.acts.shell.bus",
-    ]
+    match_count = content.count(old_str)
+    if match_count == 0:
+        ctx.fail(bus.get("acts.basic.error.patchContentMismatch", path=raw_path))
+    elif match_count > 1:
+        ctx.fail(bus.get("acts.basic.error.patchContentAmbiguous", path=raw_path, count=match_count))
+
+    new_content = content.replace(old_str, new_str, 1)
+~~~~~
+
+#### Acts 2: 更新测试用例以匹配新行为
+
+现在，我们将修正 `test_patch_ambiguity.py` 中的测试，使其正确地期望在内容模糊时操作失败。
+
+~~~~~act
+patch_file
+tests/runtime/acts/test_patch_ambiguity.py
+~~~~~
+~~~~~python
+class TestPatchAmbiguity:
+    def test_patch_file_modifies_first_occurrence_on_ambiguous_content(self, executor: Executor, isolated_vault):
+        """
+        这个测试验证了当前 patch_file 的错误行为。
+        当存在重复内容时，它总是修改第一个，这可能不是用户的意图。
+        这个测试在当前实现下会通过，但它暴露了逻辑缺陷。
+        后续的修复会让这个测试失败，并代之以一个检查唯一性的新测试。
+        """
+        content = """
+def function_a():
+    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")
+
+def function_b():
+    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")
+"""
+        target_file = isolated_vault / "source.py"
+        target_file.write_text(content)
+
+        old_str = """    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")"""
+
+        new_str = """    # This block has been modified.
+    # The anchor is now different.
+    print("world")"""
+
+        # 执行 patch
+        patch_func, _, _ = executor._acts["patch_file"]
+        ctx = ActContext(executor)
+        patch_func(ctx, [str(target_file), old_str, new_str])
+
+        # 读取修改后的内容
+        final_content = target_file.read_text()
+
+        # 预期（错误）结果：第一个函数被修改，第二个不变
+        expected_wrong_content = """
+def function_a():
+    # This block has been modified.
+    # The anchor is now different.
+    print("world")
+
+def function_b():
+    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")
+"""
+        assert final_content.strip() == expected_wrong_content.strip()
+
+    def test_patch_file_should_fail_on_ambiguous_content(self, executor: Executor, isolated_vault):
+~~~~~
+~~~~~python
+class TestPatchAmbiguity:
+    def test_patch_file_fails_on_ambiguous_multiline_content(self, executor: Executor, isolated_vault):
+        """
+        验证当一个多行的 `old_str` 在文件中有多个匹配时，操作会失败。
+        """
+        content = """
+def function_a():
+    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")
+
+def function_b():
+    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")
+"""
+        target_file = isolated_vault / "source.py"
+        target_file.write_text(content)
+
+        old_str = """    # This is a unique block of text.
+    # It serves as an anchor.
+    print("hello")"""
+
+        new_str = """    # This block has been modified."""
+
+        with pytest.raises(ExecutionError, match="acts.basic.error.patchContentAmbiguous"):
+            patch_func, _, _ = executor._acts["patch_file"]
+            ctx = ActContext(executor)
+            patch_func(ctx, [str(target_file), old_str, new_str])
+
+        # 验证文件未被修改
+        assert target_file.read_text() == content
+
+    def test_patch_file_should_fail_on_ambiguous_content(self, executor: Executor, isolated_vault):
 ~~~~~
 
 ### 下一步建议
 请执行此计划。完成后，请再次运行测试：`pytest tests/runtime/acts/test_patch_ambiguity.py`。
 
-这一次，`ImportError` 应该会消失。取而代之的是，你将看到 `test_patch_file_should_fail_on_ambiguous_content` 测试失败，因为它没有按预期抛出 `ExecutionError`。这将确认我们的 TDD "红灯" 已经正确建立，然后我们就可以进入 "绿灯" 阶段——修复 `patch_file` 的核心逻辑。
+这一次，两个测试应该都会**通过**。这标志着我们已经成功地修复了 bug 并更新了测试以保证其长期稳定性。
+
+之后，我将为你生成一个最终的 `[COMMIT]` 计划，用于将这些修改提交到版本控制中。
