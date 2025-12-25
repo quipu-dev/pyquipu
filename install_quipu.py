@@ -2,7 +2,6 @@
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 # --- 配置 ---
@@ -40,36 +39,14 @@ def create_venv(path: Path):
 
 
 def install_quipu_stable(env_path: Path):
-    """构建所有 Quipu 包的 Wheel 文件，并将其安装到指定环境"""
-    print("📦 正在构建并安装 Quipu (稳定版)...")
+    """利用 uv 工作区功能直接安装整个 Quipu 应用"""
+    print("📦 正在安装 Quipu...")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_path = Path(tmp_dir)
+    # uv 会自动识别工作区，并解析根 pyproject.toml 中的所有依赖项
+    install_cmd = ["uv", "pip", "install", "-p", str(env_path), str(ROOT_DIR)]
 
-        # 步骤 1: 将所有源码包构建为 .whl 文件
-        print("   -> 阶段 1/2: 编译源码包...")
-        for pkg in PACKAGES:
-            pkg_src_path = ROOT_DIR / pkg
-            if not pkg_src_path.exists():
-                print(f"❌ 错误: 找不到源码包目录 {pkg_src_path}")
-                sys.exit(1)
-
-            print(f"      - 正在编译 {pkg}...")
-            subprocess.run(
-                ["uv", "build", str(pkg_src_path), "--out-dir", str(tmp_path)],
-                check=True,
-                capture_output=True,
-            )
-
-        wheels = list(tmp_path.glob("*.whl"))
-        if not wheels:
-            print("❌ 错误: 未能生成任何 Wheel 文件，构建失败。")
-            sys.exit(1)
-
-        # 步骤 2: 将构建好的 .whl 文件安装到虚拟环境中
-        print(f"   -> 阶段 2/2: 正在将 {len(wheels)} 个组件安装到环境中...")
-        install_cmd = ["uv", "pip", "install", "-p", str(env_path)] + [str(w) for w in wheels]
-        subprocess.run(install_cmd, check=True, capture_output=True)
+    # 我们不捕获输出，这样用户可以看到 uv 的进度条
+    subprocess.run(install_cmd, check=True)
 
 
 def print_post_install_instructions(env_path: Path):

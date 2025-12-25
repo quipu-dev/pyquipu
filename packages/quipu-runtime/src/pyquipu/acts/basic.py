@@ -109,8 +109,11 @@ def _patch_file(ctx: ActContext, args: List[str]):
     except Exception as e:
         ctx.fail(bus.get("acts.basic.error.readFailed", path=raw_path, error=e))
 
-    if old_str not in content:
+    match_count = content.count(old_str)
+    if match_count == 0:
         ctx.fail(bus.get("acts.basic.error.patchContentMismatch", path=raw_path))
+    elif match_count > 1:
+        ctx.fail(bus.get("acts.basic.error.patchContentAmbiguous", path=raw_path, count=match_count))
 
     new_content = content.replace(old_str, new_str, 1)
 

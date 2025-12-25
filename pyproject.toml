@@ -1,13 +1,45 @@
 [project]
-name = "pyquipu-monorepo"
+name = "pyquipu"
 version = "0.1.0"
 description = "Quipu Development Monorepo"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "pyquipu-application",
+    "pyquipu-cli",
+    "pyquipu-common",
+    "pyquipu-engine",
+    "pyquipu-interfaces",
+    "pyquipu-runtime",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Local workspace packages
+    "pyquipu-application",
+    "pyquipu-cli",
+    "pyquipu-common",
+    "pyquipu-engine",
+    "pyquipu-interfaces",
+    "pyquipu-runtime",
+    # Dev tools
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "ruff",
+    "pre-commit"
+]
 
 [tool.uv]
 # 将 packages 下的所有包纳入工作区管理
-workspace.members = ["packages/*", "packages/quipu-common"]
+workspace.members = ["packages/*"]
+
+[tool.uv.sources]
+pyquipu-application = { workspace = true }
+pyquipu-cli = { workspace = true }
+pyquipu-common = { workspace = true }
+pyquipu-engine = { workspace = true }
+pyquipu-interfaces = { workspace = true }
+pyquipu-runtime = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra --cov=pyquipu --cov-report=term-missing"
@@ -22,6 +54,10 @@ pythonpath = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# 告诉 hatchling，顶层 pyquipu 包的源码来自于 quipu-runtime 子包
+packages = ["packages/quipu-runtime/src/pyquipu"]
 
 [tool.ruff]
 line-length = 120

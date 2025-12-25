@@ -132,6 +132,46 @@ class TestBasicActs:
         with pytest.raises(ExecutionError, match="acts.basic.error.fileNotFound"):
             append_func(ctx, ["ghost.txt", "content"])
 
+    def test_variable_lang_parser_recognition(self):
+        """测试解析器能够识别并捕获 python.old 或 python.new 等后缀语言块的内容"""
+        md_backtick_with_act = """
+```act
+my_test_act
+```
+```python.old
+old_code_content_here
+```
+```python.new
+new_code_content_here
+```
+"""
+        parser_backtick = BacktickParser()
+        stmts_backtick = parser_backtick.parse(md_backtick_with_act)
+        assert len(stmts_backtick) == 1
+        assert stmts_backtick[0]["act"] == "my_test_act"
+        assert len(stmts_backtick[0]["contexts"]) == 2
+        assert stmts_backtick[0]["contexts"][0].strip() == "old_code_content_here"
+        assert stmts_backtick[0]["contexts"][1].strip() == "new_code_content_here"
+
+        md_tilde_with_act = """
+~~~act
+another_test_act
+~~~
+~~~javascript.old
+console.log("old");
+~~~
+~~~javascript.new
+console.log("new");
+~~~
+"""
+        parser_tilde = TildeParser()
+        stmts_tilde = parser_tilde.parse(md_tilde_with_act)
+        assert len(stmts_tilde) == 1
+        assert stmts_tilde[0]["act"] == "another_test_act"
+        assert len(stmts_tilde[0]["contexts"]) == 2
+        assert stmts_tilde[0]["contexts"][0].strip() == 'console.log("old");'
+        assert stmts_tilde[0]["contexts"][1].strip() == 'console.log("new");'
+
 
 class TestHybridArgs:
     # These tests use executor.execute(), which correctly creates the context,
