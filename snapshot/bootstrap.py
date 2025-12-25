@@ -14,22 +14,6 @@ STABLE_DIR = ENVS_DIR / "stable"
 DEV_DIR = ENVS_DIR / "dev"
 
 
-def find_packages(root: Path) -> List[Path]:
-    """自动发现 packages 目录下的所有包"""
-    packages_dir = root / "packages"
-    found = []
-    if not packages_dir.is_dir():
-        return []
-    for pkg_path in packages_dir.iterdir():
-        if pkg_path.is_dir() and (pkg_path / "pyproject.toml").exists():
-            found.append(pkg_path)
-    print(f"🔍 自动发现 {len(found)} 个包: {[p.name for p in found]}")
-    return found
-
-
-PACKAGES = find_packages(ROOT_DIR)
-
-
 def check_uv():
     """检查 uv 是否安装"""
     if not shutil.which("uv"):
@@ -48,49 +32,19 @@ def create_venv(path: Path):
 
 
 def install_packages(env_path: Path, editable: bool):
-    """安装包到指定环境"""
-    if not PACKAGES:
-        print("⚠️  警告: 未在 packages/ 目录下发现任何包，跳过安装。")
-        return
-
-    # 1.如果是 Dev 环境：使用 -e 链接模式安装
+    """利用 uv 工作区功能，从根 pyproject.toml 安装包"""
     if editable:
-        print(f"📦 [Dev] 正在以可编辑模式(-e)安装到 {env_path.name}...")
-        pip_cmd = ["uv", "pip", "install", "-p", str(env_path), "pytest", "pytest-cov", "ruff", "pytest-timeout"]
-
-        pkg_args = []
-        for pkg_path in PACKAGES:
-            pkg_args.extend(["-e", str(pkg_path)])
-
-        subprocess.run(pip_cmd + pkg_args, check=True)
-
-    # 2.如果是 Stable 环境：先构建 Wheel，再安装 Wheel
+        print(f"📦 [Dev] 正在以可编辑模式安装开发环境到 {env_path.name}...")
+        # 安装根包的 [dev] 依赖项，它包含了所有子包和开发工具
+        # 使用 -e 确保所有本地包都是可编辑的
+        install_cmd = ["uv", "pip", "install", "-p", str(env_path), "-e", f"{ROOT_DIR}[dev]"]
     else:
-        print(f"📦 [Stable] 正在构建 Wheel 并安装到 {env_path.name} (完全隔离)...")
+        print(f"📦 [Stable] 正在安装生产环境到 {env_path.name}...")
+        # 直接安装根包，uv 会自动解析工作区内的子包依赖
+        install_cmd = ["uv", "pip", "install", "-p", str(env_path), str(ROOT_DIR)]
 
-        # 创建临时目录存放构建好的 .whl 文件
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp_path = Path(tmp_dir)
-
-            # 第一步：构建所有包的 Wheel
-            for pkg_src in PACKAGES:
-                print(f"   ⚙️  编译: {pkg_src.name} -> .whl")
-                subprocess.run(
-                    ["uv", "build", str(pkg_src), "--out-dir", str(tmp_path)],
-                    check=True,
-                    capture_output=True,
-                )
-
-            wheels = list(tmp_path.glob("*.whl"))
-            if not wheels:
-                print("❌ 错误: 未能生成 Wheel 文件")
-                sys.exit(1)
-
-            print(f"   📥 安装 {len(wheels)} 个 Wheel 文件...")
-
-            # 第二步：安装 Wheel
-            install_cmd = ["uv", "pip", "install", "-p", str(env_path)] + [str(w) for w in wheels]
-            subprocess.run(install_cmd, check=True, capture_output=True)
+    # 我们不捕获输出，这样用户可以看到 uv 的进度条
+    subprocess.run(install_cmd, check=True)
 
 
 def setup():
