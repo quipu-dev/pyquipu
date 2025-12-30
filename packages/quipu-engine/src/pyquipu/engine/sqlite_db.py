@@ -7,17 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
-    """
-    管理 SQLite 数据库连接和 Schema。
-    """
-
     def __init__(self, work_dir: Path):
         self.db_path = work_dir / ".quipu" / "history.sqlite"
         self.db_path.parent.mkdir(exist_ok=True)
         self._conn: Optional[sqlite3.Connection] = None
 
     def _get_conn(self) -> sqlite3.Connection:
-        """获取数据库连接，如果不存在则创建。"""
         if self._conn is None:
             try:
                 self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
@@ -31,21 +26,15 @@ class DatabaseManager:
         return self._conn
 
     def close(self):
-        """关闭数据库连接。"""
         if self._conn:
             self._conn.close()
             self._conn = None
             logger.debug("🗃️  数据库连接已关闭。")
 
     def __del__(self):
-        """析构函数，作为关闭连接的最后一道防线。"""
         self.close()
 
     def init_schema(self):
-        """
-        初始化数据库 Schema，如果表不存在则创建。
-        符合 QLDS v1.0 规范。
-        """
         conn = self._get_conn()
         try:
             with conn:
@@ -101,7 +90,6 @@ class DatabaseManager:
             raise
 
     def execute_write(self, sql: str, params: tuple = ()):
-        """执行写操作的通用方法。"""
         conn = self._get_conn()
         try:
             with conn:
@@ -111,7 +99,6 @@ class DatabaseManager:
             raise
 
     def get_all_node_hashes(self) -> Set[str]:
-        """获取数据库中所有节点的 commit_hash。"""
         conn = self._get_conn()
         try:
             cursor = conn.execute("SELECT commit_hash FROM nodes;")
@@ -121,7 +108,6 @@ class DatabaseManager:
             return set()
 
     def batch_insert_nodes(self, nodes: List[Tuple]):
-        """批量插入节点。"""
         conn = self._get_conn()
         sql = """
             INSERT OR IGNORE INTO nodes 
@@ -136,7 +122,6 @@ class DatabaseManager:
             raise
 
     def batch_insert_edges(self, edges: List[Tuple]):
-        """批量插入边。"""
         conn = self._get_conn()
         sql = "INSERT OR IGNORE INTO edges (child_hash, parent_hash) VALUES (?, ?)"
         try:

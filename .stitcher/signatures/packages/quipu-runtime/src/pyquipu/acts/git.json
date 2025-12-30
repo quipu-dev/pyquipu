@@ -1,0 +1,36 @@
+{
+  "_git_add": {
+    "baseline_code_signature_text": "def _git_add(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "acc173a84cb14620cb9151a2b84f778b90291f831349d8ddcbc97c0d04190b29",
+    "baseline_yaml_content_hash": "a59494c43c355d54a93f98da1a82bc7ec8f544e50690291136f8ced89dd909a5"
+  },
+  "_git_commit": {
+    "baseline_code_signature_text": "def _git_commit(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "4aaff9708e3cf2aedc7fa480477a39061c7cfdbb73177af0bde02e0ca7ee864a",
+    "baseline_yaml_content_hash": "435630c5fa246f8d994a836c8d90f9502a8deb760bddd7c7065f50a9736b8eb6"
+  },
+  "_git_init": {
+    "baseline_code_signature_text": "def _git_init(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "914caf13af3cb6a639a96cbf5c339132f3764f7e28172d3cf7b806ef185f5642",
+    "baseline_yaml_content_hash": "9b12b7ece40acd4aef940b2a9fd2d1b0dd46025ab3428a625ba066312d9e5523"
+  },
+  "_git_status": {
+    "baseline_code_signature_text": "def _git_status(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "0c7dc34d789f96fe973984f28167339ed1ad140c240597fb4d59230a5abe1159",
+    "baseline_yaml_content_hash": "eca244ab1f4b55d82cea191e07b04560f50f061647e01bd903f5126a2dddb8a8"
+  },
+  "_run_git_cmd": {
+    "baseline_code_signature_text": "def _run_git_cmd(ctx: ActContext, cmd_args: List[str]) -> str:",
+    "baseline_code_structure_hash": "578c8c820674310f791c1b934b21a97506df3b16afe32e057e2c0d5176af5009",
+    "baseline_yaml_content_hash": "5525afb220a9ce3cece24d05f66f0219da156fb74c0e8765d96f7b27ebbe1ebb"
+  },
+  "_summarize_commit": {
+    "baseline_code_signature_text": "def _summarize_commit(args: List[str], contexts: List[str]) -> str:",
+    "baseline_code_structure_hash": "a10b53c984403e40427719044705b1243996076c39f7b8e2d3d4b7c0d846220a"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "278d0a07191b863515a05426275244b1c687ead158719b73a4927058a5b99759"
+  }
+}

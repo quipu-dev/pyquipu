@@ -1,0 +1,12 @@
+"MessageBus": |-
+  The central service for all user-facing CLI output.
+"MessageBus.get": |-
+  Retrieves and formats a message string without rendering it.
+"MessageBus.set_renderer": |-
+  Injects a concrete renderer implementation.
+"MessageStore": |-
+  Loads and provides access to message templates from a JSON file.
+"MessageStore.get": |-
+  Retrieves a message template by its ID.
+"Renderer": |-
+  Protocol defining the interface for a message renderer.

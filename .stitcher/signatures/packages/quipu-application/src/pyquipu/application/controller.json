@@ -1,0 +1,29 @@
+{
+  "QuipuApplication": {
+    "baseline_yaml_content_hash": "24dd21a93390c26bf885fee07097a7980a5446e34269a37ee4379cef6f1eaa40"
+  },
+  "QuipuApplication.__init__": {
+    "baseline_code_signature_text": "def __init__(self, work_dir: Path, confirmation_handler: ConfirmationHandler, yolo: bool = False):",
+    "baseline_code_structure_hash": "b2ac0b22c850eed01f7838721b9a9040bba40f58237545f3f86d306fa4327f22"
+  },
+  "QuipuApplication._prepare_workspace": {
+    "baseline_code_signature_text": "def _prepare_workspace(self) -> str:",
+    "baseline_code_structure_hash": "528a79ec9be83b31b3016bc3a8c5492b13b106464c5bcdca495b4fae187b574d",
+    "baseline_yaml_content_hash": "25b56563f47841ccae3b934369ac94d6b2221ce328cebe30d15a7b0ca415fbdd"
+  },
+  "QuipuApplication._setup_executor": {
+    "baseline_code_signature_text": "def _setup_executor(self) -> Executor:",
+    "baseline_code_structure_hash": "2cccb8bc4e91794d693f8f3f1f9c53109587bcdd7f5b158ca72f92234e3d74cd",
+    "baseline_yaml_content_hash": "07fc6aa765d7894fbd24466f107606836457763fc605dc5f184ece4120b9739b"
+  },
+  "QuipuApplication.run": {
+    "baseline_code_signature_text": "def run(self, content: str, parser_name: str) -> QuipuResult:",
+    "baseline_code_structure_hash": "458e8779b9f0df2331eada9d10d5fa4fe729a00ed7a5fde70b771d9beb5bfa8b",
+    "baseline_yaml_content_hash": "e7f881f81d36e653779390f3e0f8daf8f414d7ba1b54e9d7f9f63845e3c7e84e"
+  },
+  "run_quipu": {
+    "baseline_code_signature_text": "def run_quipu(content: str, work_dir: Path, confirmation_handler: ConfirmationHandler, parser_name: str = 'auto', yolo: bool = False) -> QuipuResult:",
+    "baseline_code_structure_hash": "d977d58a9db1f2c9d7fb2d5fabb9cccc5edcdb1aeff988f1fa78442b229c699c",
+    "baseline_yaml_content_hash": "9061db557058af1530a661698afaeaa8c534c72891b1997d6e1d36f88187b377"
+  }
+}

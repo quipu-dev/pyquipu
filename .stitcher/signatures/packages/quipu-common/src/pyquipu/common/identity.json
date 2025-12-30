@@ -1,0 +1,7 @@
+{
+  "get_user_id_from_email": {
+    "baseline_code_signature_text": "def get_user_id_from_email(email: str) -> str:",
+    "baseline_code_structure_hash": "d723a96a189dae29395569c513bdcba3e16cfe339f26e0150eeee3ecfae1a353",
+    "baseline_yaml_content_hash": "4a4d6fd3111927675c557b08cf8332cd24b843c2183f1c48c1f9a85f6faafcde"
+  }
+}

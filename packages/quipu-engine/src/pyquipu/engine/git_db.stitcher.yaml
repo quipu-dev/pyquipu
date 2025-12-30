@@ -1,0 +1,74 @@
+"GitDB": |-
+  Quipu 的 Git 底层接口 (Plumbing Interface)。
+  负责与 Git 对象数据库交互，维护 Shadow Index 和 Refs。
+"GitDB._ensure_git_repo": |-
+  确保目标是一个 Git 仓库
+"GitDB._run": |-
+  执行 git 命令的底层封装，支持文本和二进制输出。
+"GitDB.batch_cat_file": |-
+  批量读取 Git 对象。
+  解决 N+1 查询性能问题。
+
+  Args:
+      object_hashes: 需要读取的对象哈希列表 (可以重复，内部会自动去重)
+
+  Returns:
+      Dict[hash, content_bytes]: 哈希到内容的映射。
+      如果对象不存在，则不会出现在返回字典中。
+"GitDB.cat_file": |-
+  读取 Git 对象的原始内容，返回字节流。
+  此方法现在以二进制模式运行，以避免数据损坏。
+"GitDB.checkout_tree": |-
+  将工作区强制重置为目标 Tree 的状态。
+  使用 read-tree --reset -u 实现高性能的增量更新。
+"GitDB.commit_tree": |-
+  创建一个 commit 对象并返回其哈希。
+"GitDB.delete_ref": |-
+  删除指定的引用
+"GitDB.fetch_quipu_refs": |-
+  从远程用户专属命名空间拉取 Quipu heads 到本地镜像。
+  遵循 QDPS v1.1 规范。
+"GitDB.get_all_ref_heads": |-
+  查找指定前缀下的所有 ref heads。
+  返回 (commit_hash, ref_name) 元组列表。
+"GitDB.get_blobs_from_tree": |-
+  解析一个 Tree 对象，并返回其包含的所有 blob 文件的 {filename: content_bytes} 字典。
+"GitDB.get_commit_by_output_tree": |-
+  根据 Trailer 中的 X-Quipu-Output-Tree 查找对应的 Commit Hash。
+  用于在创建新节点时定位语义上的父节点。
+"GitDB.get_diff_name_status": |-
+  获取两个 Tree 之间的文件变更状态列表 (M, A, D, etc.)。
+"GitDB.get_diff_stat": |-
+  获取两个 Tree 之间的差异统计 (Human Readable)。
+  默认限制输出为最多 30 行，以避免在有大量文件变更时生成过大的摘要。
+"GitDB.get_head_commit": |-
+  获取当前工作区 HEAD 的 Commit Hash
+"GitDB.get_tree_hash": |-
+  计算当前工作区的 Tree Hash (Snapshot)。
+  实现 'State is Truth' 的核心。
+"GitDB.has_quipu_ref": |-
+  检查是否存在任何 'refs/quipu/' 引用，用于判断存储格式。
+"GitDB.hash_object": |-
+  将内容写入 Git 对象数据库并返回对象哈希。
+"GitDB.is_ancestor": |-
+  判断两个 Commit 是否具有血统关系。
+  用于解决 'Lost Time' 问题。
+"GitDB.log_ref": |-
+  获取指定引用的日志，并解析为结构化数据列表。
+"GitDB.mktree": |-
+  从描述符创建 tree 对象并返回其哈希。
+"GitDB.prune_local_from_remote": |-
+  用远程镜像修剪本地历史。
+  删除本地存在但远程镜像中已不存在的 'local/heads'。
+"GitDB.push_quipu_refs": |-
+  将本地 Quipu heads 推送到远程用户专属的命名空间。
+  遵循 QDPS v1.1 规范。
+"GitDB.reconcile_local_with_remote": |-
+  将远程拉取下来的历史 (remotes) 与本地历史 (local) 进行调和。
+  这是一个安全的操作，只会添加本地不存在的远程引用。
+"GitDB.shadow_index": |-
+  上下文管理器：创建一个隔离的 Shadow Index。
+  在此上下文内的操作不会污染用户的 .git/index。
+"GitDB.update_ref": |-
+  更新引用 (如 refs/quipu/history)。
+  防止 Commit 被 GC 回收。

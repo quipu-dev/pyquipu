@@ -8,13 +8,7 @@ from .utils import find_git_repository_root
 
 
 class PluginManager:
-    """负责发现、加载和注册外部插件。"""
-
     def load_from_sources(self, executor: Executor, work_dir: Path):
-        """
-        按照层级顺序加载外部插件，高优先级会覆盖低优先级。
-        优先级顺序: Project > Env > Home
-        """
         plugin_sources = []
 
         # 优先级由低到高添加，后面的会覆盖前面的

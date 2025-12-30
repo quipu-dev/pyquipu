@@ -1,0 +1,24 @@
+{
+  "Hydrator": {
+    "baseline_yaml_content_hash": "66b597d31f18c76b610512d5524c4fecd71cf1b510286ac5c6c685288f4472ef"
+  },
+  "Hydrator.__init__": {
+    "baseline_code_signature_text": "def __init__(self, git_db: GitDB, db_manager: DatabaseManager):",
+    "baseline_code_structure_hash": "b6006ee22c835d105b6a719ab6b92a722f55c5c9f4f2331186081a566ac2036e"
+  },
+  "Hydrator._get_commit_owners": {
+    "baseline_code_signature_text": "def _get_commit_owners(self, local_user_id: str) -> Dict[str, str]:",
+    "baseline_code_structure_hash": "15c642540115675933f2dc5007aad7603603864a0e3f130773ce6c3a07f0db60",
+    "baseline_yaml_content_hash": "e1a1fbd5b99b468c67aa10773a0baffc916faa4340fa98f867e48f4062d9b447"
+  },
+  "Hydrator._get_owner_from_ref": {
+    "baseline_code_signature_text": "def _get_owner_from_ref(self, ref_name: str, local_user_id: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "8d3d40806d8ab240ac21823d5eaa73d7060ad2189af5d8f64844c8db692ff2cf",
+    "baseline_yaml_content_hash": "364f18be37a1dcaa3fb78e15db7e6b79eecabe9256453a3c67d9e18ad94dd501"
+  },
+  "Hydrator.sync": {
+    "baseline_code_signature_text": "def sync(self, local_user_id: str):",
+    "baseline_code_structure_hash": "17208ee2181d479334c1c69bc665d4a22210cb8ae4178352f6b8938d86c48cd4",
+    "baseline_yaml_content_hash": "1b50d37dedb2a84b8187c99900930a136e29e75971da3f091edfa637c7a23ab7"
+  }
+}

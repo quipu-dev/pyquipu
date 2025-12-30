@@ -1,0 +1,14 @@
+"ActContext": |-
+  提供给插件函数的上下文 API。
+  这是插件与执行器核心之间的稳定接口。
+"ActContext.fail": |-
+  向执行器报告一个可恢复的错误并终止当前 act。
+  这会抛出一个 ExecutionError。
+"ActContext.request_confirmation": |-
+  生成 diff 并请求用户确认
+"ActContext.resolve_path": |-
+  将相对路径安全地解析为工作区内的绝对路径
+"ActContext.root_dir": |-
+  获取当前工作区的根目录
+"Statement": |-
+  表示解析后的单个操作语句

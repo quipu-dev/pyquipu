@@ -7,11 +7,6 @@ from pyquipu.interfaces.exceptions import OperationCancelledError
 
 
 def confirmation_handler_for_executor(diff_lines: List[str], prompt: str) -> bool:
-    """
-    为 Executor 的确认处理器契约提供的适配器。
-    它调用统一的提示器，并在用户取消时抛出异常。
-    对于 'run' 操作，默认行为是继续，除非用户按下 'n'。
-    """
     # 原始逻辑是 `char.lower() != "n"`，这相当于默认为 True
     confirmed = prompt_for_confirmation(prompt=prompt, diff_lines=diff_lines, default=True)
     if not confirmed:
@@ -22,20 +17,6 @@ def confirmation_handler_for_executor(diff_lines: List[str], prompt: str) -> boo
 
 
 def prompt_for_confirmation(prompt: str, diff_lines: Optional[List[str]] = None, default: bool = False) -> bool:
-    """
-    一个健壮、统一的 CLI 确认提示器。
-
-    它能处理可选的 diff 显示、无需回车的单字符输入，
-    并在非交互式环境中优雅地降级。
-
-    Args:
-        prompt: 显示给用户的主消息。
-        diff_lines: 在提示前显示的可选 diff 字符串列表。
-        default: 当用户直接按回车键时的默认返回值。
-
-    Returns:
-        如果用户确认则返回 True，否则返回 False。
-    """
     if diff_lines:
         bus.info("prompt.ui.diffHeader")
         for line in diff_lines:

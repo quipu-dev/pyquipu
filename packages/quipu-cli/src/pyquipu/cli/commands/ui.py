@@ -25,9 +25,6 @@ def register(app: typer.Typer):
         ] = DEFAULT_WORK_DIR,
         raw: Annotated[bool, typer.Option("--raw", help="默认以纯文本模式启动，禁用 Markdown 渲染。")] = False,
     ):
-        """
-        以交互式 TUI 模式显示 Quipu 历史图谱。
-        """
         try:
             from ..tui import QuipuUiApp
         except ImportError:

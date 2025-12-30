@@ -1,0 +1,12 @@
+{
+  "confirmation_handler_for_executor": {
+    "baseline_code_signature_text": "def confirmation_handler_for_executor(diff_lines: List[str], prompt: str) -> bool:",
+    "baseline_code_structure_hash": "eb9d0298ff9910ee57c22766b923ec519439fb7394e76c976bc46dd6870a27e7",
+    "baseline_yaml_content_hash": "f375f7ebc079dcc6320eb272ba5ea1bf25877624591f16b4d2acc8960cfdf505"
+  },
+  "prompt_for_confirmation": {
+    "baseline_code_signature_text": "def prompt_for_confirmation(prompt: str, diff_lines: Optional[List[str]] = None, default: bool = False) -> bool:",
+    "baseline_code_structure_hash": "99d4f9db04ac7b8fa5eef940c0f467accb61eda08f412652efe21cee6cba508f",
+    "baseline_yaml_content_hash": "2315137d80a0b970f5bd95afbecb851ff9f864c62521f4cc11f5ad158e1def3c"
+  }
+}

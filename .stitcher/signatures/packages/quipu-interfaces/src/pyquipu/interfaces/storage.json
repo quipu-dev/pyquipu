@@ -1,0 +1,63 @@
+{
+  "HistoryReader": {
+    "baseline_yaml_content_hash": "33e7c5cbc6edbef8e3bde78fcfd6776c1d2d40d54235a45ddf4403dc1c8080c3"
+  },
+  "HistoryReader.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
+    "baseline_yaml_content_hash": "ba10988d6d3f1dcf5486d39e8b2806d342938db42994759354ba17eae8831fa9"
+  },
+  "HistoryReader.get_ancestor_output_trees": {
+    "baseline_code_signature_text": "def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "5ae091ca177977fc323d5563cb7f0c6e7af44ac50237f951d24c9793c2336220",
+    "baseline_yaml_content_hash": "7d9c9a0aaeb4cc226752e21055050836c26ff933938268d5062df64b1cd54519"
+  },
+  "HistoryReader.get_descendant_output_trees": {
+    "baseline_code_signature_text": "def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "8eb09e56e11e9534720ef7286af9a75507b606322ada07811813f6b3278f5edd",
+    "baseline_yaml_content_hash": "7704ff1e571cd93c49e35d8f743abe5f490fe4c8850dc1138425d9fc77a14608"
+  },
+  "HistoryReader.get_node_blobs": {
+    "baseline_code_signature_text": "def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "48acf7a37a5612c09d5062797e966133a5c15ba17d05e10407be3235bb076f3d",
+    "baseline_yaml_content_hash": "dfaf1e6fb83935b1b36cf9bc80de437d131143a22ba565593c7a77850ea394b7"
+  },
+  "HistoryReader.get_node_content": {
+    "baseline_code_signature_text": "def get_node_content(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "72fb728d5fb5468b523a77045d87750229fb34202f36e0bfe8861de1ab999ed8",
+    "baseline_yaml_content_hash": "ed726b8006413f0ed4c0e024ba4d8b1897c3f91e6a2d91879229c8b3b31ee87d"
+  },
+  "HistoryReader.get_node_count": {
+    "baseline_code_signature_text": "def get_node_count(self) -> int:",
+    "baseline_code_structure_hash": "f248a486494c998cc0f98482e50a5e3292f3132d247377d5088251762489517e",
+    "baseline_yaml_content_hash": "09d39c2faa0e81af2c66e2db4873bab445a69b0e89091fa206e7d3a1897f9ca4"
+  },
+  "HistoryReader.get_node_position": {
+    "baseline_code_signature_text": "def get_node_position(self, output_tree_hash: str) -> int:",
+    "baseline_code_structure_hash": "eeb815e029cbffaf43c5365481a21a4251ca6fb30632886a63a5716104041b0e",
+    "baseline_yaml_content_hash": "3694615bf9d608eafac28c3ab839e74f2f094e394de9203fb462c5687ff69dab"
+  },
+  "HistoryReader.get_private_data": {
+    "baseline_code_signature_text": "def get_private_data(self, node_commit_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772",
+    "baseline_yaml_content_hash": "750d81269b7d129d2bd3b466fab93bb7fd6a800cd2555035ae72ede03048aa7c"
+  },
+  "HistoryReader.load_all_nodes": {
+    "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be",
+    "baseline_yaml_content_hash": "3e31f6dcaa7930d326b8d390b874aeb2fdf4c00d9c5004b5bbc51fa489de60dd"
+  },
+  "HistoryReader.load_nodes_paginated": {
+    "baseline_code_signature_text": "def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "cf4d892bf90a00fa3f083ef8e4bb292b58bf36a417cf53e04002657744c0022e",
+    "baseline_yaml_content_hash": "7781482edb7de479baee6132105c5e97d314277cf0e2c90eea0a7989710d129a"
+  },
+  "HistoryWriter": {
+    "baseline_yaml_content_hash": "71a970d991dc2ec40dfa1cc34b41313c5792f0413dc6f180d3a1f46e01f190fc"
+  },
+  "HistoryWriter.create_node": {
+    "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any = {}) -> QuipuNode:",
+    "baseline_code_structure_hash": "f04bb8222f7e248eae151188752d560054da0331a6605ee0e8b2938943348a8d",
+    "baseline_yaml_content_hash": "4d81ecd10374428f3b2f8c5efa4b140a2a0bb3c3852a19df590a350a46debb98"
+  }
+}

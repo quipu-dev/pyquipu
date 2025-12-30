@@ -1,0 +1,10 @@
+{
+  "PluginManager": {
+    "baseline_yaml_content_hash": "cb34d1bcdd796ceaa064e9bab7a1e1fad2acbd50cbc63acdd68d84faf510548f"
+  },
+  "PluginManager.load_from_sources": {
+    "baseline_code_signature_text": "def load_from_sources(self, executor: Executor, work_dir: Path):",
+    "baseline_code_structure_hash": "e1015eaa8d17516183baa58ec0239c567900a308ec70f60b9ce80fa9e1c72fd4",
+    "baseline_yaml_content_hash": "91b0c5db7b16b4373a90d915f5bbb86f0927eec98f5aca87192cb893c0726851"
+  }
+}

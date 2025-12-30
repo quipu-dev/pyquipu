@@ -1,0 +1,6 @@
+{
+  "register": {
+    "baseline_code_signature_text": "def register(app: typer.Typer):",
+    "baseline_code_structure_hash": "32475c50cf36afaf2fb100127ea888c4b2eda4d547ed04ef114d35119f2a5d4b"
+  }
+}

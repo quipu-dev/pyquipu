@@ -1,0 +1,82 @@
+{
+  "MessageBus": {
+    "baseline_yaml_content_hash": "0eb1b46dfee60285c7fe6fd90eb7037526327a31626dab5223f38b87fd904d6a"
+  },
+  "MessageBus.__init__": {
+    "baseline_code_signature_text": "def __init__(self, store: MessageStore):",
+    "baseline_code_structure_hash": "5040b88be06643bddcbfbf61c0cb7dd729aa4df78c9ef146ace3c1f75f8dc2cb"
+  },
+  "MessageBus._render": {
+    "baseline_code_signature_text": "def _render(self, level: str, msg_id: str, **kwargs: Any = {}) -> None:",
+    "baseline_code_structure_hash": "7b67b33671aee186d0dc28c75867da51167de2ba06bbc2409bc9952631e6959b"
+  },
+  "MessageBus.data": {
+    "baseline_code_signature_text": "def data(self, data_string: str) -> None:",
+    "baseline_code_structure_hash": "e24670692edbaa5b2b5efeb813dbb1f8c58794e5f10e72f7b92f5ee5d18f505c"
+  },
+  "MessageBus.error": {
+    "baseline_code_signature_text": "def error(self, msg_id: str, **kwargs: Any = {}) -> None:",
+    "baseline_code_structure_hash": "74d0e1591df1ba06fd66e12c1295ee60cd7c01bb3259f824dd0a77c2c4f80d78"
+  },
+  "MessageBus.get": {
+    "baseline_code_signature_text": "def get(self, msg_id: str, **kwargs: Any = {}) -> str:",
+    "baseline_code_structure_hash": "c1bd63038d3ba8b7a6b341e7acc6da4eb887dd1d1c85eb068e88979596e0ffe0",
+    "baseline_yaml_content_hash": "278c545e78c583eb46bba9359dc9e072f5805c30613f37176a0a8de4c28a7797"
+  },
+  "MessageBus.info": {
+    "baseline_code_signature_text": "def info(self, msg_id: str, **kwargs: Any = {}) -> None:",
+    "baseline_code_structure_hash": "817afd5b683cfac505c18cbd0364e790a65d78753b848dcdde052c7850b79b84"
+  },
+  "MessageBus.set_renderer": {
+    "baseline_code_signature_text": "def set_renderer(self, renderer: Renderer):",
+    "baseline_code_structure_hash": "ce3ded2742fb947176e357aadf1a2a16da320a95d72c9a6c393d91f26a2c70a4",
+    "baseline_yaml_content_hash": "36d80397a5d8a8630bf25b3d9805f4949ed6a30bb01f8abef5b9170602f7cc5f"
+  },
+  "MessageBus.success": {
+    "baseline_code_signature_text": "def success(self, msg_id: str, **kwargs: Any = {}) -> None:",
+    "baseline_code_structure_hash": "3139e06d043fa8720768af569eb48b4943272e471316dcf409908f75169552c8"
+  },
+  "MessageBus.warning": {
+    "baseline_code_signature_text": "def warning(self, msg_id: str, **kwargs: Any = {}) -> None:",
+    "baseline_code_structure_hash": "a6b1deb421acfd2525d3145f5beb41d63b230ec1ea40663f73d3852c239d3e05"
+  },
+  "MessageStore": {
+    "baseline_yaml_content_hash": "a323ef0f396fbc943f59374cb1d3047826af17818bf4c5a71424b21d59ff64bc"
+  },
+  "MessageStore.__init__": {
+    "baseline_code_signature_text": "def __init__(self, locale: str = 'zh'):",
+    "baseline_code_structure_hash": "c814b194329487a543937d55073e98ad3803835aff0034650b0c9f604f1b86b8"
+  },
+  "MessageStore._load_messages": {
+    "baseline_code_signature_text": "def _load_messages(self):",
+    "baseline_code_structure_hash": "8674d570a06445321b723026b09b798de3b061f6120b58ce658b9042a36e31bb"
+  },
+  "MessageStore.get": {
+    "baseline_code_signature_text": "def get(self, msg_id: str, default: str = '') -> str:",
+    "baseline_code_structure_hash": "a618a42af5b6ac3f01a4a0dee6b0897ea2a7515bac0d1fd2d98bfb45f415fe82",
+    "baseline_yaml_content_hash": "b4d54fa76ec0fbcffe2d493f283f05039318bf7612c6ee9b9772d567b0015cf4"
+  },
+  "Renderer": {
+    "baseline_yaml_content_hash": "18d8fae3f7d2aaf86951a68b5733be7403edcbfaa0e2ff199bb74ba99c69c345"
+  },
+  "Renderer.data": {
+    "baseline_code_signature_text": "def data(self, data_string: str) -> None:",
+    "baseline_code_structure_hash": "e24670692edbaa5b2b5efeb813dbb1f8c58794e5f10e72f7b92f5ee5d18f505c"
+  },
+  "Renderer.error": {
+    "baseline_code_signature_text": "def error(self, message: str) -> None:",
+    "baseline_code_structure_hash": "2cd45ec5cc7b5fb349714653e4b1c9f36712fc8adf7a7ef9e1eb8774b61e7f4c"
+  },
+  "Renderer.info": {
+    "baseline_code_signature_text": "def info(self, message: str) -> None:",
+    "baseline_code_structure_hash": "74013f04bbff01b4572176f4cdac1721665fcad57786891db1ea372e5ce7de3b"
+  },
+  "Renderer.success": {
+    "baseline_code_signature_text": "def success(self, message: str) -> None:",
+    "baseline_code_structure_hash": "17cccbfacd9894cee2db64164628e166abec8d66b260be2492fa5a812ad9d615"
+  },
+  "Renderer.warning": {
+    "baseline_code_signature_text": "def warning(self, message: str) -> None:",
+    "baseline_code_structure_hash": "122aef289ffd46f5b55b51ddb08da50008b03914266298a8a491fe22cbdaabe4"
+  }
+}

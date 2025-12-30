@@ -16,19 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 class SQLiteHistoryReader(HistoryReader):
-    """
-    一个从 SQLite 缓存读取历史的实现，并按需从 Git 回填。
-    """
-
     def __init__(self, db_manager: DatabaseManager, git_db: GitDB):
         self.db_manager = db_manager
         # git_reader 用于按需加载内容和解析二进制 tree
         self._git_reader = GitObjectHistoryReader(git_db)
 
     def load_all_nodes(self) -> List[QuipuNode]:
-        """
-        从 SQLite 数据库高效加载所有节点元数据和关系。
-        """
         conn = self.db_manager._get_conn()
 
         # 1. 一次性获取所有节点元数据
@@ -91,9 +84,6 @@ class SQLiteHistoryReader(HistoryReader):
         return list(temp_nodes.values())
 
     def get_node_count(self) -> int:
-        """
-        获取历史节点总数。
-        """
         conn = self.db_manager._get_conn()
         try:
             cursor = conn.execute("SELECT COUNT(*) FROM nodes")
@@ -104,9 +94,6 @@ class SQLiteHistoryReader(HistoryReader):
             return 0
 
     def get_node_position(self, output_tree_hash: str) -> int:
-        """
-        计算节点在时间倒序列表中的位置 (Rank)。
-        """
         conn = self.db_manager._get_conn()
         try:
             # 1. 获取目标节点的时间戳
@@ -125,9 +112,6 @@ class SQLiteHistoryReader(HistoryReader):
             return -1
 
     def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:
-        """
-        按需加载一页节点数据。
-        """
         conn = self.db_manager._get_conn()
         try:
             # 1. Fetch nodes
@@ -207,10 +191,6 @@ class SQLiteHistoryReader(HistoryReader):
             return []
 
     def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:
-        """
-        获取指定状态节点的所有后代节点的 output_tree 哈希集合。
-        与 get_ancestors 逻辑相反。
-        """
         conn = self.db_manager._get_conn()
         try:
             # 1. 查找起点的 commit_hash
@@ -246,13 +226,6 @@ class SQLiteHistoryReader(HistoryReader):
             return set()
 
     def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
-        """
-        获取指定状态节点的所有祖先节点的 output_tree 哈希集合 (用于可达性分析)。
-        使用三步策略：
-        1. 将 output_tree 哈希翻译为 commit_hash。
-        2. 使用递归 CTE 查找所有祖先的 commit_hash。
-        3. 将祖先 commit_hash 集合翻译回 output_tree 哈希集合。
-        """
         conn = self.db_manager._get_conn()
         try:
             # 1. 查找起点的 commit_hash
@@ -288,9 +261,6 @@ class SQLiteHistoryReader(HistoryReader):
             return set()
 
     def get_private_data(self, node_commit_hash: str) -> Optional[str]:
-        """
-        获取指定节点的私有数据 (如 intent.md)。
-        """
         conn = self.db_manager._get_conn()
         try:
             cursor = conn.execute("SELECT intent_md FROM private_data WHERE node_hash = ?", (node_commit_hash,))
@@ -301,16 +271,9 @@ class SQLiteHistoryReader(HistoryReader):
             return None
 
     def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
-        """
-        从 Git 回源获取节点的所有文件内容。
-        SQLite 缓存不存储所有 blob，因此此操作总是委托给底层的 git_reader。
-        """
         return self._git_reader.get_node_blobs(commit_hash)
 
     def get_node_content(self, node: QuipuNode) -> str:
-        """
-        实现通读缓存策略来获取节点内容。
-        """
         if node.content:
             return node.content
 
@@ -337,9 +300,6 @@ class SQLiteHistoryReader(HistoryReader):
         node_type: Optional[str] = None,
         limit: int = 10,
     ) -> List[QuipuNode]:
-        """
-        直接在 SQLite 数据库中执行高效的节点查找。
-        """
         query = "SELECT * FROM nodes"
         conditions = []
         params = []
@@ -385,12 +345,6 @@ class SQLiteHistoryReader(HistoryReader):
 
 
 class SQLiteHistoryWriter(HistoryWriter):
-    """
-    一个实现“双写”的历史写入器。
-    1. 委托 GitObjectHistoryWriter 将节点写入 Git。
-    2. 将元数据和关系写入 SQLite。
-    """
-
     def __init__(self, git_writer: GitObjectHistoryWriter, db_manager: DatabaseManager):
         self.git_writer = git_writer
         self.db_manager = db_manager

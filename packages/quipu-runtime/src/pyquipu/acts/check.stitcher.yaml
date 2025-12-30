@@ -1,0 +1,10 @@
+"_check_cwd_match": |-
+  Act: check_cwd_match
+  Args: [expected_absolute_path]
+  说明: 检查当前运行的工作区根目录是否与预期的绝对路径匹配。
+"_check_files_exist": |-
+  Act: check_files_exist
+  Args: [file_list_string]
+  说明: 检查当前工作区内是否存在指定的文件。文件名通过换行符分隔。
+"register": |-
+  注册检查类操作

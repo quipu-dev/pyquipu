@@ -1,0 +1,14 @@
+{
+  "AIFSOpsError": {
+    "baseline_yaml_content_hash": "a569a8b7acd470b6294437f5711f3e3aa654d6e0b0c2e1bc1ae030bad14d3671"
+  },
+  "ExecutionError": {
+    "baseline_yaml_content_hash": "0eb16ac8d37589e5aa3f2455b90b531973521c673d5f1efdd7eff549bc3b424a"
+  },
+  "OperationCancelledError": {
+    "baseline_yaml_content_hash": "2c58b2be4b84ebf6d4bedb5e01aa60d83359fb3e86af37aa733564c8fd87649f"
+  },
+  "ParseError": {
+    "baseline_yaml_content_hash": "f96e92c08808b99da7b985d8ea851f682ec0880ff0a50db130cac6554d754526"
+  }
+}

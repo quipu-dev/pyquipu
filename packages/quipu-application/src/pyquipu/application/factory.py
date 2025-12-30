@@ -22,17 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def create_engine(work_dir: Path, lazy: bool = False) -> Engine:
-    """
-    实例化完整的 Engine 堆栈。
-
-    会自动向上查找项目根目录 (Git Root) 来初始化 Engine。
-    此工厂由配置驱动，以决定使用何种存储后端。
-
-    Args:
-        work_dir: 操作的工作区目录。
-        lazy: 如果为 True，则不立即加载完整的历史图谱 (不调用 align)。
-              这对于需要快速启动并按需加载数据的场景 (如 UI) 至关重要。
-    """
     project_root = find_git_repository_root(work_dir) or work_dir
     config = ConfigManager(project_root)
     storage_type = config.get("storage.type", "git_object")

@@ -1,0 +1,11 @@
+{
+  "_find_target_node": {
+    "baseline_code_signature_text": "def _find_target_node(graph: Dict, hash_prefix: str):",
+    "baseline_code_structure_hash": "a51821bc11889003f2fe8c9a531b48afb072f1c665e4539a08844792ed2a7dd5",
+    "baseline_yaml_content_hash": "1df92eb7b40ac44d8a25ab635a577563b5086a4face4ada14bf99595e4a5de23"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(app: typer.Typer):",
+    "baseline_code_structure_hash": "32475c50cf36afaf2fb100127ea888c4b2eda4d547ed04ef114d35119f2a5d4b"
+  }
+}

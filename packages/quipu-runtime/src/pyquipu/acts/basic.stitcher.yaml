@@ -1,0 +1,20 @@
+"_append_file": |-
+  Act: append_file
+  Args: [path, content]
+"_echo": |-
+  Act: echo
+  Args: [content]
+"_end": |-
+  Act: end
+  Args: [ignored_contexts...]
+  说明: 这是一个空操作。
+  它的作用是显式结束上一个指令的参数收集。
+  解析器会将后续的 block 视为 end 的参数，而 end 函数会忽略它们。
+"_patch_file": |-
+  Act: patch_file
+  Args: [path, old_string, new_string]
+"_write_file": |-
+  Act: write_file
+  Args: [path, content]
+"register": |-
+  注册基础文件系统操作

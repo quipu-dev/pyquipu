@@ -35,9 +35,6 @@ def register(app: typer.Typer):
         ] = False,
         list_acts: Annotated[bool, typer.Option("--list-acts", "-l", help="列出所有可用的操作指令及其说明。")] = False,
     ):
-        """
-        Quipu: 执行 Markdown 文件中的操作指令。
-        """
         setup_logging()
         if list_acts:
             from pyquipu.acts import register_core_acts

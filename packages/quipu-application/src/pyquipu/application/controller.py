@@ -23,11 +23,6 @@ ConfirmationHandler = Callable[[List[str], str], bool]
 
 
 class QuipuApplication:
-    """
-    封装了 Quipu 核心业务流程的高层应用对象。
-    负责协调 Engine, Parser, Executor。
-    """
-
     def __init__(self, work_dir: Path, confirmation_handler: ConfirmationHandler, yolo: bool = False):
         self.work_dir = work_dir
         self.confirmation_handler = confirmation_handler
@@ -36,10 +31,6 @@ class QuipuApplication:
         logger.info(f"Operation boundary set to: {self.work_dir}")
 
     def _prepare_workspace(self) -> str:
-        """
-        检查并准备工作区，处理状态漂移。
-        返回执行前的 input_tree_hash。
-        """
         current_hash = self.engine.git_db.get_tree_hash()
 
         # 1. 正常 Clean: current_node 存在且与当前 hash 一致
@@ -62,8 +53,6 @@ class QuipuApplication:
             return current_hash
 
     def _setup_executor(self) -> Executor:
-        """创建、配置并返回一个 Executor 实例，并注入确认处理器。"""
-
         executor = Executor(
             root_dir=self.work_dir,
             yolo=self.yolo,
@@ -80,9 +69,6 @@ class QuipuApplication:
         return executor
 
     def run(self, content: str, parser_name: str) -> QuipuResult:
-        """
-        执行一个完整的 Plan。
-        """
         # --- Phase 1 & 2: Perception & Decision (Lazy Capture) ---
         input_tree_hash = self._prepare_workspace()
 
@@ -140,12 +126,6 @@ def run_quipu(
     parser_name: str = "auto",
     yolo: bool = False,
 ) -> QuipuResult:
-    """
-    Quipu 核心业务逻辑的入口包装器。
-
-    实例化并运行 QuipuApplication，捕获所有异常并转化为 QuipuResult。
-    确保资源被安全释放。
-    """
     app = None
     try:
         app = QuipuApplication(work_dir=work_dir, confirmation_handler=confirmation_handler, yolo=yolo)

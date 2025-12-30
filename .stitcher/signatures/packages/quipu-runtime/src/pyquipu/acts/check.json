@@ -1,0 +1,17 @@
+{
+  "_check_cwd_match": {
+    "baseline_code_signature_text": "def _check_cwd_match(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "b57357d0ddafe076f07a1e904bd7761553905d8375eb992c48c8a2083ee11dc6",
+    "baseline_yaml_content_hash": "c6871d452e040050fa2d4ef56909b8d825d360a3545cc628a3677ab33f90a2d3"
+  },
+  "_check_files_exist": {
+    "baseline_code_signature_text": "def _check_files_exist(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "f590c834c4eda6c9bb26a11ad704c5ae33ebcf6171539112540628d6c238eb57",
+    "baseline_yaml_content_hash": "518a59434d5a70ccd347894cb537820d6e0e9025cf9ba92f1f2475676b13f4d5"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "d54b3d806bf43eb02fd000b8f032235b3de5c633dbbdf3bdb61ea547a93e868a"
+  }
+}

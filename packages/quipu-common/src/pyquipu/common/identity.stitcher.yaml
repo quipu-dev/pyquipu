@@ -1,0 +1,18 @@
+"get_user_id_from_email": |-
+  根据 Quipu Sync v1.1 规范，将用户邮箱地址转换为一个
+  对 Git Ref 和 URL 安全的唯一用户 ID。
+
+  该算法是确定性的，并遵循以下规则：
+  1. 转换为小写并去除首尾空格。
+  2. '@' 替换为 '-at-'。
+  3. '.' 替换为 '-dot-'。
+  4. 移除所有剩余的非字母数字或非连字符的字符。
+
+  示例:
+      "Alice.Dev@Example.COM" -> "alice-dev-at-example-dot-com"
+
+  Args:
+      email: 用户的 Git 邮箱地址。
+
+  Returns:
+      规范化后的用户 ID 字符串。

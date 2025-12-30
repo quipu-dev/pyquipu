@@ -45,9 +45,6 @@ def register(app: typer.Typer):
             ),
         ] = SyncMode.BIDIRECTIONAL,
     ):
-        """
-        与远程仓库同步 Quipu 历史图谱。
-        """
         setup_logging()
         sync_dir = find_git_repository_root(work_dir) or work_dir
         config = ConfigManager(sync_dir)

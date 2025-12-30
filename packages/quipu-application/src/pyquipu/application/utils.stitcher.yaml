@@ -1,0 +1,2 @@
+"find_git_repository_root": |-
+  向上递归查找包含 .git 的目录作为项目根目录

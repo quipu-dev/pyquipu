@@ -1,0 +1,5 @@
+"PluginManager": |-
+  负责发现、加载和注册外部插件。
+"PluginManager.load_from_sources": |-
+  按照层级顺序加载外部插件，高优先级会覆盖低优先级。
+  优先级顺序: Project > Env > Home

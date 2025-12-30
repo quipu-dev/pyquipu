@@ -1,0 +1,7 @@
+{
+  "_find_development_monorepo_root": {
+    "baseline_code_signature_text": "def _find_development_monorepo_root() -> Path:",
+    "baseline_code_structure_hash": "096a7df3dd33e9b5b982e03b29f0ebba51180926cc912aef4385f40ac0300cd0",
+    "baseline_yaml_content_hash": "54cc83fbc7669648ff0e87769135fd5e1a65cc3842397fcb22037042583b4350"
+  }
+}

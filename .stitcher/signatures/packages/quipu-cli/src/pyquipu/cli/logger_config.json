@@ -1,0 +1,12 @@
+{
+  "configure_file_logging": {
+    "baseline_code_signature_text": "def configure_file_logging(log_path: Path):",
+    "baseline_code_structure_hash": "7c35318a04de875a111ec6c77e08a6f0800bdc1b615857d62ebe367630b8bf2d",
+    "baseline_yaml_content_hash": "7026298ef1c32c1f346cf80974df2b7ee6d08a1a079121c3cf7cc9b08c84855e"
+  },
+  "setup_logging": {
+    "baseline_code_signature_text": "def setup_logging():",
+    "baseline_code_structure_hash": "9f8fe4f78b0a37cb1fdcb7a71340369231210c17cf8aabd7932364e85e49558f",
+    "baseline_yaml_content_hash": "02d818e2dfe680b3557d4367286a849dc7c4abdda171e89bf99252395d7aa730"
+  }
+}

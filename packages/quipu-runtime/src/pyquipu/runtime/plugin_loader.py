@@ -11,12 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 def load_plugins(executor: Executor, plugin_dir: Path):
-    """
-    动态扫描、导入并注册所有插件模块。
-
-    改进版：不再依赖 sys.path 和包名，而是直接通过文件路径加载模块。
-    这允许加载任意位置的插件，哪怕文件夹名称相同（如都叫 'acts'）。
-    """
     if not plugin_dir.exists():
         return
 

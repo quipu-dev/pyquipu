@@ -5,10 +5,6 @@ from pathlib import Path
 
 
 def _find_development_monorepo_root() -> Path:
-    """
-    向上递归查找 Quipu 开发时的项目根目录 (monorepo root)。
-    依据：存在 'packages' 目录和顶层 'pyproject.toml'。
-    """
     current = Path(__file__).resolve()
     for parent in [current] + list(current.parents):
         if (parent / "packages").exists() and (parent / "pyproject.toml").exists():

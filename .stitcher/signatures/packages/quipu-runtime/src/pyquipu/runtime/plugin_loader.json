@@ -1,0 +1,7 @@
+{
+  "load_plugins": {
+    "baseline_code_signature_text": "def load_plugins(executor: Executor, plugin_dir: Path):",
+    "baseline_code_structure_hash": "dc94bc92c7b5b86146bd107909b44e28cadfc9966257557ed44246e5293c8358",
+    "baseline_yaml_content_hash": "1c3b0d7edd8a6f1f5c4e8d3eae2ddc9fd7592d332421a60e4cebb62cb5691ccd"
+  }
+}

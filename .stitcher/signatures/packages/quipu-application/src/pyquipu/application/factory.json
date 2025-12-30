@@ -1,0 +1,7 @@
+{
+  "create_engine": {
+    "baseline_code_signature_text": "def create_engine(work_dir: Path, lazy: bool = False) -> Engine:",
+    "baseline_code_structure_hash": "4565a1494d7662227444205f34a6e4458c80db2856e465388e6d987a15c015c2",
+    "baseline_yaml_content_hash": "97d1354196dd8b34882b081f11ca5e37d3312137fdf8f59fa43bf21b6566b102"
+  }
+}

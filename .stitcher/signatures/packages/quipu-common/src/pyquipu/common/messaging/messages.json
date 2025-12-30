@@ -1,0 +1,7 @@
+{
+  "find_locales_dir": {
+    "baseline_code_signature_text": "def find_locales_dir() -> Path | None:",
+    "baseline_code_structure_hash": "8a89616d1e5b62b811cd66661613e5ae92fcb9d70e23e5565e6362fd60090f9f",
+    "baseline_yaml_content_hash": "d20a26466cb8076f8abf9fc96a68403bbabf42e5c8d7bc4d5357d08b45a8571c"
+  }
+}

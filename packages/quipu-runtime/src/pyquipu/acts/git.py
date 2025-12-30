@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 def register(executor: Executor):
-    """注册 Git 相关操作"""
     executor.register("git_init", _git_init, arg_mode="exclusive")
     executor.register("git_add", _git_add, arg_mode="exclusive")
     executor.register("git_commit", _git_commit, arg_mode="block_only", summarizer=_summarize_commit)
@@ -24,7 +23,6 @@ def _summarize_commit(args: List[str], contexts: List[str]) -> str:
 
 
 def _run_git_cmd(ctx: ActContext, cmd_args: List[str]) -> str:
-    """在工作区根目录执行 git 命令的辅助函数。"""
     env = os.environ.copy()
     env["LC_ALL"] = "C"
 
@@ -42,10 +40,6 @@ def _run_git_cmd(ctx: ActContext, cmd_args: List[str]) -> str:
 
 
 def _git_init(ctx: ActContext, args: List[str]):
-    """
-    Act: git_init
-    Args: []
-    """
     if (ctx.root_dir / ".git").exists():
         bus.warning("acts.git.warning.repoExists")
         return
@@ -54,10 +48,6 @@ def _git_init(ctx: ActContext, args: List[str]):
 
 
 def _git_add(ctx: ActContext, args: List[str]):
-    """
-    Act: git_add
-    Args: [files]
-    """
     targets = []
     if not args:
         targets = ["."]
@@ -71,10 +61,6 @@ def _git_add(ctx: ActContext, args: List[str]):
 
 
 def _git_commit(ctx: ActContext, args: List[str]):
-    """
-    Act: git_commit
-    Args: [message]
-    """
     if len(args) < 1:
         ctx.fail(bus.get("acts.error.missingArgs", act_name="git_commit", count=1, signature="[message]"))
 
@@ -92,9 +78,5 @@ def _git_commit(ctx: ActContext, args: List[str]):
 
 
 def _git_status(ctx: ActContext, args: List[str]):
-    """
-    Act: git_status
-    Args: []
-    """
     status = _run_git_cmd(ctx, ["status"])
     bus.data(status)

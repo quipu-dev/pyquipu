@@ -1,0 +1,8 @@
+"QuipuNode": |-
+  表示 Quipu 历史图谱中的一个节点。
+
+  这个数据类封装了从文件名和文件内容中解析出的所有元数据和状态信息。
+"QuipuNode.short_hash": |-
+  返回一个用于UI展示的简短哈希
+"QuipuNode.siblings": |-
+  获取所有兄弟节点 (包括自身)，按时间排序

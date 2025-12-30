@@ -1,0 +1,16 @@
+"_git_add": |-
+  Act: git_add
+  Args: [files]
+"_git_commit": |-
+  Act: git_commit
+  Args: [message]
+"_git_init": |-
+  Act: git_init
+  Args: []
+"_git_status": |-
+  Act: git_status
+  Args: []
+"_run_git_cmd": |-
+  在工作区根目录执行 git 命令的辅助函数。
+"register": |-
+  注册 Git 相关操作

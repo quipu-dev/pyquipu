@@ -1,0 +1,10 @@
+"_format_frontmatter": |-
+  生成 YAML Frontmatter 字符串。
+"_generate_file_content": |-
+  构建单个 Markdown 文件的完整内容。
+"_generate_filename": |-
+  根据规范生成文件名。
+"_generate_navbar": |-
+  生成导航栏 Markdown 字符串。
+"_sanitize_summary": |-
+  净化摘要以用作安全的文件名部分。

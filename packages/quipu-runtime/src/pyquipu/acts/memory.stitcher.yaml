@@ -1,0 +1,6 @@
+"_log_thought": |-
+  Act: log_thought
+  Args: [content]
+  说明: 将思维过程追加到 .quipu/memory.md 文件中，用于长期记忆。
+"register": |-
+  注册记忆与日志操作

@@ -1,0 +1,34 @@
+{
+  "ConfigManager": {
+    "baseline_yaml_content_hash": "144ea85a9177de7be79b4094021f53ea7f587fb44ba94999ca4e5e4bc82c12f0"
+  },
+  "ConfigManager.__init__": {
+    "baseline_code_signature_text": "def __init__(self, work_dir: Path):",
+    "baseline_code_structure_hash": "410e384713ce7a2785399a049150c043e7f89f05313fb70c5c50e3a40ac78c4c"
+  },
+  "ConfigManager._get_nested": {
+    "baseline_code_signature_text": "def _get_nested(self, data: Dict, key: str) -> Any:",
+    "baseline_code_structure_hash": "b6b196d49b916bb01478960e5383ad8d71cae3145973943407207ab314da9ccf",
+    "baseline_yaml_content_hash": "49741c0ebe8369f15beb2c271b87ef9385eb0efa4b04e38e47feb91c447c03f7"
+  },
+  "ConfigManager._load_config": {
+    "baseline_code_signature_text": "def _load_config(self) -> Dict[str, Any]:",
+    "baseline_code_structure_hash": "b5af01e644f364b36040b753b450a412f306020d57456b0773064920a9f1f273",
+    "baseline_yaml_content_hash": "b379e54d50d37d148f8c7afc1593d82d7e7bfcdf828e39aff77d0535940ea683"
+  },
+  "ConfigManager.get": {
+    "baseline_code_signature_text": "def get(self, key: str, fallback: Any = None) -> Any:",
+    "baseline_code_structure_hash": "a4548c54c768d95c357464250968ee2a2a8a68f52dca12a458d8cb03add039cb",
+    "baseline_yaml_content_hash": "1f404f561f2558522ef00f290007a4e277d31cc87574d00f43defd8f1cda7cad"
+  },
+  "ConfigManager.save": {
+    "baseline_code_signature_text": "def save(self):",
+    "baseline_code_structure_hash": "2623711af64febd36898191ef757936e2defb3bf71b789130bf103b69437b877",
+    "baseline_yaml_content_hash": "996176fb92f55eef849fc2677968b31602f4e62338d6fabbfe35ea2c3a3d91e2"
+  },
+  "ConfigManager.set": {
+    "baseline_code_signature_text": "def set(self, key: str, value: Any):",
+    "baseline_code_structure_hash": "436330f851387c37a3fb8808133f5f50a2379727cfebb3c66a80ea4e082694ea",
+    "baseline_yaml_content_hash": "ecdac6fa20754d90d4522f1a14bd06fe506fdf487f39aa5b37ff3dd7724c43b9"
+  }
+}

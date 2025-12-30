@@ -1,0 +1,49 @@
+{
+  "BacktickParser": {
+    "baseline_yaml_content_hash": "711f8e799ec79c5fb37e2a3ea02ce6593e9b8fda4e8bf8c81fe6a272d6257519"
+  },
+  "BacktickParser.__init__": {
+    "baseline_code_signature_text": "def __init__(self):",
+    "baseline_code_structure_hash": "9bab2b1dd22fea04e58176b09f65ef4f673738c47abf25fca7e0c62af472206f"
+  },
+  "BaseParser": {
+    "baseline_yaml_content_hash": "bc106f5614bc212b3e62d8669fb249687b724e1a1e9ede117d7aab8343c6d024"
+  },
+  "BaseParser.parse": {
+    "baseline_code_signature_text": "def parse(self, text: str) -> List[Statement]:",
+    "baseline_code_structure_hash": "707b6f06d9e47b672e6523beff9a1e7699ff5ad4f4c930ad4aa87c75b18fbd7f",
+    "baseline_yaml_content_hash": "64c53a7fb79deda59d2e7c724ba48bf897358348f42e96b730dfe621d08ff993"
+  },
+  "StateBlockParser": {
+    "baseline_yaml_content_hash": "c7865e4fd30a844b68b72f4f2abe3410bf13add20b9f14ebd11372cc424b3b3d"
+  },
+  "StateBlockParser.__init__": {
+    "baseline_code_signature_text": "def __init__(self, fence_char: str):",
+    "baseline_code_structure_hash": "18f2b958cf5f4c41f822cced13d1104a7e246f658c45199b0759f18cad3b2fe8"
+  },
+  "StateBlockParser.parse": {
+    "baseline_code_signature_text": "def parse(self, text: str) -> List[Statement]:",
+    "baseline_code_structure_hash": "707b6f06d9e47b672e6523beff9a1e7699ff5ad4f4c930ad4aa87c75b18fbd7f"
+  },
+  "TildeParser": {
+    "baseline_yaml_content_hash": "94cf60b8be8706748af40088d615fd5517c2863ffa3e5fd06295a4dae29b6e34"
+  },
+  "TildeParser.__init__": {
+    "baseline_code_signature_text": "def __init__(self):",
+    "baseline_code_structure_hash": "9bab2b1dd22fea04e58176b09f65ef4f673738c47abf25fca7e0c62af472206f"
+  },
+  "detect_best_parser": {
+    "baseline_code_signature_text": "def detect_best_parser(text: str) -> str:",
+    "baseline_code_structure_hash": "c84de73594160642d37e1c7a3a95236da88fff14a4290ab7d76d25acbad93ad0",
+    "baseline_yaml_content_hash": "e490ead58b7edde1caa065d18936ceaee61ca0bf566264e26149317ae72d0ae4"
+  },
+  "get_parser": {
+    "baseline_code_signature_text": "def get_parser(name: str) -> BaseParser:",
+    "baseline_code_structure_hash": "51c51914d1fc7980f6b19116ebde6d8fffc7efeac97e2a3d8d0afb04897eba36",
+    "baseline_yaml_content_hash": "08eb9eb7bbbbc639e6794c13381c7c7a55734a092bb68ea7135f5489f35e6c88"
+  },
+  "list_parsers": {
+    "baseline_code_signature_text": "def list_parsers() -> List[str]:",
+    "baseline_code_structure_hash": "d7d0bd6033defde1d06cb358e0b106d9c18f0daba6e1d80536e2147c4ccb3372"
+  }
+}

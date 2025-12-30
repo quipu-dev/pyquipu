@@ -1,0 +1,11 @@
+{
+  "_nodes_to_json_str": {
+    "baseline_code_signature_text": "def _nodes_to_json_str(nodes: List[QuipuNode]) -> str:",
+    "baseline_code_structure_hash": "61c41315aa76759f15d59b4b5b386c46e347d63f3ede0d2b3bb3ccce6f8b95a7",
+    "baseline_yaml_content_hash": "633411c23107fd7595a213e45cc6073af7503ac0557808c076b8444d6973dda4"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(app: typer.Typer):",
+    "baseline_code_structure_hash": "32475c50cf36afaf2fb100127ea888c4b2eda4d547ed04ef114d35119f2a5d4b"
+  }
+}

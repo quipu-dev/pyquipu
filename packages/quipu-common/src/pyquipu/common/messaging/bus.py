@@ -8,8 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class MessageStore:
-    """Loads and provides access to message templates from a JSON file."""
-
     def __init__(self, locale: str = "zh"):
         self._messages: Dict[str, str] = {}
         self.locale = locale
@@ -38,13 +36,10 @@ class MessageStore:
             logger.debug(f"Successfully loaded {len(self._messages)} messages for locale '{self.locale}'.")
 
     def get(self, msg_id: str, default: str = "") -> str:
-        """Retrieves a message template by its ID."""
         return self._messages.get(msg_id, default or f"<{msg_id}>")
 
 
 class Renderer(Protocol):
-    """Protocol defining the interface for a message renderer."""
-
     def success(self, message: str) -> None: ...
     def info(self, message: str) -> None: ...
     def warning(self, message: str) -> None: ...
@@ -53,14 +48,11 @@ class Renderer(Protocol):
 
 
 class MessageBus:
-    """The central service for all user-facing CLI output."""
-
     def __init__(self, store: MessageStore):
         self._store = store
         self._renderer: Optional[Renderer] = None
 
     def set_renderer(self, renderer: Renderer):
-        """Injects a concrete renderer implementation."""
         self._renderer = renderer
 
     def _render(self, level: str, msg_id: str, **kwargs: Any) -> None:
@@ -91,7 +83,6 @@ class MessageBus:
         self._render("error", msg_id, **kwargs)
 
     def get(self, msg_id: str, **kwargs: Any) -> str:
-        """Retrieves and formats a message string without rendering it."""
         template = self._store.get(msg_id)
         try:
             return template.format(**kwargs)

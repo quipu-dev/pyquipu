@@ -25,9 +25,6 @@ def register(app: typer.Typer):
         ] = DEFAULT_WORK_DIR,
         force: Annotated[bool, typer.Option("--force", "-f", help="强制执行，跳过确认提示。")] = False,
     ):
-        """
-        将工作区恢复到指定的历史节点状态。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
 
@@ -79,9 +76,6 @@ def register(app: typer.Typer):
         count: Annotated[int, typer.Option("--count", "-n", help="向上移动的步数。")] = 1,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [结构化导航] 向上移动到当前状态的父节点。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
             current_node = _find_current_node(engine, graph)
@@ -113,9 +107,6 @@ def register(app: typer.Typer):
         count: Annotated[int, typer.Option("--count", "-n", help="向下移动的步数。")] = 1,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [结构化导航] 向下移动到子节点 (默认最新)。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
             current_node = _find_current_node(engine, graph)
@@ -148,9 +139,6 @@ def register(app: typer.Typer):
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [结构化导航] 切换到上一个兄弟分支。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
             current_node = _find_current_node(engine, graph)
@@ -181,9 +169,6 @@ def register(app: typer.Typer):
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [结构化导航] 切换到下一个兄弟分支。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
             current_node = _find_current_node(engine, graph)
@@ -214,9 +199,6 @@ def register(app: typer.Typer):
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [时序性导航] 后退：回到上一次访问的历史状态。
-        """
         with engine_context(work_dir) as engine:
             try:
                 result_hash = engine.back()
@@ -234,9 +216,6 @@ def register(app: typer.Typer):
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
     ):
-        """
-        [时序性导航] 前进：撤销后退操作。
-        """
         with engine_context(work_dir) as engine:
             try:
                 result_hash = engine.forward()

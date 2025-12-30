@@ -1,0 +1,30 @@
+{
+  "ActContext": {
+    "baseline_yaml_content_hash": "b87653f6b1c518f1519f3d9a0efe62df1d6df50d19cff1439a76650aa0d12fe8"
+  },
+  "ActContext.__init__": {
+    "baseline_code_signature_text": "def __init__(self, executor: Executor):",
+    "baseline_code_structure_hash": "95d27b69193cf63926d1a71aabb81488fb2fdeb5f063c8d78b50acd9b61bd5dd"
+  },
+  "ActContext.fail": {
+    "baseline_code_signature_text": "def fail(self, message: str):",
+    "baseline_code_structure_hash": "958e2673564bee10478978290bfc40000240b95caeda5960ba5ab3f021fde407",
+    "baseline_yaml_content_hash": "d78bd0c1102726b8c017af93e02da2add19e149ceb173d381f6e61b17657f331"
+  },
+  "ActContext.request_confirmation": {
+    "baseline_code_signature_text": "def request_confirmation(self, file_path: Path, old_content: str, new_content: str) -> bool:",
+    "baseline_code_structure_hash": "308ac488c4d05a8380d8910726f80f5b8037609442117aefbf79db0737ed1831",
+    "baseline_yaml_content_hash": "5ade6dada7fee6ddd86b94b18c1eccf98dc6c60eee15d69bcc53b07ddac27278"
+  },
+  "ActContext.resolve_path": {
+    "baseline_code_signature_text": "def resolve_path(self, rel_path: str) -> Path:",
+    "baseline_code_structure_hash": "72f5dd33f74cb5de3c3603b501ffd27c15a1aa7ad04c772be50667efef35f981",
+    "baseline_yaml_content_hash": "683fd97e24ffb0251bf3ce18e5d80311308d93bcac63262b32062ddbac913176"
+  },
+  "ActContext.root_dir": {
+    "baseline_yaml_content_hash": "adc51d011b1c9a20fa537b7df202543c35f9f885a0c7cee40b856d723b335b8f"
+  },
+  "Statement": {
+    "baseline_yaml_content_hash": "4c5cdf525a78869d1ee638fd3aecd02658b854d51e2d26fa50bef9c978eb3fae"
+  }
+}

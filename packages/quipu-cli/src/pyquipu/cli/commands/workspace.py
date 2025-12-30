@@ -21,9 +21,6 @@ def register(app: typer.Typer):
             ),
         ] = DEFAULT_WORK_DIR,
     ):
-        """
-        捕获当前工作区的状态，创建一个“微提交”快照。
-        """
         with engine_context(work_dir) as engine:
             current_tree_hash = engine.git_db.get_tree_hash()
             is_node_clean = (engine.current_node is not None) and (engine.current_node.output_tree == current_tree_hash)
@@ -53,9 +50,6 @@ def register(app: typer.Typer):
         ] = DEFAULT_WORK_DIR,
         force: Annotated[bool, typer.Option("--force", "-f", help="强制执行，跳过确认提示。")] = False,
     ):
-        """
-        丢弃工作区所有未记录的变更，恢复到上一个干净状态。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
             if not graph:

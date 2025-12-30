@@ -1,0 +1,18 @@
+"ConfigManager": |-
+  负责加载和管理 .quipu/config.yml 文件。
+"ConfigManager._get_nested": |-
+  使用点状符号安全地访问嵌套字典。
+"ConfigManager._load_config": |-
+  加载并解析 YAML 配置文件，如果文件不存在或无效则返回空字典。
+"ConfigManager.get": |-
+  获取一个配置值，支持点状符号进行嵌套访问 (e.g., 'sync.remote_name')。
+
+  查找顺序:
+  1. 用户配置 (`config.yml`)
+  2. 内置默认值 (`DEFAULTS`)
+  3. 提供的 `fallback` 值
+"ConfigManager.save": |-
+  将当前的 user_config 写回到 .quipu/config.yml 文件。
+"ConfigManager.set": |-
+  设置一个配置值，支持点状符号进行嵌套访问。
+  如果中间路径的字典不存在，会自动创建。

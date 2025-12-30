@@ -1,0 +1,27 @@
+{
+  "_execute_visit": {
+    "baseline_code_signature_text": "def _execute_visit(ctx: typer.Context, engine: Engine, target_hash: str, msg_id: str, **kwargs = {}):",
+    "baseline_code_structure_hash": "745c49ce22068c74d026d6173f1a90e0ae12f292466fb39538ef7eab6b0f2466",
+    "baseline_yaml_content_hash": "7a35afc942f6dacf267b344532e9ea618929c19173c82c9db656ee2a282ceabe"
+  },
+  "_find_current_node": {
+    "baseline_code_signature_text": "def _find_current_node(engine: Engine, graph: Dict[str, QuipuNode]) -> Optional[QuipuNode]:",
+    "baseline_code_structure_hash": "79b18f799ebe6139a1aed83fbf7ea5fa12335af0cc58e15219222451acc5449c",
+    "baseline_yaml_content_hash": "e7ab415c516162184e7ad853f5325df02f0fe90c252d0a84c2b556ea7311785f"
+  },
+  "engine_context": {
+    "baseline_code_signature_text": "def engine_context(work_dir: Path) -> Generator[Engine, None, None]:",
+    "baseline_code_structure_hash": "5ae9f94f24aae0e6885c2888a75ec9c9f51fc8a710a7c4dbb724a7c09c751e73",
+    "baseline_yaml_content_hash": "dfdc9d03b1d2063be1a257e22500dc68ddbe89a484bc85eed029ae2a52147bfb"
+  },
+  "filter_nodes": {
+    "baseline_code_signature_text": "def filter_nodes(nodes: List[QuipuNode], limit: Optional[int], since: Optional[str], until: Optional[str]) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "472289c4518baaa2c48f30f0852b7fdb847967b34df5e0d022aea2a86e43d562",
+    "baseline_yaml_content_hash": "2c2bb2c28c8d9b5749388237ca8578c0a83561a73340980a96c0c7204bfd9bf9"
+  },
+  "filter_reachable_nodes": {
+    "baseline_code_signature_text": "def filter_reachable_nodes(engine: Engine, nodes: List[QuipuNode]) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "39cedd34f3f1b02b3a1d49b07418cc71215c696ea3a8a5031a0e3ff5846f66f0",
+    "baseline_yaml_content_hash": "983f38123ca6d28897da50df5289e6feda29cffde4ebfd789069766ee4641b83"
+  }
+}

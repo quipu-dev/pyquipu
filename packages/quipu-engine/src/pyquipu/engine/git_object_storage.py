@@ -17,11 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 class GitObjectHistoryReader(HistoryReader):
-    """
-    一个从 Git 底层对象读取历史的实现。
-    使用批处理优化加载性能。
-    """
-
     def __init__(self, git_db: GitDB):
         self.git_db = git_db
 
@@ -30,11 +25,6 @@ class GitObjectHistoryReader(HistoryReader):
         return match.group(1) if match else None
 
     def _parse_tree_binary(self, data: bytes) -> Dict[str, str]:
-        """
-        解析 Git 原始二进制 Tree 对象。
-        格式: [mode] [space] [path] [null] [20-byte-hash]
-        返回: { filename: hex_hash }
-        """
         entries = {}
         idx = 0
         length = len(data)
@@ -67,15 +57,6 @@ class GitObjectHistoryReader(HistoryReader):
         return entries
 
     def load_all_nodes(self) -> List[QuipuNode]:
-        """
-        加载所有节点。
-        优化策略: Batch cat-file
-        1. 获取所有 commits
-        2. 批量读取所有 Trees
-        3. 解析 Trees 找到 metadata.json Blob Hashes
-        4. 批量读取所有 Metadata Blobs
-        5. 组装 Nodes
-        """
         # Step 1: Get Commits
         ref_tuples = self.git_db.get_all_ref_heads("refs/quipu/")
         if not ref_tuples:
@@ -184,11 +165,9 @@ class GitObjectHistoryReader(HistoryReader):
         return list(temp_nodes.values())
 
     def get_node_count(self) -> int:
-        """Git后端: 低效实现，加载所有节点后计数"""
         return len(self.load_all_nodes())
 
     def get_node_position(self, output_tree_hash: str) -> int:
-        """Git后端: 低效实现，加载所有节点后查找索引"""
         all_nodes = self.load_all_nodes()
         # load_all_nodes 内部已经按时间倒序排序了
         # 但为了保险，还是在这里再次确认排序逻辑
@@ -200,13 +179,11 @@ class GitObjectHistoryReader(HistoryReader):
         return -1
 
     def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:
-        """Git后端: 低效实现，加载所有节点后切片"""
         all_nodes = self.load_all_nodes()
         # load_all_nodes 通常按时间倒序返回
         return all_nodes[offset : offset + limit]
 
     def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:
-        """Git后端: 在内存中遍历图谱"""
         all_nodes = self.load_all_nodes()
         node_map = {n.output_tree: n for n in all_nodes}
 
@@ -227,11 +204,9 @@ class GitObjectHistoryReader(HistoryReader):
         return ancestors
 
     def get_private_data(self, node_commit_hash: str) -> Optional[str]:
-        """Git后端: 不支持私有数据"""
         return None
 
     def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:
-        """Git后端: 在内存中遍历图谱以查找后代"""
         all_nodes = self.load_all_nodes()
         node_map = {n.output_tree: n for n in all_nodes}
 
@@ -252,7 +227,6 @@ class GitObjectHistoryReader(HistoryReader):
         return descendants
 
     def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
-        """从 Git 对象中读取节点的所有文件内容。"""
         try:
             # 1. Get Tree Hash from Commit
             commit_content = self.git_db.cat_file(commit_hash, "commit").decode("utf-8", "ignore")
@@ -281,10 +255,6 @@ class GitObjectHistoryReader(HistoryReader):
             return {}
 
     def get_node_content(self, node: QuipuNode) -> str:
-        """
-        从 Git Commit 中按需读取 content.md。
-        node.filename 被 hack 为 ".quipu/git_objects/{commit_hash}"
-        """
         if node.content:
             return node.content
 
@@ -331,10 +301,6 @@ class GitObjectHistoryReader(HistoryReader):
         node_type: Optional[str] = None,
         limit: int = 10,
     ) -> List[QuipuNode]:
-        """
-        GitObject 后端的查找实现。
-        由于没有索引，此实现加载所有节点并在内存中进行过滤。
-        """
         # 这是一个高成本操作，因为它需要加载整个图
         candidates = self.load_all_nodes()
 
@@ -356,23 +322,16 @@ class GitObjectHistoryReader(HistoryReader):
 
 
 class GitObjectHistoryWriter(HistoryWriter):
-    """
-    一个将历史节点作为 Git 底层对象写入存储的实现。
-    遵循 Quipu 数据持久化协议规范 (QDPS) v1.0。
-    """
-
     def __init__(self, git_db: GitDB):
         self.git_db = git_db
 
     def _get_generator_info(self) -> Dict[str, str]:
-        """根据 QDPS v1.0 规范，通过环境变量获取生成源信息。"""
         return {
             "id": os.getenv("QUIPU_GENERATOR_ID", "manual"),
             "tool": os.getenv("QUIPU_TOOL", "pyquipu-cli"),
         }
 
     def _get_env_info(self) -> Dict[str, str]:
-        """获取运行时环境指纹。"""
         try:
             quipu_version = importlib.metadata.version("pyquipu-engine")
         except importlib.metadata.PackageNotFoundError:
@@ -392,7 +351,6 @@ class GitObjectHistoryWriter(HistoryWriter):
         output_tree: str,
         **kwargs: Any,
     ) -> str:
-        """根据节点类型生成单行摘要。"""
         # 1. 如果传入了显式的摘要，直接使用
         if kwargs.get("summary_override"):
             return kwargs["summary_override"]
@@ -433,9 +391,6 @@ class GitObjectHistoryWriter(HistoryWriter):
         content: str,
         **kwargs: Any,
     ) -> QuipuNode:
-        """
-        在 Git 对象数据库中创建并持久化一个新的历史节点。
-        """
         start_time = kwargs.get("start_time", time.time())
         end_time = time.time()
         duration_ms = int((end_time - start_time) * 1000)

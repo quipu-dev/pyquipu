@@ -1,0 +1,17 @@
+{
+  "cache_prune_refs": {
+    "baseline_code_signature_text": "def cache_prune_refs(ctx: typer.Context, work_dir: Annotated[Path, typer.Option(--work - dir, -w, help='\u64cd\u4f5c\u6267\u884c\u7684\u6839\u76ee\u5f55\uff08\u5de5\u4f5c\u533a\uff09', file_okay=False, dir_okay=True, resolve_path=True)] = DEFAULT_WORK_DIR):",
+    "baseline_code_structure_hash": "cd0d63937dc3ff829e901d88276fe134bbe8fca18c7d440a57fd8e4ff906731f",
+    "baseline_yaml_content_hash": "9504143547482e5ec3035328462c614e00b9288a9be9b4b9224bb1ff90852d88"
+  },
+  "cache_rebuild": {
+    "baseline_code_signature_text": "def cache_rebuild(ctx: typer.Context, force: Annotated[bool, typer.Option(--force, -f, help='\u5f3a\u5236\u6267\u884c\uff0c\u8df3\u8fc7\u786e\u8ba4\u63d0\u793a\u3002')] = False, work_dir: Annotated[Path, typer.Option(--work - dir, -w, help='\u64cd\u4f5c\u6267\u884c\u7684\u6839\u76ee\u5f55\uff08\u5de5\u4f5c\u533a\uff09', file_okay=False, dir_okay=True, resolve_path=True)] = DEFAULT_WORK_DIR):",
+    "baseline_code_structure_hash": "3c2c989314686512251ea8bd336220d89dad542401b8b6d91db123d4d0cac970",
+    "baseline_yaml_content_hash": "071399c5d96eff1ed21e51a21a7128acfa61b7bed8e991a9d9e78a4349624c9c"
+  },
+  "cache_sync": {
+    "baseline_code_signature_text": "def cache_sync(ctx: typer.Context, work_dir: Annotated[Path, typer.Option(--work - dir, -w, help='\u64cd\u4f5c\u6267\u884c\u7684\u6839\u76ee\u5f55\uff08\u5de5\u4f5c\u533a\uff09', file_okay=False, dir_okay=True, resolve_path=True)] = DEFAULT_WORK_DIR):",
+    "baseline_code_structure_hash": "6158299ce53d68611c515623da59839849d41841e16a10c1b64ed227d58ae544",
+    "baseline_yaml_content_hash": "ae739125d56a1d2df891edf6b098f45a4e1dca46c18af384f5960bc88a322b38"
+  }
+}

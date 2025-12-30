@@ -9,16 +9,11 @@ logger = logging.getLogger(__name__)
 
 
 def register(executor: Executor):
-    """注册重构类操作"""
     executor.register("move_file", _move_file, arg_mode="hybrid")
     executor.register("delete_file", _delete_file, arg_mode="exclusive")
 
 
 def _move_file(ctx: ActContext, args: List[str]):
-    """
-    Act: move_file
-    Args: [src_path, dest_path]
-    """
     if len(args) < 2:
         ctx.fail(bus.get("acts.error.missingArgs", act_name="move_file", count=2, signature="[src, dest]"))
 
@@ -43,10 +38,6 @@ def _move_file(ctx: ActContext, args: List[str]):
 
 
 def _delete_file(ctx: ActContext, args: List[str]):
-    """
-    Act: delete_file
-    Args: [path]
-    """
     if len(args) < 1:
         ctx.fail(bus.get("acts.error.missingArgs", act_name="delete_file", count=1, signature="[path]"))
 

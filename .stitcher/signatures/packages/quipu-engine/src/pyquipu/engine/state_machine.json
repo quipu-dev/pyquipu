@@ -1,0 +1,77 @@
+{
+  "Engine": {
+    "baseline_yaml_content_hash": "4b830a378a01d1def3b9ea873c3d26cacbe662baf7e42ca1b53c59a4c1a3eee4"
+  },
+  "Engine.__init__": {
+    "baseline_code_signature_text": "def __init__(self, root_dir: Path, db: Any, reader: HistoryReader, writer: HistoryWriter, db_manager: Optional[Any] = None):",
+    "baseline_code_structure_hash": "f87c60df35603ea8f14e27b5f92613e6a1bd59e54ed4b3e12691f5852cf9fe45"
+  },
+  "Engine._append_nav": {
+    "baseline_code_signature_text": "def _append_nav(self, tree_hash: str):",
+    "baseline_code_structure_hash": "1748e1a346f6dc62984db9574cc9c758cee1f7563873884977ca6638761c6639"
+  },
+  "Engine._get_current_user_id": {
+    "baseline_code_signature_text": "def _get_current_user_id(self) -> str:",
+    "baseline_code_structure_hash": "8be305c184ecb08bbbbce943e0be53202ddff62c41cc5db00ec4d06aa667c993",
+    "baseline_yaml_content_hash": "25be9f8dc25f69ade003cda993ec653715f9d931f2109709367cba40d5c18619"
+  },
+  "Engine._read_head": {
+    "baseline_code_signature_text": "def _read_head(self) -> Optional[str]:",
+    "baseline_code_structure_hash": "e57e8613de23afb14912c3c6997616f21226e28b5e86b6eb751d732f7e415668"
+  },
+  "Engine._read_nav": {
+    "baseline_code_signature_text": "def _read_nav(self) -> Tuple[List[str], int]:",
+    "baseline_code_structure_hash": "2ccdd3d7fa2d21cd726782827be48d39cb28194cfe6565d7db6e98bce2b820b9"
+  },
+  "Engine._sync_persistent_ignores": {
+    "baseline_code_signature_text": "def _sync_persistent_ignores(self):",
+    "baseline_code_structure_hash": "661c2116b55933ccf3dad8c05d1e9178ed82f9de14e948fc91c3c31519101bb0",
+    "baseline_yaml_content_hash": "a362651c4cd0094cfd1dd3a24f016ca5fec871df95dff5df50e2174438c970fa"
+  },
+  "Engine._write_head": {
+    "baseline_code_signature_text": "def _write_head(self, tree_hash: str):",
+    "baseline_code_structure_hash": "b74da508d9d899ca9f173b7e52982ee3e1cf99e1275effc4e490ef0735eb0a24"
+  },
+  "Engine._write_nav": {
+    "baseline_code_signature_text": "def _write_nav(self, log: List[str], ptr: int):",
+    "baseline_code_structure_hash": "292f9b5bc8f3da4b3ee096620243228af68a390d6ec2317c4dfb8fd7e188aa23"
+  },
+  "Engine.align": {
+    "baseline_code_signature_text": "def align(self) -> str:",
+    "baseline_code_structure_hash": "ca024696817bc79db5069e2e16d7d503f5c7187d13ecc10f5e571df4e3670ddd"
+  },
+  "Engine.back": {
+    "baseline_code_signature_text": "def back(self) -> Optional[str]:",
+    "baseline_code_structure_hash": "a7748b7fc946b8eb824e020a87aa0c57ce9228f36f2bfea46eae4e36acc5a368"
+  },
+  "Engine.capture_drift": {
+    "baseline_code_signature_text": "def capture_drift(self, current_hash: str, message: Optional[str] = None) -> QuipuNode:",
+    "baseline_code_structure_hash": "d4756168f9df0f9c1e09da7cd742ce1442c7cf4e4ffba883161ab492798eb903"
+  },
+  "Engine.checkout": {
+    "baseline_code_signature_text": "def checkout(self, target_hash: str):",
+    "baseline_code_structure_hash": "258135b8b4c8cc4071d013ddf8372f5eb7d475ca2736b60197c0e25066b6cf3d"
+  },
+  "Engine.close": {
+    "baseline_code_signature_text": "def close(self):",
+    "baseline_code_structure_hash": "891487df5864d74641bbf87625ae2626293fdfb44f739422c082459416d15f90",
+    "baseline_yaml_content_hash": "a100c8157a97cb80ed156fa032cf1bab537ddcb4f9d1dae232d3ed3d672696d0"
+  },
+  "Engine.create_plan_node": {
+    "baseline_code_signature_text": "def create_plan_node(self, input_tree: str, output_tree: str, plan_content: str, summary_override: Optional[str] = None) -> QuipuNode:",
+    "baseline_code_structure_hash": "54a7940fb7f43ac7495fdbde9c1f62b7befd3a341f3c23d6917c3cbfa9d22cd5"
+  },
+  "Engine.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
+    "baseline_yaml_content_hash": "cd335d9aa3c8f8fcc0334054f03e777438bf390e0ccc388c6e32ffc31d7763f5"
+  },
+  "Engine.forward": {
+    "baseline_code_signature_text": "def forward(self) -> Optional[str]:",
+    "baseline_code_structure_hash": "dc27f9b55154bebc01529f9ea3b0e1ae8e57be3dfeebc5e1bf291caa3aa73ee9"
+  },
+  "Engine.visit": {
+    "baseline_code_signature_text": "def visit(self, target_hash: str):",
+    "baseline_code_structure_hash": "0a53bc65fb1530967b86e3be1d6d9654802ec03a218c4070f99016485702a4a9"
+  }
+}

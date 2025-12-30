@@ -1,0 +1,3 @@
+"find_locales_dir": |-
+  Find the 'locales' directory located relative to this file.
+  This is robust for both development and installed package environments.

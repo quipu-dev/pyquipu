@@ -1,0 +1,49 @@
+{
+  "DatabaseManager": {
+    "baseline_yaml_content_hash": "881fc02a0b0272eb595777d9c28caa09fc21084fd13f584649e5438f5016c25d"
+  },
+  "DatabaseManager.__del__": {
+    "baseline_code_signature_text": "def __del__(self):",
+    "baseline_code_structure_hash": "3215356609374e5b6ea0c1e8965aad2e3a531ab5c13fb6e40f5503aba5822b83",
+    "baseline_yaml_content_hash": "363d9a050d188593af22c20ca0174abc3dacf2a7305cba2499ca5de0e5c23511"
+  },
+  "DatabaseManager.__init__": {
+    "baseline_code_signature_text": "def __init__(self, work_dir: Path):",
+    "baseline_code_structure_hash": "410e384713ce7a2785399a049150c043e7f89f05313fb70c5c50e3a40ac78c4c"
+  },
+  "DatabaseManager._get_conn": {
+    "baseline_code_signature_text": "def _get_conn(self) -> sqlite3.Connection:",
+    "baseline_code_structure_hash": "064fe77fdadf27b3ce42dd031b76a157b6a63f323e96bbc0dfb785d1ff08e47d",
+    "baseline_yaml_content_hash": "1478c47d76621976c0e3fdd91c7e1046fbb5d0eac66e13d191072b0c2ff4cdfc"
+  },
+  "DatabaseManager.batch_insert_edges": {
+    "baseline_code_signature_text": "def batch_insert_edges(self, edges: List[Tuple]):",
+    "baseline_code_structure_hash": "05874bb9fc82267ed96c4195d316f16f3dde8788b18298f08e3532cb9756ca89",
+    "baseline_yaml_content_hash": "e4ff3661bd49ef2a7de29e769c796687f61fee7f81e9a36f44c4c6055eeb73c9"
+  },
+  "DatabaseManager.batch_insert_nodes": {
+    "baseline_code_signature_text": "def batch_insert_nodes(self, nodes: List[Tuple]):",
+    "baseline_code_structure_hash": "7c13d97eac617f7b19323d3128aa4e05532b34a8b2d1560a35a9cf894624af8f",
+    "baseline_yaml_content_hash": "dce1e532feb82a7b42b2ccfc6079477eb8cc7f56e573856fb263241506b49f42"
+  },
+  "DatabaseManager.close": {
+    "baseline_code_signature_text": "def close(self):",
+    "baseline_code_structure_hash": "891487df5864d74641bbf87625ae2626293fdfb44f739422c082459416d15f90",
+    "baseline_yaml_content_hash": "0c53f600fefed034032d53331abea1823005924d3d0758c32f55aa24cd021452"
+  },
+  "DatabaseManager.execute_write": {
+    "baseline_code_signature_text": "def execute_write(self, sql: str, params: tuple = ()):",
+    "baseline_code_structure_hash": "fdbc5bb94b778c2c20ddd0548c4b0f5a29faad5d470b0d6d6ead0fa53cc8139c",
+    "baseline_yaml_content_hash": "cba5c6505737287b86421daf8e0711b9109ac517f9da6068542d4adaff6f73fc"
+  },
+  "DatabaseManager.get_all_node_hashes": {
+    "baseline_code_signature_text": "def get_all_node_hashes(self) -> Set[str]:",
+    "baseline_code_structure_hash": "407accb78f97f551c0c0a04ea30e3913a698e23bb1aac70ebd696227bd6fd656",
+    "baseline_yaml_content_hash": "f8c4d6d008fae27344267a7a2a455750b024d8e883978090d0038ded1b2dcff8"
+  },
+  "DatabaseManager.init_schema": {
+    "baseline_code_signature_text": "def init_schema(self):",
+    "baseline_code_structure_hash": "53b2b3fae06539a16cbe377048942025c58748ef6c1b4c58f46bd78a53d54cf9",
+    "baseline_yaml_content_hash": "b2a72c2d5e6a95651ce8792444c62e29860b2b712949144baa90e87bbdc2d411"
+  }
+}

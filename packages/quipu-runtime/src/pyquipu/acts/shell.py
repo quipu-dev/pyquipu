@@ -9,15 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def register(executor: Executor):
-    """注册 Shell 相关操作"""
     executor.register("run_command", _run_command, arg_mode="exclusive")
 
 
 def _run_command(ctx: ActContext, args: List[str]):
-    """
-    Act: run_command
-    Args: [command_string]
-    """
     if len(args) < 1:
         ctx.fail(bus.get("acts.error.missingArgs", act_name="run_command", count=1, signature="[command_string]"))
 

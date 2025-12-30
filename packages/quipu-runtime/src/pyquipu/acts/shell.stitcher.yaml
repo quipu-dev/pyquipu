@@ -1,0 +1,5 @@
+"_run_command": |-
+  Act: run_command
+  Args: [command_string]
+"register": |-
+  注册 Shell 相关操作

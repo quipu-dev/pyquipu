@@ -1,0 +1,39 @@
+{
+  "Executor": {
+    "baseline_yaml_content_hash": "1321ec1d24fc3e9ee61055f61f7fb280f448f98979c9c5f263a24cd6fee27973"
+  },
+  "Executor.__init__": {
+    "baseline_code_signature_text": "def __init__(self, root_dir: Path, yolo: bool = False, confirmation_handler: Optional[ConfirmationHandler] = None):",
+    "baseline_code_structure_hash": "5dc8c461df1f75093077e29ed22d8468532ec5b0a0193d5e33c714d7db50060b"
+  },
+  "Executor.execute": {
+    "baseline_code_signature_text": "def execute(self, statements: List[Statement]):",
+    "baseline_code_structure_hash": "7bd8035f21e80f8ae547d434157fa345ee0a0a64a07b6a96b925c2c9281544e8",
+    "baseline_yaml_content_hash": "6313581487d7e61b8a2f74e81b7fc7b2fe5294cd14189b537df0003b414bca69"
+  },
+  "Executor.get_registered_acts": {
+    "baseline_code_signature_text": "def get_registered_acts(self) -> Dict[str, str]:",
+    "baseline_code_structure_hash": "7724e91a9caa012c69cfbf4718b479eda77ac0d71616c5637dd4269e0553c84c",
+    "baseline_yaml_content_hash": "6329019a4677b3f194d6aa45f3fdd3a1a9e7f5e6cef396b9a11ad259d5ce9239"
+  },
+  "Executor.register": {
+    "baseline_code_signature_text": "def register(self, name: str, func: ActFunction, arg_mode: str = 'hybrid', summarizer: Any = None):",
+    "baseline_code_structure_hash": "e48c261915f85c280d106b0c93b1cf98654e56b8e1fc2e5800cd9e426b735a0d",
+    "baseline_yaml_content_hash": "8882d0ae29f406d92a868aa110d1e85bd55f4485ce05af9998f4688a3e834486"
+  },
+  "Executor.request_confirmation": {
+    "baseline_code_signature_text": "def request_confirmation(self, file_path: Path, old_content: str, new_content: str):",
+    "baseline_code_structure_hash": "7de3ce6fcfd85ba1c5ecdf43522307ca6809807081e9eb4769c50a3615ef2db7",
+    "baseline_yaml_content_hash": "ef31ead16854982a84a5e2d08ab4e864bd1e6690f633d35eb4d31e717aece796"
+  },
+  "Executor.resolve_path": {
+    "baseline_code_signature_text": "def resolve_path(self, rel_path: str) -> Path:",
+    "baseline_code_structure_hash": "72f5dd33f74cb5de3c3603b501ffd27c15a1aa7ad04c772be50667efef35f981",
+    "baseline_yaml_content_hash": "c19d0d3dbd547a2a7e648ce76ea50dde937a0b8187fa31690d5c98515247857d"
+  },
+  "Executor.summarize_statement": {
+    "baseline_code_signature_text": "def summarize_statement(self, stmt: Statement) -> str | None:",
+    "baseline_code_structure_hash": "cff09d68c9391966de6251a7aba7ba3a3ba2843a72e0e0a9f1e55fcf6e1dc504",
+    "baseline_yaml_content_hash": "a8fcaed8269deb20d8efb3c8940558f59a51888deac9fe5e7a8daa5f7f1b6df0"
+  }
+}

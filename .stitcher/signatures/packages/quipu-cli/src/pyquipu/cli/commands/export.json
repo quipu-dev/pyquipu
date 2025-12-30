@@ -1,0 +1,31 @@
+{
+  "_format_frontmatter": {
+    "baseline_code_signature_text": "def _format_frontmatter(node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "8240cf5ce3db751aae5dc355449a865be22aeb8d5f353c237b6a7aab9f6c6e23",
+    "baseline_yaml_content_hash": "dee41eaf3a8559fbfb2e30e4f2cc9e5e137708db76fc2e6c0e247542bdb2ad2a"
+  },
+  "_generate_file_content": {
+    "baseline_code_signature_text": "def _generate_file_content(node: QuipuNode, engine: Engine, no_frontmatter: bool, no_nav: bool, exported_hashes_set: Set[str], filename_map: Dict[str, str], hidden_link_types: Set[str]) -> str:",
+    "baseline_code_structure_hash": "a2069123e8ad2f8fb7669b759a07bf27d75408c680eb39d61909494f245e4270",
+    "baseline_yaml_content_hash": "86a4bb22912a522b4bea2798405d666637babfd9d4bfa66cdabca66e18b54cfc"
+  },
+  "_generate_filename": {
+    "baseline_code_signature_text": "def _generate_filename(node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "c91e83f113e279a0adb6371a69aaee0b9aa60760bf994e76e61cd3e00c25d890",
+    "baseline_yaml_content_hash": "9d858d508f1d5a77edc910101441c5e25b91e8a3a09795c097367129c4f14676"
+  },
+  "_generate_navbar": {
+    "baseline_code_signature_text": "def _generate_navbar(current_node: QuipuNode, exported_hashes_set: Set[str], filename_map: Dict[str, str], hidden_link_types: Set[str]) -> str:",
+    "baseline_code_structure_hash": "31730019d72095558dfbb0f1409ac592b3385282bd70b82d0e846ac04feb1425",
+    "baseline_yaml_content_hash": "439ee3044f717fd745aefda1f2bc6f58000aaf1f8d24fcfad4d0b590727136b6"
+  },
+  "_sanitize_summary": {
+    "baseline_code_signature_text": "def _sanitize_summary(summary: str) -> str:",
+    "baseline_code_structure_hash": "c6aa66cd0f4041b9978c8262f712dec660248f7cdea7a5bccd18b52cb1f2920d",
+    "baseline_yaml_content_hash": "515fb40dea6723ed37488a8d07429a6e875978fe91a18c934ec2a4abf29dbfa9"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(app: typer.Typer):",
+    "baseline_code_structure_hash": "32475c50cf36afaf2fb100127ea888c4b2eda4d547ed04ef114d35119f2a5d4b"
+  }
+}

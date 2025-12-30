@@ -1,0 +1,95 @@
+{
+  "GitObjectHistoryReader": {
+    "baseline_yaml_content_hash": "fa9de4606ba973ce8967c5e18e2a57c2b68f25c98595f574b07e09f2d6b0b8c1"
+  },
+  "GitObjectHistoryReader.__init__": {
+    "baseline_code_signature_text": "def __init__(self, git_db: GitDB):",
+    "baseline_code_structure_hash": "77ecc597dec1e420b8ec20498d1073fe96d4f70b467178ad59d85887e3f67764"
+  },
+  "GitObjectHistoryReader._parse_output_tree_from_body": {
+    "baseline_code_signature_text": "def _parse_output_tree_from_body(self, body: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "6e75565a640c71eb0329f5841f021eac227cc0edbc11f6e98bb165b88f0857aa"
+  },
+  "GitObjectHistoryReader._parse_tree_binary": {
+    "baseline_code_signature_text": "def _parse_tree_binary(self, data: bytes) -> Dict[str, str]:",
+    "baseline_code_structure_hash": "93db9fe55915d05bba3758f93fc244ff5da58b4db2240fc1d51cd4c1689771e9",
+    "baseline_yaml_content_hash": "7830a9b238eab446a4cc1f02ac960dd4cc914372e20989e9f54fc9ea952ca3a9"
+  },
+  "GitObjectHistoryReader.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
+    "baseline_yaml_content_hash": "fd3cea22b5b4cf61bde4480725ab641306829e31db1c71752cdf456bd74a9ad2"
+  },
+  "GitObjectHistoryReader.get_ancestor_output_trees": {
+    "baseline_code_signature_text": "def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "5ae091ca177977fc323d5563cb7f0c6e7af44ac50237f951d24c9793c2336220",
+    "baseline_yaml_content_hash": "9849e4d88ccc8915ff0ea296d98819102a75a39110b9ce29db09f96daa04ee4e"
+  },
+  "GitObjectHistoryReader.get_descendant_output_trees": {
+    "baseline_code_signature_text": "def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "8eb09e56e11e9534720ef7286af9a75507b606322ada07811813f6b3278f5edd",
+    "baseline_yaml_content_hash": "3092b6b4942a3f800cbb1f8b9bc52d11306de0eed4f0f063de9689c211aaf633"
+  },
+  "GitObjectHistoryReader.get_node_blobs": {
+    "baseline_code_signature_text": "def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "48acf7a37a5612c09d5062797e966133a5c15ba17d05e10407be3235bb076f3d",
+    "baseline_yaml_content_hash": "abb939ea7c6cc0767ee196f957f0acd80fe50af5b13888563eccbd798db62431"
+  },
+  "GitObjectHistoryReader.get_node_content": {
+    "baseline_code_signature_text": "def get_node_content(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "72fb728d5fb5468b523a77045d87750229fb34202f36e0bfe8861de1ab999ed8",
+    "baseline_yaml_content_hash": "78e2ae18a0d89a1cbe335a464dfd5c57596fa5c27e5820a5378eba5152915562"
+  },
+  "GitObjectHistoryReader.get_node_count": {
+    "baseline_code_signature_text": "def get_node_count(self) -> int:",
+    "baseline_code_structure_hash": "f248a486494c998cc0f98482e50a5e3292f3132d247377d5088251762489517e",
+    "baseline_yaml_content_hash": "d790a970e3bf2ba1c363b34d6e08435db58ce8ff6586c6d29969a8503d0923fa"
+  },
+  "GitObjectHistoryReader.get_node_position": {
+    "baseline_code_signature_text": "def get_node_position(self, output_tree_hash: str) -> int:",
+    "baseline_code_structure_hash": "eeb815e029cbffaf43c5365481a21a4251ca6fb30632886a63a5716104041b0e",
+    "baseline_yaml_content_hash": "2c0aabaead6fe0d3a26f162368b614d4af70a2a8d2643be578587e6f4221bb73"
+  },
+  "GitObjectHistoryReader.get_private_data": {
+    "baseline_code_signature_text": "def get_private_data(self, node_commit_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772",
+    "baseline_yaml_content_hash": "5a8ee3f85a5bf0099e8046ac07d8237bc1cdfe5934ad76fb626e35e3d602c6ca"
+  },
+  "GitObjectHistoryReader.load_all_nodes": {
+    "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be",
+    "baseline_yaml_content_hash": "f7baab526c729b8255fb8df91500d15d8b269ddd9a8d0a0d63420f2a78bd1fc9"
+  },
+  "GitObjectHistoryReader.load_nodes_paginated": {
+    "baseline_code_signature_text": "def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "cf4d892bf90a00fa3f083ef8e4bb292b58bf36a417cf53e04002657744c0022e",
+    "baseline_yaml_content_hash": "36d66b60befe24bda0493292a8b04c22b9002faeb13e0eb865067f506e8ef0ee"
+  },
+  "GitObjectHistoryWriter": {
+    "baseline_yaml_content_hash": "27d18b151c46ab381653c3a1a865a287f7b5eccead5a65b716de6a9650b3d6c3"
+  },
+  "GitObjectHistoryWriter.__init__": {
+    "baseline_code_signature_text": "def __init__(self, git_db: GitDB):",
+    "baseline_code_structure_hash": "77ecc597dec1e420b8ec20498d1073fe96d4f70b467178ad59d85887e3f67764"
+  },
+  "GitObjectHistoryWriter._generate_summary": {
+    "baseline_code_signature_text": "def _generate_summary(self, node_type: str, content: str, input_tree: str, output_tree: str, **kwargs: Any = {}) -> str:",
+    "baseline_code_structure_hash": "d7e47a240163ec9d584a02372862705d9fed3fcec13161ca3f8440e50ad7bac8",
+    "baseline_yaml_content_hash": "bc6da71ae70e5021ea01d9df55e7886cb320eb427cee95d0fcf3252fec71afeb"
+  },
+  "GitObjectHistoryWriter._get_env_info": {
+    "baseline_code_signature_text": "def _get_env_info(self) -> Dict[str, str]:",
+    "baseline_code_structure_hash": "31df68f14478e2a2dc8aba55fdc5f1ed5469e517144bf5f26a0a3b6ccbdbf8ed",
+    "baseline_yaml_content_hash": "7cc6852ab22783d6d079479682b46e8e4030dfa42fe37ffa74281e349448ab81"
+  },
+  "GitObjectHistoryWriter._get_generator_info": {
+    "baseline_code_signature_text": "def _get_generator_info(self) -> Dict[str, str]:",
+    "baseline_code_structure_hash": "f2cfe42d24dcc6ab8de7bc71a620e91f8f721f0e6daab47739827760147a34d1",
+    "baseline_yaml_content_hash": "e183416edd78cff88a1948cc6de8bd9ed2b21ce59674f2c3728c339346bb364c"
+  },
+  "GitObjectHistoryWriter.create_node": {
+    "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any = {}) -> QuipuNode:",
+    "baseline_code_structure_hash": "f04bb8222f7e248eae151188752d560054da0331a6605ee0e8b2938943348a8d",
+    "baseline_yaml_content_hash": "e50339225cf23742abbbafcdadd25baced08f1c79c109f25b72c0e26158d25de"
+  }
+}

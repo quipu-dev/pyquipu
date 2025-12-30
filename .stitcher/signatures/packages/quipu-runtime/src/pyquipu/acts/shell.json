@@ -1,0 +1,12 @@
+{
+  "_run_command": {
+    "baseline_code_signature_text": "def _run_command(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "4cbaf604e29ae42fd17eaabe5a7374f93e18b522609d454103a49b43ac3505c0",
+    "baseline_yaml_content_hash": "22a4d619973464a13b853a6ee589b34272deb24f03372728ff87eb3d4bdd922e"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "3441aaf5afcde908e4863bfa777859025d54b716d56327887f9672ea8ad2e8cd"
+  }
+}

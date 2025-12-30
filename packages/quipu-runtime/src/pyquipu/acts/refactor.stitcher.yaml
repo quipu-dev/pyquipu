@@ -1,0 +1,8 @@
+"_delete_file": |-
+  Act: delete_file
+  Args: [path]
+"_move_file": |-
+  Act: move_file
+  Args: [src_path, dest_path]
+"register": |-
+  注册重构类操作

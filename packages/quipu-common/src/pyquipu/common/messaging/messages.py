@@ -5,10 +5,6 @@ logger = logging.getLogger(__name__)
 
 
 def find_locales_dir() -> Path | None:
-    """
-    Find the 'locales' directory located relative to this file.
-    This is robust for both development and installed package environments.
-    """
     try:
         # The 'locales' directory is now part of the quipu.common package data
         locales_path = Path(__file__).parent.parent / "locales"

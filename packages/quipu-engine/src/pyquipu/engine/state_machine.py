@@ -22,13 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Engine:
-    """
-    Quipu 状态引擎。
-    负责协调 Git 物理状态和 Quipu 逻辑图谱。
-    """
-
     def _sync_persistent_ignores(self):
-        """将 config.yml 中的持久化忽略规则同步到 .git/info/exclude。"""
         try:
             config = ConfigManager(self.root_dir)
             patterns = config.get("sync.persistent_ignores", [])
@@ -97,18 +91,10 @@ class Engine:
             self._sync_persistent_ignores()
 
     def close(self):
-        """关闭引擎持有的所有资源，如数据库连接。"""
         if self.db_manager:
             self.db_manager.close()
 
     def _get_current_user_id(self) -> str:
-        """
-        确定当前用户的 ID，实现统一的、鲁棒的身份识别。
-        优先级:
-        1. .quipu/config.yml 中的 `sync.user_id`
-        2. `git config user.email` (经过规范化处理)
-        3. 回退到 "unknown-local-user"
-        """
         # 1. 尝试从 Quipu 配置中读取
         config = ConfigManager(self.root_dir)
         user_id = config.get("sync.user_id")
@@ -271,10 +257,6 @@ class Engine:
         node_type: Optional[str] = None,
         limit: int = 10,
     ) -> List[QuipuNode]:
-        """
-        在历史图谱中查找符合条件的节点。
-        此方法现在委托给配置的 HistoryReader 来执行查找。
-        """
         return self.reader.find_nodes(
             summary_regex=summary_regex,
             node_type=node_type,

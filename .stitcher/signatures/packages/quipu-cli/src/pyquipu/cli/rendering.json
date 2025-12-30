@@ -1,0 +1,48 @@
+{
+  "Renderer": {
+    "baseline_yaml_content_hash": "18d8fae3f7d2aaf86951a68b5733be7403edcbfaa0e2ff199bb74ba99c69c345"
+  },
+  "Renderer.data": {
+    "baseline_code_signature_text": "def data(self, data_string: str) -> None:",
+    "baseline_code_structure_hash": "e24670692edbaa5b2b5efeb813dbb1f8c58794e5f10e72f7b92f5ee5d18f505c"
+  },
+  "Renderer.error": {
+    "baseline_code_signature_text": "def error(self, message: str) -> None:",
+    "baseline_code_structure_hash": "2cd45ec5cc7b5fb349714653e4b1c9f36712fc8adf7a7ef9e1eb8774b61e7f4c"
+  },
+  "Renderer.info": {
+    "baseline_code_signature_text": "def info(self, message: str) -> None:",
+    "baseline_code_structure_hash": "74013f04bbff01b4572176f4cdac1721665fcad57786891db1ea372e5ce7de3b"
+  },
+  "Renderer.success": {
+    "baseline_code_signature_text": "def success(self, message: str) -> None:",
+    "baseline_code_structure_hash": "17cccbfacd9894cee2db64164628e166abec8d66b260be2492fa5a812ad9d615"
+  },
+  "Renderer.warning": {
+    "baseline_code_signature_text": "def warning(self, message: str) -> None:",
+    "baseline_code_structure_hash": "122aef289ffd46f5b55b51ddb08da50008b03914266298a8a491fe22cbdaabe4"
+  },
+  "TyperRenderer": {
+    "baseline_yaml_content_hash": "fee149668ccd0287048ed4b7dc9836728da5c48fb18e9059fde948e5ee48fdbb"
+  },
+  "TyperRenderer.data": {
+    "baseline_code_signature_text": "def data(self, data_string: str) -> None:",
+    "baseline_code_structure_hash": "e24670692edbaa5b2b5efeb813dbb1f8c58794e5f10e72f7b92f5ee5d18f505c"
+  },
+  "TyperRenderer.error": {
+    "baseline_code_signature_text": "def error(self, message: str) -> None:",
+    "baseline_code_structure_hash": "2cd45ec5cc7b5fb349714653e4b1c9f36712fc8adf7a7ef9e1eb8774b61e7f4c"
+  },
+  "TyperRenderer.info": {
+    "baseline_code_signature_text": "def info(self, message: str) -> None:",
+    "baseline_code_structure_hash": "74013f04bbff01b4572176f4cdac1721665fcad57786891db1ea372e5ce7de3b"
+  },
+  "TyperRenderer.success": {
+    "baseline_code_signature_text": "def success(self, message: str) -> None:",
+    "baseline_code_structure_hash": "17cccbfacd9894cee2db64164628e166abec8d66b260be2492fa5a812ad9d615"
+  },
+  "TyperRenderer.warning": {
+    "baseline_code_signature_text": "def warning(self, message: str) -> None:",
+    "baseline_code_structure_hash": "122aef289ffd46f5b55b51ddb08da50008b03914266298a8a491fe22cbdaabe4"
+  }
+}

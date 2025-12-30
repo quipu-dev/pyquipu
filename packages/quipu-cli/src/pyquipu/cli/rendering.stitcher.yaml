@@ -1,0 +1,4 @@
+"Renderer": |-
+  Protocol defining the interface for a message renderer.
+"TyperRenderer": |-
+  A renderer that uses Typer for colored and styled CLI output.

@@ -1,0 +1,19 @@
+"DatabaseManager": |-
+  管理 SQLite 数据库连接和 Schema。
+"DatabaseManager.__del__": |-
+  析构函数，作为关闭连接的最后一道防线。
+"DatabaseManager._get_conn": |-
+  获取数据库连接，如果不存在则创建。
+"DatabaseManager.batch_insert_edges": |-
+  批量插入边。
+"DatabaseManager.batch_insert_nodes": |-
+  批量插入节点。
+"DatabaseManager.close": |-
+  关闭数据库连接。
+"DatabaseManager.execute_write": |-
+  执行写操作的通用方法。
+"DatabaseManager.get_all_node_hashes": |-
+  获取数据库中所有节点的 commit_hash。
+"DatabaseManager.init_schema": |-
+  初始化数据库 Schema，如果表不存在则创建。
+  符合 QLDS v1.0 规范。

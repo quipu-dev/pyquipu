@@ -13,10 +13,6 @@ from .helpers import engine_context, filter_nodes, filter_reachable_nodes
 
 
 def _nodes_to_json_str(nodes: List[QuipuNode]) -> str:
-    """
-    Dynamically serializes a list of QuipuNode objects to a JSON string,
-    avoiding hardcoded fields for better maintainability.
-    """
     EXCLUDED_FIELDS = {"parent", "children", "content", "filename"}
     node_list = []
     for node in nodes:
@@ -55,9 +51,6 @@ def register(app: typer.Typer):
         ] = False,
         json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
     ):
-        """
-        显示 Quipu 历史图谱日志。
-        """
         with engine_context(work_dir) as engine:
             graph = engine.history_graph
 
@@ -113,9 +106,6 @@ def register(app: typer.Typer):
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
         json_output: Annotated[bool, typer.Option("--json", help="以 JSON 格式输出结果。")] = False,
     ):
-        """
-        根据条件查找历史节点。
-        """
         with engine_context(work_dir) as engine:
             if not engine.history_graph:
                 if json_output:

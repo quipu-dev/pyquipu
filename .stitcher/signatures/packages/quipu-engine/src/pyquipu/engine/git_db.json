@@ -1,0 +1,134 @@
+{
+  "GitDB": {
+    "baseline_yaml_content_hash": "4c211b17d57c9908f294f6fb6253f873ba0777479f3660e6ad3fc0a45d4c0bb2"
+  },
+  "GitDB.__init__": {
+    "baseline_code_signature_text": "def __init__(self, root_dir: Path):",
+    "baseline_code_structure_hash": "5dc1c0adb5a7fd93b7c1aac10cd7fcfda7de4259c8fb8d73764072598e93d1bf"
+  },
+  "GitDB._ensure_git_repo": {
+    "baseline_code_signature_text": "def _ensure_git_repo(self):",
+    "baseline_code_structure_hash": "94519345cb13fcfdbc9746ec4b72ec22759aa0ccfe279b10aba80897adf91954",
+    "baseline_yaml_content_hash": "ea0fc9cdf0b213d2ced025c05b2bf89cc9dc1d0798c97a16a540d2bb636c1e1e"
+  },
+  "GitDB._run": {
+    "baseline_code_signature_text": "def _run(self, args: list[str], env: Optional[Dict] = None, check: bool = True, log_error: bool = True, input_data: Optional[Union[str, bytes]] = None, capture_as_text: bool = True) -> subprocess.CompletedProcess:",
+    "baseline_code_structure_hash": "49820f769dbb9d4bb085c4844225334622b37a33e4643b422fb6175630aa5f69",
+    "baseline_yaml_content_hash": "2c8ce8d5a833345359c8acd2c1706b40f53ef40217025557face1208ecaf63b3"
+  },
+  "GitDB.batch_cat_file": {
+    "baseline_code_signature_text": "def batch_cat_file(self, object_hashes: List[str]) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "2fda258fc9336164886b30c1a4a7d3b53eb3dd63bf2b1a3c3aad99a649e0ef44",
+    "baseline_yaml_content_hash": "7f9592885616f3c2a5e448e3365d5825bb256c748928dfb6696bd419ddc9acda"
+  },
+  "GitDB.cat_file": {
+    "baseline_code_signature_text": "def cat_file(self, object_hash: str, object_type: str) -> bytes:",
+    "baseline_code_structure_hash": "69b166411f4a31727115caa197ddc32637a646bfe735aa4e555400c654597f5a",
+    "baseline_yaml_content_hash": "52e3968e67f654e7a6f2b2e52a4629495a39530ab63ac489338e64c90c0daa31"
+  },
+  "GitDB.checkout_tree": {
+    "baseline_code_signature_text": "def checkout_tree(self, new_tree_hash: str, old_tree_hash: Optional[str] = None):",
+    "baseline_code_structure_hash": "5665baaadaf6a2b3e5f09812ec429cd57f9cd0ee96ec6a6fd9b574de0638f5a5",
+    "baseline_yaml_content_hash": "46b7f74d59b8310ad88d424bad906eaf9930bb06bd1eb8d606b48f2e8ff28c83"
+  },
+  "GitDB.commit_tree": {
+    "baseline_code_signature_text": "def commit_tree(self, tree_hash: str, parent_hashes: Optional[List[str]], message: str) -> str:",
+    "baseline_code_structure_hash": "7ab021793b05f0b3cb2b77b03a26ec3c8c79a5216afdf6f4a28c0d619ffed6b5",
+    "baseline_yaml_content_hash": "52028edf835313f833d8936f093731ed9a16c12a2dbf1c208de2d24472b728e5"
+  },
+  "GitDB.delete_ref": {
+    "baseline_code_signature_text": "def delete_ref(self, ref_name: str):",
+    "baseline_code_structure_hash": "5fbe8dad7b09cf9d4a07cebe49e1bfa2c05a3dedd0e637c2285abe0da91a5ed9",
+    "baseline_yaml_content_hash": "3f8d76d1431101dda5fdaa973a9c26bb6aab973147bfd503f4d61fc132c974c5"
+  },
+  "GitDB.fetch_quipu_refs": {
+    "baseline_code_signature_text": "def fetch_quipu_refs(self, remote: str, user_id: str):",
+    "baseline_code_structure_hash": "5329c1d95fafb12b36203f0be2969576feae0f02796c809e21d83a230e4e5fdf",
+    "baseline_yaml_content_hash": "db103925271f64c0010840e19fabd852d279b19b98937c577e81e4e11d559370"
+  },
+  "GitDB.get_all_ref_heads": {
+    "baseline_code_signature_text": "def get_all_ref_heads(self, prefix: str) -> List[Tuple[str, str]]:",
+    "baseline_code_structure_hash": "bd329d6724ee9eba23d711036e2f791c4fd637e1edee08c0440aa0b4ee8d445c",
+    "baseline_yaml_content_hash": "d6126b65fe71e358de8d9d3c971d1f0dc13fa8f0ca013138303f9a9da5745101"
+  },
+  "GitDB.get_blobs_from_tree": {
+    "baseline_code_signature_text": "def get_blobs_from_tree(self, tree_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "a952fe6c31a8b6532b83257d86c688a703472fc1632edaec3af54c8337db6935",
+    "baseline_yaml_content_hash": "e2faeffe40d3d8b76812e62ae5c0318326c953220ca1904604ad36c42c8e8dbf"
+  },
+  "GitDB.get_commit_by_output_tree": {
+    "baseline_code_signature_text": "def get_commit_by_output_tree(self, tree_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "018531ed054722f9ba394a14bff3ee18959f1f45208546ac6d7d9cec35bc69f9",
+    "baseline_yaml_content_hash": "8fced0006415d57e1d9e0b4c492e1a32f1318d4f596d258ece0d50e69aea5c49"
+  },
+  "GitDB.get_diff_name_status": {
+    "baseline_code_signature_text": "def get_diff_name_status(self, old_tree: str, new_tree: str) -> List[Tuple[str, str]]:",
+    "baseline_code_structure_hash": "807343877a65b864a254b3e3719d15a6cc0edb17c4e792ea1bba00c60f0be910",
+    "baseline_yaml_content_hash": "0f669c401a5989dd7902eadeb7c40b38153b10d68285360fbda9a2b9a6f3e831"
+  },
+  "GitDB.get_diff_stat": {
+    "baseline_code_signature_text": "def get_diff_stat(self, old_tree: str, new_tree: str, count = 30) -> str:",
+    "baseline_code_structure_hash": "02b557078d108f816fceafd4e19b9609b54ac6ce684d7f450ecf9c619dc12e54",
+    "baseline_yaml_content_hash": "023384ec602fe4ac35b236063ef8a9e45bed76cc62a8f8ec55880374719b28f0"
+  },
+  "GitDB.get_head_commit": {
+    "baseline_code_signature_text": "def get_head_commit(self) -> Optional[str]:",
+    "baseline_code_structure_hash": "ac96cb4ee256e4945f2b79fd4da8ddd4656c58e54c8c0c6839945bdca6e946b0",
+    "baseline_yaml_content_hash": "e29c4cdc6057b618fd5e64d52bb0681b6571a872cbb6aef2db1d18f2f53bf8e2"
+  },
+  "GitDB.get_tree_hash": {
+    "baseline_code_signature_text": "def get_tree_hash(self) -> str:",
+    "baseline_code_structure_hash": "9fd88b05fd5c0e70ea2ea2a59b07ed091770257177751914385e56deeb306eff",
+    "baseline_yaml_content_hash": "74a423b6a5b5364382d802443556d9624e75c9e9053ab384d243ec8cdf456fa3"
+  },
+  "GitDB.has_quipu_ref": {
+    "baseline_code_signature_text": "def has_quipu_ref(self) -> bool:",
+    "baseline_code_structure_hash": "3c1ac402aca77182a80fa5d6e7dd603dff6931ebf0e8c62e412476b0092e6a1b",
+    "baseline_yaml_content_hash": "c51dd5cc3ac09779821b7e68d2841822c24c2d4d0222a95368c4beb31b1b65ef"
+  },
+  "GitDB.hash_object": {
+    "baseline_code_signature_text": "def hash_object(self, content_bytes: bytes, object_type: str = 'blob') -> str:",
+    "baseline_code_structure_hash": "7ed7d92539fb42ef3ac3fe361d7bdc09f452ff8325a8e1be350cbcce92f56d86",
+    "baseline_yaml_content_hash": "7177f28f948c14565ecea3f8048092ac5bd4f09f1a944434f44db379aaad5e03"
+  },
+  "GitDB.is_ancestor": {
+    "baseline_code_signature_text": "def is_ancestor(self, ancestor: str, descendant: str) -> bool:",
+    "baseline_code_structure_hash": "23f025bcc08169a0956ebac6ce419f075e2b7061a356b011568d0326c196da42",
+    "baseline_yaml_content_hash": "8f2d2d5bab7c1fe808c842cd6eefdf1ee80f098d46f03bce001b3825a7343b5c"
+  },
+  "GitDB.log_ref": {
+    "baseline_code_signature_text": "def log_ref(self, ref_names: Union[str, List[str]]) -> List[Dict[str, str]]:",
+    "baseline_code_structure_hash": "9d9ba825352bec5047302b81c5ee2015e06cb72d50c2f5cd7be36d54edb684fa",
+    "baseline_yaml_content_hash": "910cc823410c5539ec1b16f14d4ff3e78fca06a22996c40516ada35ab0e052a3"
+  },
+  "GitDB.mktree": {
+    "baseline_code_signature_text": "def mktree(self, tree_descriptor: str) -> str:",
+    "baseline_code_structure_hash": "52d1332aa4900f72dc9fa169fbec3db9cc812fa7de7e93df2d476113f8f2ab37",
+    "baseline_yaml_content_hash": "68de6a7fc1517b50a14630fc6fed2461f9b03824f1f43474e0a5257a0c3454a0"
+  },
+  "GitDB.prune_local_from_remote": {
+    "baseline_code_signature_text": "def prune_local_from_remote(self, remote: str, user_id: str):",
+    "baseline_code_structure_hash": "1dee7d7db5207789d7e5ecaec48e9c2e8ea39b41352df305c97af914db5284e4",
+    "baseline_yaml_content_hash": "b0b6f0146bf29143b5564e13441643485fd945509e77372f897c3d2e7b4feb11"
+  },
+  "GitDB.push_quipu_refs": {
+    "baseline_code_signature_text": "def push_quipu_refs(self, remote: str, user_id: str, force: bool = False):",
+    "baseline_code_structure_hash": "1dabcc997d35978c6e9fa59a348ff803c39fa2e54bbdc9eb3f990f8dbb07eb85",
+    "baseline_yaml_content_hash": "3b42f684093552a3f7a9b199c5e06f5c8831058d0c54291d7e62cd736320426d"
+  },
+  "GitDB.reconcile_local_with_remote": {
+    "baseline_code_signature_text": "def reconcile_local_with_remote(self, remote: str, user_id: str):",
+    "baseline_code_structure_hash": "febb797ed43b998abec81d7c98c30bb3ae2b6ffe104443fa7853ea1fcf140a3e",
+    "baseline_yaml_content_hash": "db65eab7f1e945fe48c40276227ae9c770b5413d0a053d5851d2a45127d14624"
+  },
+  "GitDB.shadow_index": {
+    "baseline_code_signature_text": "def shadow_index(self):",
+    "baseline_code_structure_hash": "49c00a86d90913123b8ca5959808b465ca18e57fbf0768e55c93180fe1b8e972",
+    "baseline_yaml_content_hash": "b77a7b4073331573c773b40a56dcbede1e676694df0b2ad5a3f74c6d9eeea07c"
+  },
+  "GitDB.update_ref": {
+    "baseline_code_signature_text": "def update_ref(self, ref_name: str, commit_hash: str):",
+    "baseline_code_structure_hash": "ac004f95d84fa5572f9d8979cf68ecd5086dd127ccbde14d38d45d2d5f19aece",
+    "baseline_yaml_content_hash": "4c9f9a6eed7ca38b9cf06e2ec724763a7233f5159968903b0c16cb89b7ab5fe9"
+  }
+}

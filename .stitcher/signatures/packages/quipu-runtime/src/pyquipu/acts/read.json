@@ -1,0 +1,37 @@
+{
+  "SafeArgumentParser": {
+    "baseline_yaml_content_hash": "23c28c4a1c0d44ec8a2b1dbec4caf1014ca2c07d74aa198210cbc11c41963104"
+  },
+  "SafeArgumentParser.error": {
+    "baseline_code_signature_text": "def error(self, message):",
+    "baseline_code_structure_hash": "f5d4b06a1f2ccb21a54181ab170905fd7dd4d90d233a2c336c2e0959b0faaae9"
+  },
+  "SafeArgumentParser.exit": {
+    "baseline_code_signature_text": "def exit(self, status = 0, message = None):",
+    "baseline_code_structure_hash": "b657e47efb3b0c259699a1b88e9a0b02d689b79453b7caa7ea080f8db420cc67"
+  },
+  "_list_files": {
+    "baseline_code_signature_text": "def _list_files(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "ea78bfb50fb17f905c21c6eb3799ae1b60e7778211e2d7058297acd3a27d798b",
+    "baseline_yaml_content_hash": "2b4da833ae756579937a6c5321d10b2cc96c19b41fa0088d5d5a25c229552ffc"
+  },
+  "_python_search": {
+    "baseline_code_signature_text": "def _python_search(ctx: ActContext, start_path: Path, pattern_str: str):",
+    "baseline_code_structure_hash": "b88fe69461db031536099e10d9a978a7baf4629f6bb8af5fc079dcfdd4b356e5"
+  },
+  "_read_file": {
+    "baseline_code_signature_text": "def _read_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "1c20c2eed414a164cfe41ead3c4eda34deb7181e426c7fed9213a471c313dcc0",
+    "baseline_yaml_content_hash": "a35b897f7207a9cf4601178fa5ca9512eda2e0e3858f4be07d499909df8038ec"
+  },
+  "_search_files": {
+    "baseline_code_signature_text": "def _search_files(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "a96f37a1e686362d69ab00ddc5639de1c10e833d746cc43fbdfcf571dae8e467",
+    "baseline_yaml_content_hash": "9c30c3d5b9838c55ef5fc09ff90883d64b55f689a6e0beef2279c7db00a43960"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "603b6a996c61447e39a2b6f4ceb9de6647fa6e874612bdb80e9cdc62b5ea2723"
+  }
+}

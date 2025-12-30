@@ -38,9 +38,6 @@ def register(app: typer.Typer):
         ] = False,
         list_acts: Annotated[bool, typer.Option("--list-acts", "-l", help="列出所有可用的操作指令及其说明。")] = False,
     ):
-        """
-        Axon: 无状态的 Markdown 任务执行器 (不记录历史)。
-        """
         setup_logging()
         logger.debug(f"axon started with file={file}, work_dir={work_dir}, parser={parser_name}, yolo={yolo}")
 

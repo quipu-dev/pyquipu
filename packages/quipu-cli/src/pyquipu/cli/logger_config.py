@@ -6,7 +6,6 @@ from .config import LOG_LEVEL
 
 
 def setup_logging():
-    """配置全局日志记录器 (默认 stderr)"""
     root_logger = logging.getLogger()
     root_logger.setLevel(LOG_LEVEL)
 
@@ -22,10 +21,6 @@ def setup_logging():
 
 
 def configure_file_logging(log_path: Path):
-    """
-    将日志重定向到文件，专为 TUI 模式设计。
-    强制使用 DEBUG 级别以捕获详细信息。
-    """
     root_logger = logging.getLogger()
 
     # 移除所有现有的 handler (通常是 stderr stream handler)

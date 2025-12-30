@@ -1,0 +1,3 @@
+"_find_development_monorepo_root": |-
+  向上递归查找 Quipu 开发时的项目根目录 (monorepo root)。
+  依据：存在 'packages' 目录和顶层 'pyproject.toml'。

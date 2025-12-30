@@ -1,0 +1,105 @@
+{
+  "QuipuUiApp.__init__": {
+    "baseline_code_signature_text": "def __init__(self, work_dir: Path, initial_raw_mode: bool = False):",
+    "baseline_code_structure_hash": "01289e979aa1706f5d24373f9ce01b36459ec8285f3bfa3678fa737278e19dc8"
+  },
+  "QuipuUiApp._focus_current_node": {
+    "baseline_code_signature_text": "def _focus_current_node(self, table: DataTable):",
+    "baseline_code_structure_hash": "3f14fec25010cd9d925d28f74c08f854c7054430a655402c717c1467abf39ece"
+  },
+  "QuipuUiApp._get_graph_chars": {
+    "baseline_code_signature_text": "def _get_graph_chars(self, tracks: list, node: QuipuNode, base_color: str, dim_tag: str, end_dim_tag: str) -> list[str]:",
+    "baseline_code_structure_hash": "fe1b3643a1cd93cf866b6fd217fa89a9d950b748d0ddf9956d9b5d15eb288169"
+  },
+  "QuipuUiApp._get_node_summary": {
+    "baseline_code_signature_text": "def _get_node_summary(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "e213009b7d93faa2848cb2327cb7c68bf1dc189eb02dc001eae4df755cd46dcb"
+  },
+  "QuipuUiApp._load_page": {
+    "baseline_code_signature_text": "def _load_page(self, page_number: int) -> None:",
+    "baseline_code_structure_hash": "98b62932be33372d95dc93d62e67d1058ddf83d6594412dfe204991e90172aad",
+    "baseline_yaml_content_hash": "b27bba05f73908b85561112ba0f154f969826084660d47f03a3b8f6e4599b7a0"
+  },
+  "QuipuUiApp._on_timer_finished": {
+    "baseline_code_signature_text": "def _on_timer_finished(self) -> None:",
+    "baseline_code_structure_hash": "32df223f8eec8c74f8fe73b9398de6706ab16757bf4f177300d5656f5195f731",
+    "baseline_yaml_content_hash": "8c05cc6e0403d09776223f9ae685a3a53be128f56a903cecba47592fadf6b3ef"
+  },
+  "QuipuUiApp._populate_table": {
+    "baseline_code_signature_text": "def _populate_table(self, table: DataTable, nodes: List[QuipuNode]):",
+    "baseline_code_structure_hash": "f037273d62d065407745e04587e974714e2145a5c02ad16cbce19a59432bb60a"
+  },
+  "QuipuUiApp._refresh_table": {
+    "baseline_code_signature_text": "def _refresh_table(self):",
+    "baseline_code_structure_hash": "d0f29982113d0c8b76cb1da8b9ec4b1cad9167be8fff537c2260bd9e8a8b9c5c"
+  },
+  "QuipuUiApp._set_state": {
+    "baseline_code_signature_text": "def _set_state(self, new_state: ContentViewSate):",
+    "baseline_code_structure_hash": "ec272fac2029963b9fc5683d8dc4d342c3266b71247926143eb173a10b33c471"
+  },
+  "QuipuUiApp._update_header": {
+    "baseline_code_signature_text": "def _update_header(self):",
+    "baseline_code_structure_hash": "b99829eccbe22b74e9a7d1c1e07cbb1e9cc409d56f65fe2940d3e31dac70260f",
+    "baseline_yaml_content_hash": "b2fbbfb839a9985d11e706e8129a9113327cd552cdd6b5d4b39f55689a4f991b"
+  },
+  "QuipuUiApp._update_loading_preview": {
+    "baseline_code_signature_text": "def _update_loading_preview(self):",
+    "baseline_code_structure_hash": "767c9290debf190f584a9436e23c2aa9982d5a60f1d6e290cad7659ea52fbdb9",
+    "baseline_yaml_content_hash": "1b88c79624419a90ee90f41f5d2edb8d65aa3bd63c608028d6a422cc1ffbe848"
+  },
+  "QuipuUiApp.action_checkout_node": {
+    "baseline_code_signature_text": "def action_checkout_node(self) -> None:",
+    "baseline_code_structure_hash": "6056a94daa90ec8a6a31754dfee8cc8520bc6445b36a7d57d2b7d9a2752733c0"
+  },
+  "QuipuUiApp.action_dump_content": {
+    "baseline_code_signature_text": "def action_dump_content(self) -> None:",
+    "baseline_code_structure_hash": "5a4fe927bc2135f38176a350e1c5e72e776d02a093a510fef635b209e4f32ed0"
+  },
+  "QuipuUiApp.action_move_down": {
+    "baseline_code_signature_text": "def action_move_down(self) -> None:",
+    "baseline_code_structure_hash": "58c973119cc52d30536c8679cc3ad47e15f62a48556d382f0ca4e9946195ba5e"
+  },
+  "QuipuUiApp.action_move_up": {
+    "baseline_code_signature_text": "def action_move_up(self) -> None:",
+    "baseline_code_structure_hash": "baad7e50849ff155e575cf20848d79c9d2e990d8b9ea64ef377244a9240a4f62"
+  },
+  "QuipuUiApp.action_next_page": {
+    "baseline_code_signature_text": "def action_next_page(self) -> None:",
+    "baseline_code_structure_hash": "a011dcb10ba3a907630098bb7148047663f8dda37d56306a5d4867d70099587c"
+  },
+  "QuipuUiApp.action_previous_page": {
+    "baseline_code_signature_text": "def action_previous_page(self) -> None:",
+    "baseline_code_structure_hash": "f936a4f0d94f61c8e5c5da4e7cc263b47cc2ab5501928e596cea1e8809c98484"
+  },
+  "QuipuUiApp.action_toggle_hidden": {
+    "baseline_code_signature_text": "def action_toggle_hidden(self) -> None:",
+    "baseline_code_structure_hash": "d3e7cc55640e837653e783bf6e4e082300e4b5185e54d46e8f619b7ffac68469"
+  },
+  "QuipuUiApp.action_toggle_markdown": {
+    "baseline_code_signature_text": "def action_toggle_markdown(self) -> None:",
+    "baseline_code_structure_hash": "04c4ce3ba00cef71f98a68b872df58b6e601f80663afcfc876ae2b7ef471ba44",
+    "baseline_yaml_content_hash": "7b59e98423a7c6389a37d0c46d499d75ae1830bb4c77d3202b1ad7afd6fbbc91"
+  },
+  "QuipuUiApp.action_toggle_view": {
+    "baseline_code_signature_text": "def action_toggle_view(self) -> None:",
+    "baseline_code_structure_hash": "e55a4f61388ceb72baa7902977db9e45d76361b9610852bbc2f8ac4cf9cb013f",
+    "baseline_yaml_content_hash": "07c2f359ed18b3d53e0f59a545ae2ca1fec52b0e0e2df510193c9744d2c046a3"
+  },
+  "QuipuUiApp.compose": {
+    "baseline_code_signature_text": "def compose(self) -> ComposeResult:",
+    "baseline_code_structure_hash": "9d0206bca01ed6c1f9c9e895dfccd721bd6d623042d848013c91bb94cecf9938"
+  },
+  "QuipuUiApp.on_mount": {
+    "baseline_code_signature_text": "def on_mount(self) -> None:",
+    "baseline_code_structure_hash": "429db3decbec78474f9e0da57f060cad9ff3818521b0955c7a1fd7970deafd80",
+    "baseline_yaml_content_hash": "c8814c83dbac217fab7545b7a53f62f274a9aff0d374a5d3dfbf6679535fb4ea"
+  },
+  "QuipuUiApp.on_row_highlighted": {
+    "baseline_code_signature_text": "def on_row_highlighted(self, event: DataTable.RowHighlighted) -> None:",
+    "baseline_code_structure_hash": "4bd495bb1f0a64af31b79518560668c996c9d3cf6bf7e0280a649365c3a16930"
+  },
+  "QuipuUiApp.on_unmount": {
+    "baseline_code_signature_text": "def on_unmount(self) -> None:",
+    "baseline_code_structure_hash": "3f8bce49d7664245df81a63bb5a291ccf0c3cd96c45f83e04d75aebf1d2d5e3d"
+  }
+}

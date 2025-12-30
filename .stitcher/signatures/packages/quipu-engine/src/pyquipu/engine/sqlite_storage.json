@@ -1,0 +1,70 @@
+{
+  "SQLiteHistoryReader": {
+    "baseline_yaml_content_hash": "b4bdc32528f7d599454f338bb10326589ee72e35dafaa05533b670fca8a36008"
+  },
+  "SQLiteHistoryReader.__init__": {
+    "baseline_code_signature_text": "def __init__(self, db_manager: DatabaseManager, git_db: GitDB):",
+    "baseline_code_structure_hash": "4cc032f0d1a0b62f5bebeb0846c7c3721ec318549b2de1cb0c6f8dfd165faac4"
+  },
+  "SQLiteHistoryReader.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
+    "baseline_yaml_content_hash": "e40ed6b583e5a6ebd129eb88e18c18c8cb2ca2145444fe6de1837d98f260e36e"
+  },
+  "SQLiteHistoryReader.get_ancestor_output_trees": {
+    "baseline_code_signature_text": "def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "5ae091ca177977fc323d5563cb7f0c6e7af44ac50237f951d24c9793c2336220",
+    "baseline_yaml_content_hash": "d1a1859690419c6e40642a127d227c948ba1b46c1736f0b083031b3a2ea98071"
+  },
+  "SQLiteHistoryReader.get_descendant_output_trees": {
+    "baseline_code_signature_text": "def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "8eb09e56e11e9534720ef7286af9a75507b606322ada07811813f6b3278f5edd",
+    "baseline_yaml_content_hash": "5b15da04d284e0c4a5c199a1dc381d699f3de23dce20b1d921ef27eb293035a8"
+  },
+  "SQLiteHistoryReader.get_node_blobs": {
+    "baseline_code_signature_text": "def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "48acf7a37a5612c09d5062797e966133a5c15ba17d05e10407be3235bb076f3d",
+    "baseline_yaml_content_hash": "b888453b47142693e9007482bd27dadbfc566c88a6bd3bb27d3c609bed89fd63"
+  },
+  "SQLiteHistoryReader.get_node_content": {
+    "baseline_code_signature_text": "def get_node_content(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "72fb728d5fb5468b523a77045d87750229fb34202f36e0bfe8861de1ab999ed8",
+    "baseline_yaml_content_hash": "dbd2813851c838e42996ce5eb2030f9d6e1d0171456405c69e1e82db8082a1f4"
+  },
+  "SQLiteHistoryReader.get_node_count": {
+    "baseline_code_signature_text": "def get_node_count(self) -> int:",
+    "baseline_code_structure_hash": "f248a486494c998cc0f98482e50a5e3292f3132d247377d5088251762489517e",
+    "baseline_yaml_content_hash": "09d39c2faa0e81af2c66e2db4873bab445a69b0e89091fa206e7d3a1897f9ca4"
+  },
+  "SQLiteHistoryReader.get_node_position": {
+    "baseline_code_signature_text": "def get_node_position(self, output_tree_hash: str) -> int:",
+    "baseline_code_structure_hash": "eeb815e029cbffaf43c5365481a21a4251ca6fb30632886a63a5716104041b0e",
+    "baseline_yaml_content_hash": "aef8922d45ed0b2fcfa7974c9ad354f45db611882ce1a39ffa3afc4af4416e52"
+  },
+  "SQLiteHistoryReader.get_private_data": {
+    "baseline_code_signature_text": "def get_private_data(self, node_commit_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772",
+    "baseline_yaml_content_hash": "750d81269b7d129d2bd3b466fab93bb7fd6a800cd2555035ae72ede03048aa7c"
+  },
+  "SQLiteHistoryReader.load_all_nodes": {
+    "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be",
+    "baseline_yaml_content_hash": "a010aedaebd61fb076779cfd6c5ab582295de44112ffdb67180891802752cab3"
+  },
+  "SQLiteHistoryReader.load_nodes_paginated": {
+    "baseline_code_signature_text": "def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "cf4d892bf90a00fa3f083ef8e4bb292b58bf36a417cf53e04002657744c0022e",
+    "baseline_yaml_content_hash": "5beea74dae1733d4b03fe7ca15284dbacd5d822633b49bbad4d33790a2aa1999"
+  },
+  "SQLiteHistoryWriter": {
+    "baseline_yaml_content_hash": "444be1ec3373d745224cf0d0ed9bbc319e4e944ad1861ff72b743bcc14a72a53"
+  },
+  "SQLiteHistoryWriter.__init__": {
+    "baseline_code_signature_text": "def __init__(self, git_writer: GitObjectHistoryWriter, db_manager: DatabaseManager):",
+    "baseline_code_structure_hash": "b712e75ae060b4413d4df77f3045082c05a5e5fe370aeafb319e4cdd8acdfb86"
+  },
+  "SQLiteHistoryWriter.create_node": {
+    "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any = {}) -> QuipuNode:",
+    "baseline_code_structure_hash": "f04bb8222f7e248eae151188752d560054da0331a6605ee0e8b2938943348a8d"
+  }
+}

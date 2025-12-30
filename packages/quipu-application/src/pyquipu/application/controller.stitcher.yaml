@@ -1,0 +1,15 @@
+"QuipuApplication": |-
+  封装了 Quipu 核心业务流程的高层应用对象。
+  负责协调 Engine, Parser, Executor。
+"QuipuApplication._prepare_workspace": |-
+  检查并准备工作区，处理状态漂移。
+  返回执行前的 input_tree_hash。
+"QuipuApplication._setup_executor": |-
+  创建、配置并返回一个 Executor 实例，并注入确认处理器。
+"QuipuApplication.run": |-
+  执行一个完整的 Plan。
+"run_quipu": |-
+  Quipu 核心业务逻辑的入口包装器。
+
+  实例化并运行 QuipuApplication，捕获所有异常并转化为 QuipuResult。
+  确保资源被安全释放。

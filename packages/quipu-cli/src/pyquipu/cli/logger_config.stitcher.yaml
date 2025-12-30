@@ -1,0 +1,5 @@
+"configure_file_logging": |-
+  将日志重定向到文件，专为 TUI 模式设计。
+  强制使用 DEBUG 级别以捕获详细信息。
+"setup_logging": |-
+  配置全局日志记录器 (默认 stderr)

@@ -4,8 +4,6 @@ import typer
 
 
 class Renderer(Protocol):
-    """Protocol defining the interface for a message renderer."""
-
     def success(self, message: str) -> None: ...
     def info(self, message: str) -> None: ...
     def warning(self, message: str) -> None: ...
@@ -14,8 +12,6 @@ class Renderer(Protocol):
 
 
 class TyperRenderer:
-    """A renderer that uses Typer for colored and styled CLI output."""
-
     def success(self, message: str) -> None:
         typer.secho(message, fg=typer.colors.GREEN, err=True)
 

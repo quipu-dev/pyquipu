@@ -1,0 +1,44 @@
+{
+  "_append_file": {
+    "baseline_code_signature_text": "def _append_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "e78d8b8261306fbf565c2b49e91b086f26fca5fa768e332ba80adf86a70974fa",
+    "baseline_yaml_content_hash": "1aec44c09fad33933de5df84c580803ce7f1da5c3dcd8c80c4ce69299d4cab79"
+  },
+  "_echo": {
+    "baseline_code_signature_text": "def _echo(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "cd0193521a527aaccf2210d079fb1b7c499a558c3fde1975c67c9184bf6b3e00",
+    "baseline_yaml_content_hash": "14d7166bd73c339f40abe2ab0790e835530eac3dccd438de131be0eb6d842243"
+  },
+  "_end": {
+    "baseline_code_signature_text": "def _end(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "10f034ad868a5c083cca6c671d08cfff072493982871f2dc9e8c5ead83f5f262",
+    "baseline_yaml_content_hash": "3a41a180ba37200a117a6ffde8c99f8c9b2dc293c88d1149b67dbac5b932dbd2"
+  },
+  "_patch_file": {
+    "baseline_code_signature_text": "def _patch_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "4eb4aac8aec94dbbf183c3bb4e7db0072bcb69a39c8c14985229361afe76763a",
+    "baseline_yaml_content_hash": "41d08dfe4206e5fac434d7e9fe138ce76ba8792468659f77b3025975cd3df813"
+  },
+  "_summarize_append": {
+    "baseline_code_signature_text": "def _summarize_append(args: List[str], contexts: List[str]) -> str:",
+    "baseline_code_structure_hash": "48ef13978b4e76d8a06ee269ef8dbf9eb61273a8c50620b39772c187da366fbd"
+  },
+  "_summarize_patch_file": {
+    "baseline_code_signature_text": "def _summarize_patch_file(args: List[str], contexts: List[str]) -> str:",
+    "baseline_code_structure_hash": "900ab7217dc36a344556aad08ab2adcdbe7808be6dfa2d6f7f76c86591ad4b02"
+  },
+  "_summarize_write": {
+    "baseline_code_signature_text": "def _summarize_write(args: List[str], contexts: List[str]) -> str:",
+    "baseline_code_structure_hash": "c425846ca27d8fc0c7557063874e605e861defa666c93bd68b41ee5d61afc519"
+  },
+  "_write_file": {
+    "baseline_code_signature_text": "def _write_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "f9d1ddd4bd3133bb986ea3da57c13468a696244917adb9b4845765d0cce4f8e3",
+    "baseline_yaml_content_hash": "9b38bf8e17f7e7726a391fd4fdc52eae178735ea23b2ac1f05cfb1ea524523bc"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "74943ad77b18e8a649d9e0de2eb7d7626ba5ea6925a4f67ec13c06a219e5dbb8"
+  }
+}

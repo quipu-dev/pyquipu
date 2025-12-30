@@ -1,0 +1,3 @@
+"_nodes_to_json_str": |-
+  Dynamically serializes a list of QuipuNode objects to a JSON string,
+  avoiding hardcoded fields for better maintainability.

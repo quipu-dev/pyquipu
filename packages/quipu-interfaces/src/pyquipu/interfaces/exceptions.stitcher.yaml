@@ -1,0 +1,8 @@
+"AIFSOpsError": |-
+  基础异常类
+"ExecutionError": |-
+  操作执行错误
+"OperationCancelledError": |-
+  当用户取消一个操作时引发
+"ParseError": |-
+  Markdown 解析错误

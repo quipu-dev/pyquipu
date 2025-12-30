@@ -24,9 +24,6 @@ def cache_sync(
         ),
     ] = DEFAULT_WORK_DIR,
 ):
-    """
-    将 Git 历史增量同步到 SQLite 缓存。
-    """
     bus.info("cache.sync.info.hydrating")
     try:
         with engine_context(work_dir):
@@ -49,9 +46,6 @@ def cache_rebuild(
         ),
     ] = DEFAULT_WORK_DIR,
 ):
-    """
-    强制全量重建 SQLite 缓存。
-    """
     setup_logging()
     db_path = work_dir.resolve() / ".quipu" / "history.sqlite"
     if not db_path.exists():
@@ -69,10 +63,6 @@ def cache_prune_refs(
         ),
     ] = DEFAULT_WORK_DIR,
 ):
-    """
-    清理 refs/quipu/local/heads/ 下的冗余引用。
-    只保留分支末端 (Leaves)，删除中间节点的引用。
-    """
     setup_logging()
 
     with engine_context(work_dir) as engine:

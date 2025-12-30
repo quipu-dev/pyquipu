@@ -1,0 +1,10 @@
+"Hydrator": |-
+  负责将 Git 对象历史记录同步（补水）到 SQLite 数据库。
+"Hydrator._get_commit_owners": |-
+  构建一个从 commit_hash 到 owner_id 的完整映射。
+  通过从每个分支末端向上遍历图来传播所有权。
+"Hydrator._get_owner_from_ref": |-
+  从 Git ref 路径中解析 owner_id。
+"Hydrator.sync": |-
+  执行增量补水操作。
+  此实现经过重构，以确保在从零重建时能够处理完整的历史图谱。

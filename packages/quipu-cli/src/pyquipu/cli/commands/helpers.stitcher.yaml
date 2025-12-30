@@ -1,0 +1,10 @@
+"_execute_visit": |-
+  辅助函数：执行 engine.visit 并处理结果
+"_find_current_node": |-
+  在图中查找与当前工作区状态匹配的节点
+"engine_context": |-
+  Context manager to set up logging, create, and automatically close a Quipu engine.
+"filter_nodes": |-
+  根据时间戳和数量过滤节点列表。
+"filter_reachable_nodes": |-
+  仅保留与当前工作区状态直接相关的节点（祖先和后代）。

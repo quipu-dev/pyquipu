@@ -1,0 +1,27 @@
+"GraphViewModel": |-
+  一个 ViewModel, 用于解耦 TUI (View) 和 HistoryReader (Model)。
+
+  它负责管理分页状态、缓存可达性数据，并为 UI 提供简洁的数据接口。
+"GraphViewModel.calculate_initial_page": |-
+  根据当前 HEAD 位置计算其所在的页码
+"GraphViewModel.get_content_bundle": |-
+  获取节点的公共内容和私有内容，并将它们格式化成一个单一的字符串用于展示。
+"GraphViewModel.get_nodes_to_render": |-
+  根据当前可见性设置，返回需要渲染的节点列表。
+"GraphViewModel.get_public_content": |-
+  仅获取节点的公共内容 (content.md)。
+"GraphViewModel.initialize": |-
+  初始化 ViewModel, 获取总数并计算可达性缓存。
+  这是一个快速操作，因为它不加载任何节点内容。
+"GraphViewModel.is_reachable": |-
+  检查一个节点哈希是否在可达性集合中。
+"GraphViewModel.load_page": |-
+  加载指定页码的数据，更新内部状态，并返回该页的节点列表。
+"GraphViewModel.next_page": |-
+  加载下一页的数据。
+"GraphViewModel.previous_page": |-
+  加载上一页的数据。
+"GraphViewModel.select_node_by_key": |-
+  根据行 Key 选择节点并更新状态。
+"GraphViewModel.toggle_unreachable": |-
+  切换是否显示不可达节点。

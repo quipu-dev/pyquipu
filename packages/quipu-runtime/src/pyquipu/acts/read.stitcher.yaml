@@ -1,0 +1,13 @@
+"SafeArgumentParser": |-
+  覆盖 ArgumentParser 以抛出 ExecutionError。
+"_list_files": |-
+  Act: list_files
+  Args: [path] [--tree]
+"_read_file": |-
+  Act: read_file
+  Args: [path]
+"_search_files": |-
+  Act: search_files
+  Args: pattern [--path PATH]
+"register": |-
+  注册读取与检索操作

@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def _find_target_node(graph: Dict, hash_prefix: str):
-    """辅助函数，用于在图中查找唯一的节点。"""
     matches = [
         node
         for node in graph.values()
@@ -46,9 +45,6 @@ def register(app: typer.Typer):
             Optional[List[str]], typer.Option("--extract", "-e", help="仅提取并显示指定文件的内容 (可多次使用)。")
         ] = None,
     ):
-        """
-        显示指定历史节点的详细信息，包括所有内部文件。
-        """
         with engine_context(work_dir) as engine:
             target_node = _find_target_node(engine.history_graph, hash_prefix)
             blobs = engine.reader.get_node_blobs(target_node.commit_hash)

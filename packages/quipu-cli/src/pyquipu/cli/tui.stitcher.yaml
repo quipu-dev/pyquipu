@@ -1,0 +1,14 @@
+"QuipuUiApp._load_page": |-
+  Loads and displays a specific page of nodes.
+"QuipuUiApp._on_timer_finished": |-
+  Callback for the debounce timer.
+"QuipuUiApp._update_header": |-
+  Centralized method to update the app's title and sub_title.
+"QuipuUiApp._update_loading_preview": |-
+  A lightweight method to only update header/placeholder text.
+"QuipuUiApp.action_toggle_markdown": |-
+  Toggles the rendering mode between Markdown and raw text.
+"QuipuUiApp.action_toggle_view": |-
+  Handles the 'v' key press to toggle the content view.
+"QuipuUiApp.on_mount": |-
+  Loads the first page of data.

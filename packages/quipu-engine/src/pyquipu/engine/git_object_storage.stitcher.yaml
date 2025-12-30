@@ -1,0 +1,46 @@
+"GitObjectHistoryReader": |-
+  一个从 Git 底层对象读取历史的实现。
+  使用批处理优化加载性能。
+"GitObjectHistoryReader._parse_tree_binary": |-
+  解析 Git 原始二进制 Tree 对象。
+  格式: [mode] [space] [path] [null] [20-byte-hash]
+  返回: { filename: hex_hash }
+"GitObjectHistoryReader.find_nodes": |-
+  GitObject 后端的查找实现。
+  由于没有索引，此实现加载所有节点并在内存中进行过滤。
+"GitObjectHistoryReader.get_ancestor_output_trees": |-
+  Git后端: 在内存中遍历图谱
+"GitObjectHistoryReader.get_descendant_output_trees": |-
+  Git后端: 在内存中遍历图谱以查找后代
+"GitObjectHistoryReader.get_node_blobs": |-
+  从 Git 对象中读取节点的所有文件内容。
+"GitObjectHistoryReader.get_node_content": |-
+  从 Git Commit 中按需读取 content.md。
+  node.filename 被 hack 为 ".quipu/git_objects/{commit_hash}"
+"GitObjectHistoryReader.get_node_count": |-
+  Git后端: 低效实现，加载所有节点后计数
+"GitObjectHistoryReader.get_node_position": |-
+  Git后端: 低效实现，加载所有节点后查找索引
+"GitObjectHistoryReader.get_private_data": |-
+  Git后端: 不支持私有数据
+"GitObjectHistoryReader.load_all_nodes": |-
+  加载所有节点。
+  优化策略: Batch cat-file
+  1. 获取所有 commits
+  2. 批量读取所有 Trees
+  3. 解析 Trees 找到 metadata.json Blob Hashes
+  4. 批量读取所有 Metadata Blobs
+  5. 组装 Nodes
+"GitObjectHistoryReader.load_nodes_paginated": |-
+  Git后端: 低效实现，加载所有节点后切片
+"GitObjectHistoryWriter": |-
+  一个将历史节点作为 Git 底层对象写入存储的实现。
+  遵循 Quipu 数据持久化协议规范 (QDPS) v1.0。
+"GitObjectHistoryWriter._generate_summary": |-
+  根据节点类型生成单行摘要。
+"GitObjectHistoryWriter._get_env_info": |-
+  获取运行时环境指纹。
+"GitObjectHistoryWriter._get_generator_info": |-
+  根据 QDPS v1.0 规范，通过环境变量获取生成源信息。
+"GitObjectHistoryWriter.create_node": |-
+  在 Git 对象数据库中创建并持久化一个新的历史节点。

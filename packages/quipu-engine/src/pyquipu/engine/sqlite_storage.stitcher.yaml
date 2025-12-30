@@ -1,0 +1,32 @@
+"SQLiteHistoryReader": |-
+  一个从 SQLite 缓存读取历史的实现，并按需从 Git 回填。
+"SQLiteHistoryReader.find_nodes": |-
+  直接在 SQLite 数据库中执行高效的节点查找。
+"SQLiteHistoryReader.get_ancestor_output_trees": |-
+  获取指定状态节点的所有祖先节点的 output_tree 哈希集合 (用于可达性分析)。
+  使用三步策略：
+  1. 将 output_tree 哈希翻译为 commit_hash。
+  2. 使用递归 CTE 查找所有祖先的 commit_hash。
+  3. 将祖先 commit_hash 集合翻译回 output_tree 哈希集合。
+"SQLiteHistoryReader.get_descendant_output_trees": |-
+  获取指定状态节点的所有后代节点的 output_tree 哈希集合。
+  与 get_ancestors 逻辑相反。
+"SQLiteHistoryReader.get_node_blobs": |-
+  从 Git 回源获取节点的所有文件内容。
+  SQLite 缓存不存储所有 blob，因此此操作总是委托给底层的 git_reader。
+"SQLiteHistoryReader.get_node_content": |-
+  实现通读缓存策略来获取节点内容。
+"SQLiteHistoryReader.get_node_count": |-
+  获取历史节点总数。
+"SQLiteHistoryReader.get_node_position": |-
+  计算节点在时间倒序列表中的位置 (Rank)。
+"SQLiteHistoryReader.get_private_data": |-
+  获取指定节点的私有数据 (如 intent.md)。
+"SQLiteHistoryReader.load_all_nodes": |-
+  从 SQLite 数据库高效加载所有节点元数据和关系。
+"SQLiteHistoryReader.load_nodes_paginated": |-
+  按需加载一页节点数据。
+"SQLiteHistoryWriter": |-
+  一个实现“双写”的历史写入器。
+  1. 委托 GitObjectHistoryWriter 将节点写入 Git。
+  2. 将元数据和关系写入 SQLite。

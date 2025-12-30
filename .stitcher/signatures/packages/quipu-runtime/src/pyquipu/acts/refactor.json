@@ -1,0 +1,17 @@
+{
+  "_delete_file": {
+    "baseline_code_signature_text": "def _delete_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "88993539fc29b7b1278781b3cda0fb68112ab04b0f14b8d404d76d9dcc441bbf",
+    "baseline_yaml_content_hash": "504718684f98cf3eeacfa10cb1f255584d3b30029ee8ad7409b530eda6991ee3"
+  },
+  "_move_file": {
+    "baseline_code_signature_text": "def _move_file(ctx: ActContext, args: List[str]):",
+    "baseline_code_structure_hash": "c52b7410cdceb3b085175e469a59baa93679f5b851ecc835b27317577c473f52",
+    "baseline_yaml_content_hash": "0b9be96a2e5afc4ef02cca110fcddd64cf4c3a8a410289af39e45b1913a53e89"
+  },
+  "register": {
+    "baseline_code_signature_text": "def register(executor: Executor):",
+    "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",
+    "baseline_yaml_content_hash": "746969c142c10dba140ca03219c68914547da16902a9f144d46ee5f534bc8e64"
+  }
+}
