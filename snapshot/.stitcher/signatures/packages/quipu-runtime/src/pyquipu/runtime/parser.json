@@ -21,6 +21,7 @@
     "baseline_code_signature_text": "def __init__(self, fence_char: str):",
     "baseline_code_structure_hash": "18f2b958cf5f4c41f822cced13d1104a7e246f658c45199b0759f18cad3b2fe8"
   },
+  "StateBlockParser.fence_char": {},
   "StateBlockParser.parse": {
     "baseline_code_signature_text": "def parse(self, text: str) -> List[Statement]:",
     "baseline_code_structure_hash": "707b6f06d9e47b672e6523beff9a1e7699ff5ad4f4c930ad4aa87c75b18fbd7f"
@@ -32,6 +33,7 @@
     "baseline_code_signature_text": "def __init__(self):",
     "baseline_code_structure_hash": "9bab2b1dd22fea04e58176b09f65ef4f673738c47abf25fca7e0c62af472206f"
   },
+  "_PARSERS": {},
   "detect_best_parser": {
     "baseline_code_signature_text": "def detect_best_parser(text: str) -> str:",
     "baseline_code_structure_hash": "c84de73594160642d37e1c7a3a95236da88fff14a4290ab7d76d25acbad93ad0",

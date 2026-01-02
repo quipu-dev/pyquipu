@@ -1,4 +1,5 @@
 {
+  "ConfirmationHandler": {},
   "Executor": {
     "baseline_yaml_content_hash": "1321ec1d24fc3e9ee61055f61f7fb280f448f98979c9c5f263a24cd6fee27973"
   },
@@ -6,6 +7,8 @@
     "baseline_code_signature_text": "def __init__(self, root_dir: Path, yolo: bool = False, confirmation_handler: Optional[ConfirmationHandler] = None):",
     "baseline_code_structure_hash": "5dc8c461df1f75093077e29ed22d8468532ec5b0a0193d5e33c714d7db50060b"
   },
+  "Executor._acts": {},
+  "Executor.confirmation_handler": {},
   "Executor.execute": {
     "baseline_code_signature_text": "def execute(self, statements: List[Statement]):",
     "baseline_code_structure_hash": "7bd8035f21e80f8ae547d434157fa345ee0a0a64a07b6a96b925c2c9281544e8",
@@ -31,9 +34,12 @@
     "baseline_code_structure_hash": "72f5dd33f74cb5de3c3603b501ffd27c15a1aa7ad04c772be50667efef35f981",
     "baseline_yaml_content_hash": "c19d0d3dbd547a2a7e648ce76ea50dde937a0b8187fa31690d5c98515247857d"
   },
+  "Executor.root_dir": {},
   "Executor.summarize_statement": {
     "baseline_code_signature_text": "def summarize_statement(self, stmt: Statement) -> str | None:",
     "baseline_code_structure_hash": "cff09d68c9391966de6251a7aba7ba3a3ba2843a72e0e0a9f1e55fcf6e1dc504",
     "baseline_yaml_content_hash": "a8fcaed8269deb20d8efb3c8940558f59a51888deac9fe5e7a8daa5f7f1b6df0"
-  }
+  },
+  "Executor.yolo": {},
+  "logger": {}
 }

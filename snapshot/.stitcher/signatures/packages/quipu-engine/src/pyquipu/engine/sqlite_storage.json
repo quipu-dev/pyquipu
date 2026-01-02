@@ -6,6 +6,8 @@
     "baseline_code_signature_text": "def __init__(self, db_manager: DatabaseManager, git_db: GitDB):",
     "baseline_code_structure_hash": "4cc032f0d1a0b62f5bebeb0846c7c3721ec318549b2de1cb0c6f8dfd165faac4"
   },
+  "SQLiteHistoryReader._git_reader": {},
+  "SQLiteHistoryReader.db_manager": {},
   "SQLiteHistoryReader.find_nodes": {
     "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
     "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
@@ -66,5 +68,8 @@
   "SQLiteHistoryWriter.create_node": {
     "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any = {}) -> QuipuNode:",
     "baseline_code_structure_hash": "f04bb8222f7e248eae151188752d560054da0331a6605ee0e8b2938943348a8d"
-  }
+  },
+  "SQLiteHistoryWriter.db_manager": {},
+  "SQLiteHistoryWriter.git_writer": {},
+  "logger": {}
 }

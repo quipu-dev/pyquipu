@@ -36,6 +36,7 @@
     "baseline_code_structure_hash": "f9d1ddd4bd3133bb986ea3da57c13468a696244917adb9b4845765d0cce4f8e3",
     "baseline_yaml_content_hash": "9b38bf8e17f7e7726a391fd4fdc52eae178735ea23b2ac1f05cfb1ea524523bc"
   },
+  "logger": {},
   "register": {
     "baseline_code_signature_text": "def register(executor: Executor):",
     "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",

@@ -61,6 +61,8 @@
     "baseline_code_signature_text": "def create_plan_node(self, input_tree: str, output_tree: str, plan_content: str, summary_override: Optional[str] = None) -> QuipuNode:",
     "baseline_code_structure_hash": "54a7940fb7f43ac7495fdbde9c1f62b7befd3a341f3c23d6917c3cbfa9d22cd5"
   },
+  "Engine.current_node": {},
+  "Engine.db_manager": {},
   "Engine.find_nodes": {
     "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
     "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc",
@@ -70,8 +72,19 @@
     "baseline_code_signature_text": "def forward(self) -> Optional[str]:",
     "baseline_code_structure_hash": "dc27f9b55154bebc01529f9ea3b0e1ae8e57be3dfeebc5e1bf291caa3aa73ee9"
   },
+  "Engine.git_db": {},
+  "Engine.head_file": {},
+  "Engine.history_dir": {},
+  "Engine.history_graph": {},
+  "Engine.nav_log_file": {},
+  "Engine.nav_ptr_file": {},
+  "Engine.quipu_dir": {},
+  "Engine.reader": {},
+  "Engine.root_dir": {},
   "Engine.visit": {
     "baseline_code_signature_text": "def visit(self, target_hash: str):",
     "baseline_code_structure_hash": "0a53bc65fb1530967b86e3be1d6d9654802ec03a218c4070f99016485702a4a9"
-  }
+  },
+  "Engine.writer": {},
+  "logger": {}
 }

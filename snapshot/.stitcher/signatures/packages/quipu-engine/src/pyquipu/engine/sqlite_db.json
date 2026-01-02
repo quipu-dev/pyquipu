@@ -11,6 +11,7 @@
     "baseline_code_signature_text": "def __init__(self, work_dir: Path):",
     "baseline_code_structure_hash": "410e384713ce7a2785399a049150c043e7f89f05313fb70c5c50e3a40ac78c4c"
   },
+  "DatabaseManager._conn": {},
   "DatabaseManager._get_conn": {
     "baseline_code_signature_text": "def _get_conn(self) -> sqlite3.Connection:",
     "baseline_code_structure_hash": "064fe77fdadf27b3ce42dd031b76a157b6a63f323e96bbc0dfb785d1ff08e47d",
@@ -31,6 +32,7 @@
     "baseline_code_structure_hash": "891487df5864d74641bbf87625ae2626293fdfb44f739422c082459416d15f90",
     "baseline_yaml_content_hash": "0c53f600fefed034032d53331abea1823005924d3d0758c32f55aa24cd021452"
   },
+  "DatabaseManager.db_path": {},
   "DatabaseManager.execute_write": {
     "baseline_code_signature_text": "def execute_write(self, sql: str, params: tuple = ()):",
     "baseline_code_structure_hash": "fdbc5bb94b778c2c20ddd0548c4b0f5a29faad5d470b0d6d6ead0fa53cc8139c",
@@ -45,5 +47,6 @@
     "baseline_code_signature_text": "def init_schema(self):",
     "baseline_code_structure_hash": "53b2b3fae06539a16cbe377048942025c58748ef6c1b4c58f46bd78a53d54cf9",
     "baseline_yaml_content_hash": "b2a72c2d5e6a95651ce8792444c62e29860b2b712949144baa90e87bbdc2d411"
-  }
+  },
+  "logger": {}
 }
