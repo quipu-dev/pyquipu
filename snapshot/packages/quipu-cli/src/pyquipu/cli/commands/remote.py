@@ -23,7 +23,7 @@ class SyncMode(str, Enum):
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="与远程 Git 仓库同步 Quipu 历史记录。")
     def sync(
         ctx: typer.Context,
         work_dir: Annotated[

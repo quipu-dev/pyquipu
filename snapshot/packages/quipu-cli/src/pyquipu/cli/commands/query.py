@@ -34,7 +34,7 @@ def _nodes_to_json_str(nodes: List[QuipuNode]) -> str:
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="按时间倒序显示历史图谱。")
     def log(
         ctx: typer.Context,
         work_dir: Annotated[
@@ -93,7 +93,7 @@ def register(app: typer.Typer):
                 data_line = f"{ts} {tag:<9} {node.short_hash} - {summary}"
                 bus.data(data_line)
 
-    @app.command(name="find")
+    @app.command(name="find", help="根据摘要或类型搜索历史节点。")
     def find_command(
         ctx: typer.Context,
         summary_regex: Annotated[

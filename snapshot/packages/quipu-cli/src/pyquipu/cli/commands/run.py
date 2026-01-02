@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(app: typer.Typer):
-    @app.command(name="run")
+    @app.command(name="run", help="执行 Plan 文件并记录到 Quipu 历史。")
     def run_command(
         ctx: typer.Context,
         file: Annotated[

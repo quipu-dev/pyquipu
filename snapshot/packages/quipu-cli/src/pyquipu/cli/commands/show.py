@@ -30,7 +30,7 @@ def _find_target_node(graph: Dict, hash_prefix: str):
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="显示指定历史节点中的文件内容。")
     def show(
         ctx: typer.Context,
         hash_prefix: Annotated[str, typer.Argument(help="目标状态节点的 commit_hash 或 output_tree 的哈希前缀。")],
