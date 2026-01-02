@@ -1,4 +1,8 @@
 {
+  "DEFAULT_ENTRY_FILE": {},
+  "DEFAULT_WORK_DIR": {},
+  "LOG_LEVEL": {},
+  "PROJECT_ROOT": {},
   "_find_development_monorepo_root": {
     "baseline_code_signature_text": "def _find_development_monorepo_root() -> Path:",
     "baseline_code_structure_hash": "096a7df3dd33e9b5b982e03b29f0ebba51180926cc912aef4385f40ac0300cd0",

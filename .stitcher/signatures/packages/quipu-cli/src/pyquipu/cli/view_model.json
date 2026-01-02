@@ -6,11 +6,16 @@
     "baseline_code_signature_text": "def __init__(self, reader: HistoryReader, current_output_tree_hash: Optional[str], page_size: int = 50):",
     "baseline_code_structure_hash": "5f9bf8cd0c755d6c2a699bd40cb713b8304c929ef917faf3c52993088465f73f"
   },
+  "GraphViewModel._node_by_key": {},
   "GraphViewModel.calculate_initial_page": {
     "baseline_code_signature_text": "def calculate_initial_page(self) -> int:",
     "baseline_code_structure_hash": "d675a366880afff8c908598f899160f6a2567ea3e309ffbe311114b4cb7016e9",
     "baseline_yaml_content_hash": "8962af1cae05029af27085263b3a03067d894bd261bc1bd11585e3832fd4c453"
   },
+  "GraphViewModel.current_output_tree_hash": {},
+  "GraphViewModel.current_page": {},
+  "GraphViewModel.current_page_nodes": {},
+  "GraphViewModel.current_selected_node": {},
   "GraphViewModel.get_content_bundle": {
     "baseline_code_signature_text": "def get_content_bundle(self, node: QuipuNode) -> str:",
     "baseline_code_structure_hash": "75e0ce76bbf92545656acb45ae65b7fcd447a9152e0c043e23571f59018224f0",
@@ -50,19 +55,25 @@
     "baseline_code_structure_hash": "b94e50e356c7114a9c08852b28fe00f8fb6be7814d725e1444ecc19fdd7cb867",
     "baseline_yaml_content_hash": "34b9ac643724f671369acbbe31570cf559e95b13d33070ab6454badc5fb5eb39"
   },
+  "GraphViewModel.page_size": {},
   "GraphViewModel.previous_page": {
     "baseline_code_signature_text": "def previous_page(self) -> List[QuipuNode]:",
     "baseline_code_structure_hash": "c2b6193078dda89a4bea9480faa371cc9da83986573d969a263c9f42368f9842",
     "baseline_yaml_content_hash": "4dadd00ffafcea53b1ba25f4f4fd477bad33e16c02d98143d95c62b7abb50876"
   },
+  "GraphViewModel.reachable_set": {},
+  "GraphViewModel.reader": {},
   "GraphViewModel.select_node_by_key": {
     "baseline_code_signature_text": "def select_node_by_key(self, key: str) -> Optional[QuipuNode]:",
     "baseline_code_structure_hash": "645748af52e71503a521c46a4ba9dcbe12ca5bca801c44384304fcbe8228bace",
     "baseline_yaml_content_hash": "6c1086ed848ba4c9440e987ed76658cebb7dc588302c4f59a40946112b283896"
   },
+  "GraphViewModel.show_unreachable": {},
   "GraphViewModel.toggle_unreachable": {
     "baseline_code_signature_text": "def toggle_unreachable(self):",
     "baseline_code_structure_hash": "dcf240dcc0f9a202f747452a37682882b0b082e5504061f4a0cbf8d067e2d0f7",
     "baseline_yaml_content_hash": "7553daf27a3517d7e2b1a040fb8cded4860982d1fdc42fe86929af1b1488809d"
-  }
+  },
+  "GraphViewModel.total_nodes": {},
+  "GraphViewModel.total_pages": {}
 }

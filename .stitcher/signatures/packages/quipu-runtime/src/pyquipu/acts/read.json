@@ -29,6 +29,7 @@
     "baseline_code_structure_hash": "a96f37a1e686362d69ab00ddc5639de1c10e833d746cc43fbdfcf571dae8e467",
     "baseline_yaml_content_hash": "9c30c3d5b9838c55ef5fc09ff90883d64b55f689a6e0beef2279c7db00a43960"
   },
+  "logger": {},
   "register": {
     "baseline_code_signature_text": "def register(executor: Executor):",
     "baseline_code_structure_hash": "2f820b91d66bbffbd872983a23ae3830f6bb7d1787bab880348afb4f0ce71cb2",

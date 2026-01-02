@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="检出指定状态的快照到工作区。")
     def checkout(
         ctx: typer.Context,
         hash_prefix: Annotated[str, typer.Argument(help="目标状态节点 output_tree 的哈希前缀。")],
@@ -70,7 +70,7 @@ def register(app: typer.Typer):
                 short_hash=target_node.short_hash,
             )
 
-    @app.command()
+    @app.command(help="沿当前分支向上导航（回到父节点）。")
     def undo(
         ctx: typer.Context,
         count: Annotated[int, typer.Option("--count", "-n", help="向上移动的步数。")] = 1,
@@ -101,7 +101,7 @@ def register(app: typer.Typer):
                 short_hash=target_node.short_hash,
             )
 
-    @app.command()
+    @app.command(help="沿当前分支向下导航（进入最新子节点）。")
     def redo(
         ctx: typer.Context,
         count: Annotated[int, typer.Option("--count", "-n", help="向下移动的步数。")] = 1,
@@ -134,7 +134,7 @@ def register(app: typer.Typer):
                 short_hash=target_node.short_hash,
             )
 
-    @app.command()
+    @app.command(help="导航到时间上更早的兄弟分支节点。")
     def prev(
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
@@ -164,7 +164,7 @@ def register(app: typer.Typer):
             except ValueError:
                 pass
 
-    @app.command()
+    @app.command(help="导航到时间上更新的兄弟分支节点。")
     def next(
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
@@ -194,7 +194,7 @@ def register(app: typer.Typer):
             except ValueError:
                 pass
 
-    @app.command()
+    @app.command(help="在访问历史中后退一步。")
     def back(
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,
@@ -211,7 +211,7 @@ def register(app: typer.Typer):
                 bus.error("navigation.back.error", error=str(e))
                 ctx.exit(1)
 
-    @app.command()
+    @app.command(help="在访问历史中前进一步。")
     def forward(
         ctx: typer.Context,
         work_dir: Annotated[Path, typer.Option("--work-dir", "-w", help="工作区根目录。")] = DEFAULT_WORK_DIR,

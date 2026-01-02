@@ -128,7 +128,7 @@ def _generate_file_content(
 
 
 def register(app: typer.Typer):
-    @app.command(name="export")
+    @app.command(name="export", help="将历史图谱中的节点导出为 Markdown 文件。")
     def export_command(
         ctx: typer.Context,
         work_dir: Annotated[

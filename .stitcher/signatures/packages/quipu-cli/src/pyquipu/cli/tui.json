@@ -1,4 +1,12 @@
 {
+  "ContentViewSate": {},
+  "ContentViewSate.HIDDEN": {},
+  "ContentViewSate.LOADING": {},
+  "ContentViewSate.SHOWING_CONTENT": {},
+  "QuipuUiApp": {},
+  "QuipuUiApp.BINDINGS": {},
+  "QuipuUiApp.CSS_PATH": {},
+  "QuipuUiApp.TITLE": {},
   "QuipuUiApp.__init__": {
     "baseline_code_signature_text": "def __init__(self, work_dir: Path, initial_raw_mode: bool = False):",
     "baseline_code_structure_hash": "01289e979aa1706f5d24373f9ce01b36459ec8285f3bfa3678fa737278e19dc8"
@@ -89,6 +97,10 @@
     "baseline_code_signature_text": "def compose(self) -> ComposeResult:",
     "baseline_code_structure_hash": "9d0206bca01ed6c1f9c9e895dfccd721bd6d623042d848013c91bb94cecf9938"
   },
+  "QuipuUiApp.content_view_state": {},
+  "QuipuUiApp.debounce_delay_seconds": {},
+  "QuipuUiApp.engine": {},
+  "QuipuUiApp.markdown_enabled": {},
   "QuipuUiApp.on_mount": {
     "baseline_code_signature_text": "def on_mount(self) -> None:",
     "baseline_code_structure_hash": "429db3decbec78474f9e0da57f060cad9ff3818521b0955c7a1fd7970deafd80",
@@ -101,5 +113,10 @@
   "QuipuUiApp.on_unmount": {
     "baseline_code_signature_text": "def on_unmount(self) -> None:",
     "baseline_code_structure_hash": "3f8bce49d7664245df81a63bb5a291ccf0c3cd96c45f83e04d75aebf1d2d5e3d"
-  }
+  },
+  "QuipuUiApp.update_timer": {},
+  "QuipuUiApp.view_model": {},
+  "QuipuUiApp.work_dir": {},
+  "UiResult": {},
+  "logger": {}
 }

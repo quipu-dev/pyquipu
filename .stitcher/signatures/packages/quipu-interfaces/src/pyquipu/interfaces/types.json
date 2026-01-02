@@ -6,6 +6,7 @@
     "baseline_code_signature_text": "def __init__(self, executor: Executor):",
     "baseline_code_structure_hash": "95d27b69193cf63926d1a71aabb81488fb2fdeb5f063c8d78b50acd9b61bd5dd"
   },
+  "ActContext._executor": {},
   "ActContext.fail": {
     "baseline_code_signature_text": "def fail(self, message: str):",
     "baseline_code_structure_hash": "958e2673564bee10478978290bfc40000240b95caeda5960ba5ab3f021fde407",
@@ -24,7 +25,12 @@
   "ActContext.root_dir": {
     "baseline_yaml_content_hash": "adc51d011b1c9a20fa537b7df202543c35f9f885a0c7cee40b856d723b335b8f"
   },
+  "ActFunction": {},
+  "Executor": {},
   "Statement": {
     "baseline_yaml_content_hash": "4c5cdf525a78869d1ee638fd3aecd02658b854d51e2d26fa50bef9c978eb3fae"
-  }
+  },
+  "Statement.act": {},
+  "Statement.contexts": {},
+  "Summarizer": {}
 }

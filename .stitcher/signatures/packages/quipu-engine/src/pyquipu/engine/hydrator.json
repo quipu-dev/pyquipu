@@ -16,9 +16,13 @@
     "baseline_code_structure_hash": "8d3d40806d8ab240ac21823d5eaa73d7060ad2189af5d8f64844c8db692ff2cf",
     "baseline_yaml_content_hash": "364f18be37a1dcaa3fb78e15db7e6b79eecabe9256453a3c67d9e18ad94dd501"
   },
+  "Hydrator._parser": {},
+  "Hydrator.db_manager": {},
+  "Hydrator.git_db": {},
   "Hydrator.sync": {
     "baseline_code_signature_text": "def sync(self, local_user_id: str):",
     "baseline_code_structure_hash": "17208ee2181d479334c1c69bc665d4a22210cb8ae4178352f6b8938d86c48cd4",
     "baseline_yaml_content_hash": "1b50d37dedb2a84b8187c99900930a136e29e75971da3f091edfa637c7a23ab7"
-  }
+  },
+  "logger": {}
 }

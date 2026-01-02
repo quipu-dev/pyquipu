@@ -55,6 +55,7 @@
     "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772",
     "baseline_yaml_content_hash": "5a8ee3f85a5bf0099e8046ac07d8237bc1cdfe5934ad76fb626e35e3d602c6ca"
   },
+  "GitObjectHistoryReader.git_db": {},
   "GitObjectHistoryReader.load_all_nodes": {
     "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
     "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be",
@@ -91,5 +92,7 @@
     "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, **kwargs: Any = {}) -> QuipuNode:",
     "baseline_code_structure_hash": "f04bb8222f7e248eae151188752d560054da0331a6605ee0e8b2938943348a8d",
     "baseline_yaml_content_hash": "e50339225cf23742abbbafcdadd25baced08f1c79c109f25b72c0e26158d25de"
-  }
+  },
+  "GitObjectHistoryWriter.git_db": {},
+  "logger": {}
 }

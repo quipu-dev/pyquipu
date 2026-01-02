@@ -116,11 +116,13 @@
     "baseline_code_structure_hash": "1dabcc997d35978c6e9fa59a348ff803c39fa2e54bbdc9eb3f990f8dbb07eb85",
     "baseline_yaml_content_hash": "3b42f684093552a3f7a9b199c5e06f5c8831058d0c54291d7e62cd736320426d"
   },
+  "GitDB.quipu_dir": {},
   "GitDB.reconcile_local_with_remote": {
     "baseline_code_signature_text": "def reconcile_local_with_remote(self, remote: str, user_id: str):",
     "baseline_code_structure_hash": "febb797ed43b998abec81d7c98c30bb3ae2b6ffe104443fa7853ea1fcf140a3e",
     "baseline_yaml_content_hash": "db65eab7f1e945fe48c40276227ae9c770b5413d0a053d5851d2a45127d14624"
   },
+  "GitDB.root": {},
   "GitDB.shadow_index": {
     "baseline_code_signature_text": "def shadow_index(self):",
     "baseline_code_structure_hash": "49c00a86d90913123b8ca5959808b465ca18e57fbf0768e55c93180fe1b8e972",
@@ -130,5 +132,6 @@
     "baseline_code_signature_text": "def update_ref(self, ref_name: str, commit_hash: str):",
     "baseline_code_structure_hash": "ac004f95d84fa5572f9d8979cf68ecd5086dd127ccbde14d38d45d2d5f19aece",
     "baseline_yaml_content_hash": "4c9f9a6eed7ca38b9cf06e2ec724763a7233f5159968903b0c16cb89b7ab5fe9"
-  }
+  },
+  "logger": {}
 }

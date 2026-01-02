@@ -6,6 +6,7 @@
   "acts.basic.error.fileNotFound": "文件未找到: {path}",
   "acts.basic.error.readFailed": "读取文件 {path} 失败: {error}",
   "acts.basic.error.patchContentMismatch": "在文件 {path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。",
+  "acts.basic.error.patchContentAmbiguous": "在文件 {path} 中找到 {count} 个匹配项，无法确定要替换哪一个。",
   "acts.basic.error.patchPermission": "替换文件内容失败: 对 '{path}' 的访问权限不足。",
   "acts.basic.error.patchUnknown": "更新文件时发生未知错误: {error}",
   "acts.basic.error.appendPermission": "追加文件内容失败: 对 '{path}' 的访问权限不足。",

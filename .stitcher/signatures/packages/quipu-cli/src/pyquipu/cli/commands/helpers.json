@@ -23,5 +23,6 @@
     "baseline_code_signature_text": "def filter_reachable_nodes(engine: Engine, nodes: List[QuipuNode]) -> List[QuipuNode]:",
     "baseline_code_structure_hash": "39cedd34f3f1b02b3a1d49b07418cc71215c696ea3a8a5031a0e3ff5846f66f0",
     "baseline_yaml_content_hash": "983f38123ca6d28897da50df5289e6feda29cffde4ebfd789069766ee4641b83"
-  }
+  },
+  "logger": {}
 }

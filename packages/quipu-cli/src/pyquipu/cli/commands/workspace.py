@@ -10,7 +10,7 @@ from .helpers import engine_context
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="将当前工作区的变更创建为一个新的快照节点。")
     def save(
         ctx: typer.Context,
         message: Annotated[Optional[str], typer.Argument(help="本次快照的简短描述。")] = None,
@@ -39,7 +39,7 @@ def register(app: typer.Typer):
                 bus.error("workspace.save.error", error=str(e))
                 ctx.exit(1)
 
-    @app.command()
+    @app.command(help="丢弃当前工作区的所有变更，恢复到上一个快照状态。")
     def discard(
         ctx: typer.Context,
         work_dir: Annotated[

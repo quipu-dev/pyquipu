@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def register(app: typer.Typer):
-    @app.command()
+    @app.command(help="启动交互式 TUI 历史浏览器。")
     def ui(
         ctx: typer.Context,
         work_dir: Annotated[
