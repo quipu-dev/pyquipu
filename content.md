@@ -1,205 +1,157 @@
-You've correctly identified a potential gap in our tooling. A script to verify localization string coverage is an excellent idea for maintaining code quality. I will create a script named `check_locales.py` in a new `scripts/` directory. This script will use Python's `ast` module to find all localization keys used in the codebase and compare them against the keys defined in the JSON files, reporting any discrepancies.
+Excellent, the script has done its job perfectly by identifying several concrete issues. The analysis is clear: we have duplicate definitions, a few missing keys, and a number of keys that appear to be unused.
 
-## [WIP] feat: Add script to check localization string coverage
+Based on my analysis of the report, here's the plan:
+
+*   **Duplicates:** The `acts.*` keys are defined in both `acts.json` and `runtime.json`. This is incorrect; they belong exclusively in `acts.json`. I will remove them from `runtime.json`.
+*   **Missing Keys:** I will add the three missing keys to the correct locale files.
+*   **Unused Keys:** This is the most interesting category. Many of these keys (like `run.success`, `engine.state.info.planNode`, etc.) seem like they *should* be in use. This is likely a limitation of the static analysis script: it can only find literal strings (e.g., `bus.success("key.id")`) but cannot trace keys passed through variables (e.g., `bus.success(result.message)`). Deleting these keys would be risky and likely break functionality.
+
+Therefore, this plan will focus on fixing the definitive, critical errors: the duplicates and the missing keys.
+
+## [WIP] fix: Correct localization key errors
+
+### 错误分析
+
+The script has identified three categories of problems:
+
+1.  **重复的键 (Duplicate Keys)**: A significant number of keys with the `acts.` prefix were found in both `acts.json` and `runtime.json`. This indicates a copy-paste error during development. The single source of truth for these keys should be `acts.json`.
+2.  **缺失的键 (Missing Keys)**: Three keys used in the codebase are not defined in any locale file, which would cause errors or display raw key IDs to the user.
+3.  **未使用的键 (Unused Keys)**: The script reported many keys as unused. This is likely a **false positive**. The `ast` analysis is not sophisticated enough to track key names stored in variables (e.g., `result.message`). Deleting these keys would be unsafe. We will ignore this category for now and focus on the verifiable errors.
 
 ### 用户需求
 
-The user wants a Python script in the `./scripts` directory to ensure localization strings are fully covered and have no duplicates. The script should:
-1.  Use `ast` to find all localization keys (e.g., `"a.b.c"`) used in calls to the `bus` object within the source code.
-2.  Load all key-value pairs from the `locales/zh/*.json` files.
-3.  Compare the set of used keys against the set of defined keys.
-4.  Report on missing keys, unused keys, and duplicate key definitions.
+The user wants to fix the localization issues reported by the `check_locales.py` script to improve codebase health and ensure all user-facing strings are correctly localized.
 
 ### 评论
 
-This is a crucial piece of tooling for developer experience (DX) and ensuring a polished user experience (UX). It automates a tedious and error-prone checking process, preventing runtime errors from missing keys and keeping the locale files clean. Using `ast` is the correct and robust approach, as it avoids the fragility of regular expressions for code analysis.
+This is a fantastic cleanup task. By fixing these issues, we make the codebase more maintainable, eliminate potential runtime errors from missing keys, and ensure each localization domain has a clear and single source of truth.
 
 ### 目标
 
-1.  Create a new directory named `scripts`.
-2.  Create a Python script `scripts/check_locales.py`.
-3.  Implement the script to perform a three-way analysis: missing, unused, and duplicate localization keys.
-4.  The script should be executable and provide a clear report of its findings.
-5.  The script should exit with a non-zero status code if critical errors (missing or duplicate keys) are found, making it suitable for CI/CD integration.
+1.  Remove all duplicate `acts.*` key definitions from `runtime.json`.
+2.  Add the definition for `acts.basic.error.patchContentAmbiguous` to `acts.json`.
+3.  Add definitions for `common.error.invalidConfig` and `run.warning.yoloEnabled` to `cli.json`.
 
 ### 基本原理
 
-By creating a dedicated script, we establish a single source of truth for localization health. This script can be run locally by developers before committing and can be integrated into automated CI pipelines to catch localization issues early. The `ast` approach ensures accuracy by parsing the code exactly as the Python interpreter does, making it resilient to formatting changes. The clear, actionable report helps developers quickly identify and fix problems.
+The strategy is to perform precise surgical fixes using `patch_file`. We will correct the verifiable errors (duplicates and missing keys) while deliberately avoiding the "unused keys" category due to the risk of false positives from the static analysis script. This ensures a safe and effective resolution of the most critical issues.
 
 ### 标签
 
-#intent/tooling #flow/ready #priority/medium #comp/build #scope/dx #ai/instruct #task/domain/testing #task/object/localization-checker #task/action/implementation #task/state/begin
+#intent/fix #flow/ready #priority/high #comp/build #scope/dx #ai/refine #task/domain/testing #task/object/localization-checker #task/action/bug-fix #task/state/continue
 
 ---
 
 ### Script
 
-#### Acts 1: 创建脚本目录
+#### Acts 1: 从 `runtime.json` 中移除重复的键
 
-首先，我们创建 `scripts` 目录来存放新的工具脚本。
-
-~~~~~act
-run_command
-~~~~~
-~~~~~
-mkdir -p scripts
-~~~~~
-
-#### Acts 2: 创建本地化检查脚本
-
-接下来，我们创建 `check_locales.py` 脚本。它将包含解析代码、加载 JSON 文件和比较键的所有逻辑。
+我们将从 `runtime.json` 文件中删除所有属于 `acts` 域的键，以解决重复定义的问题。
 
 ~~~~~act
-write_file
-scripts/check_locales.py
+patch_file
+packages/quipu-common/src/pyquipu/common/locales/zh/runtime.json
 ~~~~~
 ~~~~~
-import ast
-import json
-import sys
-from collections import defaultdict
-from pathlib import Path
+    "runtime.plugin.error.loadFailed": "❌ 加载插件 {plugin_name} 失败: {error}",
 
-# Script configuration
-ROOT_PATH = Path(__file__).parent.parent.resolve()
-SRC_DIRS = [ROOT_PATH / "packages"]
-LOCALES_PATH = ROOT_PATH / "packages/quipu-common/src/pyquipu/common/locales/zh"
-BUS_METHODS = {"success", "info", "warning", "error", "get"}
+    "acts.basic.success.fileWritten": "✅ [写入] 文件已写入: {path}",
+    "acts.basic.success.filePatched": "✅ [更新] 文件内容已更新: {path}",
+    "acts.basic.success.fileAppended": "✅ [追加] 内容已追加到: {path}",
 
+    "acts.check.success.filesExist": "✅ [检查] 所有指定文件均存在。",
+    "acts.check.success.cwdMatched": "✅ [检查] 工作区目录匹配: {path}",
 
-class CodeVisitor(ast.NodeVisitor):
-    """
-    An AST visitor that finds all string literals passed as the first argument
-    to `bus.<method>()` calls.
-    """
+    "acts.git.success.initialized": "✅ [Git] 已初始化仓库: {path}",
+    "acts.git.success.added": "✅ [Git] 已添加文件: {targets}",
+    "acts.git.success.committed": "✅ [Git] 提交成功: {message}",
+    "acts.git.warning.repoExists": "⚠️  Git 仓库已存在，跳过初始化。",
+    "acts.git.warning.commitSkipped": "⚠️  [Git] 没有暂存的更改，跳过提交。",
 
-    def __init__(self):
-        self.keys = set()
+    "acts.memory.success.thoughtLogged": "🧠 [记忆] 思维已记录到 .quipu/memory.md",
 
-    def visit_Call(self, node: ast.Call):
-        # We are looking for calls of the form: bus.method("key", ...)
-        if (
-            isinstance(node.func, ast.Attribute)
-            and isinstance(node.func.value, ast.Name)
-            and node.func.value.id == "bus"
-            and node.func.attr in BUS_METHODS
-        ):
-            if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
-                key = node.args[0].value
-                self.keys.add(key)
+    "acts.read.info.searching": "🔍 [搜索] 模式: '{pattern}' 于 {path}",
+    "acts.read.info.useRipgrep": "⚡ 使用 'rg' (ripgrep) 进行高性能搜索。",
+    "acts.read.info.noMatchRipgrep": "🤷 (rg) 未找到匹配项。",
+    "acts.read.info.usePythonSearch": "🐢 使用原生 Python 搜索 (回退模式)。",
+    "acts.read.info.noMatchPython": "🤷 (Python) 未找到匹配项。",
+    "acts.read.info.readingFile": "📖 [读取] 正在读取 {filename}...",
+    "acts.read.info.listingTree": "📂 [列表] 目录树: {path}",
+    "acts.read.info.listingDir": "📂 [列表] 目录内容: {path}",
+    "acts.read.warning.ripgrepFailed": "⚠️  ripgrep 执行出错，回退到 Python 搜索: {error}",
+    "acts.read.error.readFailed": "❌ [读取] 无法读取二进制或非 UTF-8 文件: {filename}",
 
-        self.generic_visit(node)
+    "acts.refactor.success.moved": "✅ [移动] 已移动/重命名: {source} -> {destination}",
+    "acts.refactor.success.deleted": "🗑️  [删除] 已删除: {path}",
+    "acts.refactor.warning.deleteSkipped": "⚠️  文件不存在，跳过删除: {path}",
 
+    "acts.shell.info.executing": "🚀 [Shell] 正在执行: {command}",
+    "acts.shell.warning.stderrOutput": "⚠️  [Stderr]:\n{output}"
+}
+~~~~~
+~~~~~
+    "runtime.plugin.error.loadFailed": "❌ 加载插件 {plugin_name} 失败: {error}"
+}
+~~~~~
 
-def find_source_files(paths: list[Path]) -> list[Path]:
-    """Find all .py files in the given source directories."""
-    py_files = []
-    for p in paths:
-        py_files.extend(p.rglob("*.py"))
-    return py_files
+#### Acts 2: 修复缺失的键
 
+现在，我们将缺失的键添加到它们各自正确的 JSON 文件中。
 
-def extract_keys_from_code(source_files: list[Path]) -> set[str]:
-    """Parse source files and extract localization keys."""
-    visitor = CodeVisitor()
-    for file_path in source_files:
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                source_code = f.read()
-                tree = ast.parse(source_code, filename=str(file_path))
-                visitor.visit(tree)
-        except (SyntaxError, UnicodeDecodeError) as e:
-            print(f"  - Warning: Could not parse {file_path.relative_to(ROOT_PATH)}: {e}", file=sys.stderr)
-            continue
-    return visitor.keys
+首先是 `acts.json`：
 
+~~~~~act
+patch_file
+packages/quipu-common/src/pyquipu/common/locales/zh/acts.json
+~~~~~
+~~~~~
+  "acts.basic.error.patchContentMismatch": "在文件 {path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。",
+  "acts.basic.error.patchPermission": "替换文件内容失败: 对 '{path}' 的访问权限不足。",
+~~~~~
+~~~~~
+  "acts.basic.error.patchContentMismatch": "在文件 {path} 中未找到指定的旧文本。\n请确保 Markdown 块中的空格和换行完全匹配。",
+  "acts.basic.error.patchContentAmbiguous": "在文件 {path} 中找到 {count} 个匹配项，无法确定要替换哪一个。",
+  "acts.basic.error.patchPermission": "替换文件内容失败: 对 '{path}' 的访问权限不足。",
+~~~~~
 
-def load_defined_keys(locales_path: Path) -> tuple[set[str], dict[str, list[str]]]:
-    """Load all keys from JSON locale files and detect duplicates."""
-    defined_keys = set()
-    key_sources = defaultdict(list)
+然后是 `cli.json`：
 
-    if not locales_path.is_dir():
-        print(f"Error: Locales directory not found at {locales_path}", file=sys.stderr)
-        return set(), {}
+~~~~~act
+patch_file
+packages/quipu-common/src/pyquipu/common/locales/zh/cli.json
+~~~~~
+~~~~~
+{
+  "common.error.generic": "❌ 系统错误: {error}",
+  "common.error.fileNotFound": "❌ 错误: 找不到指令文件: {path}",
+~~~~~
+~~~~~
+{
+  "common.error.generic": "❌ 系统错误: {error}",
+  "common.error.invalidConfig": "❌ 配置或参数无效: {error}",
+  "common.error.fileNotFound": "❌ 错误: 找不到指令文件: {path}",
+~~~~~
 
-    for json_file in locales_path.glob("*.json"):
-        try:
-            with open(json_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                for key in data:
-                    defined_keys.add(key)
-                    key_sources[key].append(json_file.name)
-        except json.JSONDecodeError as e:
-            print(f"  - Warning: Could not parse JSON {json_file}: {e}", file=sys.stderr)
-
-    duplicates = {key: files for key, files in key_sources.items() if len(files) > 1}
-    return defined_keys, duplicates
-
-
-def main():
-    """Main execution function."""
-    print("🚀 Starting localization string analysis...")
-    has_errors = False
-
-    # 1. Extract keys used in the source code
-    print("\n1. Parsing source code to find used keys...")
-    source_files = find_source_files(SRC_DIRS)
-    used_keys = extract_keys_from_code(source_files)
-    print(f"   => Found {len(used_keys)} unique keys used in the code.")
-
-    # 2. Load keys defined in locale files
-    print("\n2. Loading defined keys from locale files...")
-    defined_keys, duplicates = load_defined_keys(LOCALES_PATH)
-    print(f"   => Found {len(defined_keys)} unique keys defined in JSON files.")
-
-    # 3. Analyze and report
-    print("\n" + " Analysis Report ".center(50, "="))
-
-    # Check for duplicates
-    if duplicates:
-        print("\n❌ ERROR: Duplicate keys found!")
-        has_errors = True
-        for key, files in sorted(duplicates.items()):
-            print(f"  - Key '{key}' is defined in: {', '.join(files)}")
-
-    # Check for missing keys (used but not defined)
-    missing_keys = sorted(list(used_keys - defined_keys))
-    if missing_keys:
-        print("\n❌ CRITICAL: Missing keys! (Used in code but not defined in locales)")
-        has_errors = True
-        for key in missing_keys:
-            print(f"  - {key}")
-
-    # Check for unused keys (defined but not used)
-    unused_keys = sorted(list(defined_keys - used_keys))
-    if unused_keys:
-        print("\n⚠️  WARNING: Unused keys found. (Defined in locales but not used in code)")
-        for key in unused_keys:
-            print(f"  - {key}")
-
-    # Final summary
-    if not has_errors and not unused_keys and not duplicates:
-        print("\n✅ Success! All localization keys are consistent.")
-    else:
-        print("\n" + "".center(50, "="))
-
-    if has_errors:
-        print("\n🔥 Analysis finished with critical errors.")
-        sys.exit(1)
-    else:
-        print("\n✨ Analysis finished.")
-        sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()
+~~~~~act
+patch_file
+packages/quipu-common/src/pyquipu/common/locales/zh/cli.json
+~~~~~
+~~~~~
+  "run.info.usageHint": "\n用法示例:\n  quipu run my_plan.md\n  echo '...' | quipu run",
+  "run.error.ambiguousCommand": "💡 提示: 你是不是想执行 'quipu {command}' 命令？",
+  "run.listActs.ui.header": "\n📋 可用的 Quipu 指令列表:\n",
+~~~~~
+~~~~~
+  "run.info.usageHint": "\n用法示例:\n  quipu run my_plan.md\n  echo '...' | quipu run",
+  "run.error.ambiguousCommand": "💡 提示: 你是不是想执行 'quipu {command}' 命令？",
+  "run.warning.yoloEnabled": "⚠️  YOLO 模式已启用，将跳过所有确认步骤。",
+  "run.listActs.ui.header": "\n📋 可用的 Quipu 指令列表:\n",
 ~~~~~
 
 ### 下一步建议
 
-现在我们有了这个脚本，下一步是将其集成到我们的开发工作流中：
+我们已经修复了所有已确认的错误。现在，我建议你：
 
-1.  **运行检查**：你可以立即运行 `python scripts/check_locales.py` 来查看当前本地化字符串的健康状况，并修复报告的任何问题。
-2.  **添加到 `pyproject.toml`**：我们可以将这个脚本作为一个 `poe` 任务或 `[tool.poetry.scripts]` 入口点添加到 `pyproject.toml` 中，方便通过 `poe check-locales` 或类似命令调用。
-3.  **CI 集成**：将此检查步骤添加到我们的持续集成（CI）流程中，以确保任何合并到主分支的代码都具有完整的本地化覆盖率。
+1.  **再次运行检查脚本**: 执行 `python scripts/check_locales.py` 来确认所有的重复和缺失键问题都已解决。
+2.  **提交变更**: 在确认无误后，我们可以将这些修复作为一个 `[COMMIT]` 计划提交。
+3.  **改进脚本 (可选)**: 我们可以考虑改进 `check_locales.py`，使其能够识别更多间接使用的键（例如，通过正则表达式查找 `QuipuResult(message="...")` 的模式），以减少关于“未使用键”的误报。

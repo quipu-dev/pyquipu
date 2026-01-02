@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] feat: Add script to check localization string coverage", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767339930.7304845, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] fix: Correct localization key errors", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767340059.4494932, "duration_ms": 0}}
