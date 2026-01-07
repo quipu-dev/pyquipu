@@ -39,6 +39,7 @@ quipu = "pyquipu.cli.main:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
+exclude = ["pyquipu.cli.tests*"]
 
 [tool.setuptools.package-data]
 "pyquipu.cli" = ["*.css"]

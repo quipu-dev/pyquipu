@@ -29,3 +29,4 @@ pyquipu-common = { workspace = true }
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = true
+exclude = ["pyquipu.engine.tests*"]
