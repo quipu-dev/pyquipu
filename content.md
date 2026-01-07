@@ -1,237 +1,39 @@
-好的，我完全理解。使用显式映射（map）而不是启发式规则是更稳健、更符合“零启发式策略”公理的做法。它消除了所有歧义，确保了重构的精确性。使用 `pathlib` 也是现代 Python 开发的最佳实践。
+# 📸 Snapshot Capture
 
-我将为你生成一个计划，该计划的核心产物是一个名为 `refactor_tests.py` 的 Python 脚本。这个脚本将包含从旧路径到新路径的完整、精确的映射，并使用 `pathlib` 执行所有文件系统操作。
+检测到工作区发生变更。
 
-我还将对 `conftest.py` 文件进行拆分，将共享的 fixtures 移动到其逻辑上所属的包中，以实现更好的模块化和关注点分离。
-
-## [WIP] feat(test): 创建脚本以原子化方式重构测试套件结构
-
-### 用户需求
-1.  创建一个名为 `refactor_tests.py` 的 Python 脚本。
-2.  该脚本需要将 `tests/` 目录下的所有测试文件和 `conftest.py` 文件，根据一个显式定义的映射关系，移动到新的 `packages/*/tests/{unit,integration}/` 结构中。
-3.  脚本必须使用 `pathlib` 库进行文件操作。
-4.  脚本执行完毕后，应清理掉旧的、已变为空的 `tests/` 子目录。
-
-### 评论
-这个方法非常出色。通过创建一个独立的、可审查的重构脚本，我们将一个复杂、高风险的操作（大规模文件移动）转变为一个确定性的、可重复执行的原子事务。使用显式映射而不是启发式规则，完全杜绝了猜测，确保了操作的“本体论正确性”——每个测试文件都被精确地放置在其逻辑归属的新位置。
-
-### 目标
-1.  生成一个名为 `refactor_tests.py` 的 Python 脚本文件在项目根目录。
-2.  该脚本将硬编码一个 `FILE_MAP` 字典，其中包含所有需要移动的测试文件的源路径和目标路径。
-3.  脚本将能够安全地创建目标目录，移动文件，并在最后清理空的源目录。
-
-### 基本原理
-1.  **脚本生成**: 我将使用 `write_file` 创建 `refactor_tests.py`。
-2.  **核心逻辑 (脚本内部)**:
-    *   **数据驱动**: 脚本的核心是一个名为 `FILE_MAP` 的字典，它构成了本次重构的“真理单一来源 (SSoT)”。
-    *   **Pathlib**: 所有路径操作都将通过 `pathlib.Path` 对象完成，确保跨平台兼容性和代码的清晰性。
-    *   **原子化操作**: 脚本会遍历映射表，对每个文件执行 `destination.parent.mkdir(parents=True, exist_ok=True)` 来确保目标目录存在，然后使用 `source.rename(destination)` 来原子性地移动文件。
-    *   **Fixtures 分离**: 根 `tests/conftest.py` 文件将被拆分。`runner` fixture 强耦合于 CLI，因此其配置将被移动到 `packages/quipu-cli/tests/conftest.py`。`engine_instance` fixture 则被移动到 `packages/quipu-engine/tests/conftest.py`，因为它是引擎的核心测试工具。这遵循了“严格分层与边界”的原则。
-    *   **清理**: 在所有文件移动完成后，脚本将尝试删除旧的顶层测试目录，确保不留下任何残余结构。
-
-### 标签
-#intent/tooling #flow/ready #priority/critical #comp/tests #comp/build #scope/dx #ai/brainstorm #task/domain/testing #task/object/test-suite-structure #task/action/refactor #task/state/continue
-
----
-
-### Script
-
-#### Acts 1: 生成测试重构脚本
-
-我将创建一个 `refactor_tests.py` 脚本。请在执行后仔细审查此脚本，然后运行它来完成重构。
-
-~~~~~act
-write_file
-refactor_tests.py
-~~~~~
-~~~~~python
-import shutil
-from pathlib import Path
-
-# Explicit mapping of old test file paths to their new locations.
-# This acts as the Single Source of Truth for the refactoring.
-FILE_MAP = {
-    # Application tests
-    "tests/application/conftest.py": "packages/quipu-application/tests/conftest.py",
-    "tests/application/test_controller.py": "packages/quipu-application/tests/unit/test_controller.py",
-    "tests/application/test_utils.py": "packages/quipu-application/tests/unit/test_utils.py",
-    # CLI tests
-    "tests/cli/conftest.py": "packages/quipu-cli/tests/conftest.py",
-    "tests/cli/test_cache_commands.py": "packages/quipu-cli/tests/integration/test_cache_commands.py",
-    "tests/cli/test_cli_interaction.py": "packages/quipu-cli/tests/integration/test_cli_interaction.py",
-    "tests/cli/test_export_command.py": "packages/quipu-cli/tests/integration/test_export_command.py",
-    "tests/cli/test_navigation_commands.py": "packages/quipu-cli/tests/integration/test_navigation_commands.py",
-    "tests/cli/test_query_commands.py": "packages/quipu-cli/tests/integration/test_query_commands.py",
-    "tests/cli/test_unfriendly_paths.py": "packages/quipu-cli/tests/integration/test_unfriendly_paths.py",
-    "tests/cli/test_workspace_commands.py": "packages/quipu-cli/tests/integration/test_workspace_commands.py",
-    "tests/cli/test_tui_logic.py": "packages/quipu-cli/tests/unit/tui/test_logic.py",
-    "tests/cli/test_tui_reachability.py": "packages/quipu-cli/tests/unit/tui/test_reachability.py",
-    "tests/cli/test_view_model.py": "packages/quipu-cli/tests/unit/tui/test_view_model.py",
-    # Engine tests
-    "tests/engine/test_branching.py": "packages/quipu-engine/tests/integration/test_branching.py",
-    "tests/engine/test_checkout_behavior.py": "packages/quipu-engine/tests/integration/test_checkout_behavior.py",
-    "tests/engine/test_config.py": "packages/quipu-engine/tests/unit/test_config.py",
-    "tests/engine/test_deduplication.py": "packages/quipu-engine/tests/integration/test_deduplication.py",
-    "tests/engine/test_engine.py": "packages/quipu-engine/tests/integration/test_engine.py",
-    "tests/engine/test_engine_memory.py": "packages/quipu-engine/tests/unit/test_engine_memory.py",
-    "tests/engine/test_git_db.py": "packages/quipu-engine/tests/integration/test_git_db.py",
-    "tests/engine/test_git_reader.py": "packages/quipu-engine/tests/integration/test_git_reader.py",
-    "tests/engine/test_git_writer.py": "packages/quipu-engine/tests/integration/test_git_writer.py",
-    "tests/engine/test_head_tracking.py": "packages/quipu-engine/tests/integration/test_head_tracking.py",
-    "tests/engine/test_navigation.py": "packages/quipu-engine/tests/integration/test_navigation.py",
-    "tests/engine/sqlite/test_hydrator.py": "packages/quipu-engine/tests/integration/sqlite/test_hydrator.py",
-    "tests/engine/sqlite/test_reader.py": "packages/quipu-engine/tests/integration/sqlite/test_reader.py",
-    "tests/engine/sqlite/test_reader_integrity.py": "packages/quipu-engine/tests/integration/sqlite/test_reader_integrity.py",
-    "tests/engine/sqlite/test_writer.py": "packages/quipu-engine/tests/integration/sqlite/test_writer.py",
-    "tests/engine/sqlite/test_writer_idempotency.py": "packages/quipu-engine/tests/integration/sqlite/test_writer_idempotency.py",
-    # Runtime tests
-    "tests/runtime/conftest.py": "packages/quipu-runtime/tests/conftest.py",
-    "tests/runtime/test_arg_strategy.py": "packages/quipu-runtime/tests/unit/test_arg_strategy.py",
-    "tests/runtime/test_parser_and_basic_acts.py": "packages/quipu-runtime/tests/unit/test_parser_and_basic_acts.py",
-    "tests/runtime/test_parser_auto_detect.py": "packages/quipu-runtime/tests/unit/test_parser_auto_detect.py",
-    "tests/runtime/test_parser_robustness.py": "packages/quipu-runtime/tests/unit/test_parser_robustness.py",
-    "tests/runtime/test_plugin_loader.py": "packages/quipu-runtime/tests/unit/test_plugin_loader.py",
-    "tests/runtime/test_plugin_resilience.py": "packages/quipu-runtime/tests/unit/test_plugin_resilience.py",
-    "tests/runtime/acts/test_check.py": "packages/quipu-runtime/tests/unit/acts/test_check.py",
-    "tests/runtime/acts/test_git.py": "packages/quipu-runtime/tests/integration/acts/test_git.py",
-    "tests/runtime/acts/test_memory.py": "packages/quipu-runtime/tests/unit/acts/test_memory.py",
-    "tests/runtime/acts/test_patch_ambiguity.py": "packages/quipu-runtime/tests/unit/acts/test_patch_ambiguity.py",
-    "tests/runtime/acts/test_read.py": "packages/quipu-runtime/tests/unit/acts/test_read.py",
-    "tests/runtime/acts/test_refactor.py": "packages/quipu-runtime/tests/unit/acts/test_refactor.py",
-    "tests/runtime/acts/test_shell.py": "packages/quipu-runtime/tests/integration/acts/test_shell.py",
-    # Cross-package integration tests -> moved to CLI as they are CLI-driven
-    "tests/integration/conftest.py": "packages/quipu-cli/tests/integration/sync/conftest.py",
-    "tests/integration/test_cli_workflow.py": "packages/quipu-cli/tests/integration/test_cli_workflow.py",
-    "tests/integration/test_storage_selection.py": "packages/quipu-cli/tests/integration/test_storage_selection.py",
-    "tests/integration/test_sync_modes.py": "packages/quipu-cli/tests/integration/sync/test_modes.py",
-    "tests/integration/test_sync_workflow.py": "packages/quipu-cli/tests/integration/sync/test_workflow.py",
-    "tests/integration/test_workspace_invariance.py": "packages/quipu-cli/tests/integration/test_workspace_invariance.py",
-    "tests/integration/test_workspace_isolation.py": "packages/quipu-cli/tests/integration/test_workspace_isolation.py",
-    # Root conftest needs to be split and moved
-    "tests/conftest.py": "packages/quipu-engine/tests/conftest.py",
-}
-
-def main():
-    """Executes the test suite refactoring."""
-    project_root = Path(__file__).parent.resolve()
-    print(f"Project root detected at: {project_root}")
-
-    # Step 1: Split the root conftest.py
-    print("\n--- Splitting root conftest.py ---")
-    root_conftest_path = project_root / "tests/conftest.py"
-    if root_conftest_path.exists():
-        content = root_conftest_path.read_text()
-        
-        # Engine-related fixtures
-        engine_fixtures = [
-            'import subprocess',
-            'from pathlib import Path',
-            'import pytest',
-            'from pyquipu.engine.git_db import GitDB',
-            'from pyquipu.engine.git_object_storage import GitObjectHistoryReader, GitObjectHistoryWriter',
-            'from pyquipu.engine.state_machine import Engine',
-        ]
-        engine_code = [
-            fixture for fixture in content.split('@pytest.fixture')
-            if 'engine_instance' in fixture or 'git_workspace' in fixture
-        ]
-        
-        # CLI-related fixtures
-        cli_fixtures = [
-            'import pytest',
-            'from typer.testing import CliRunner'
-        ]
-        cli_code = [
-            fixture for fixture in content.split('@pytest.fixture')
-            if 'runner' in fixture
-        ]
-
-        if engine_code:
-            engine_conftest_target = project_root / "packages/quipu-engine/tests/conftest.py"
-            engine_conftest_target.parent.mkdir(parents=True, exist_ok=True)
-            full_engine_code = "\n".join(engine_fixtures) + "\n\n" + "\n\n@pytest.fixture".join(engine_code)
-            engine_conftest_target.write_text(full_engine_code)
-            print(f"Moved engine fixtures to {engine_conftest_target.relative_to(project_root)}")
-
-        if cli_code:
-            cli_conftest_target = project_root / "packages/quipu-cli/tests/conftest.py"
-            cli_conftest_target.parent.mkdir(parents=True, exist_ok=True)
-            full_cli_code = "\n".join(cli_fixtures) + "\n\n" + "\n@pytest.fixture".join(cli_code)
-            cli_conftest_target.write_text(full_cli_code)
-            print(f"Moved CLI fixtures to {cli_conftest_target.relative_to(project_root)}")
-            
-        # We handled it, so remove from main map to avoid double-move
-        del FILE_MAP["tests/conftest.py"]
-    else:
-        print("Root conftest.py not found, skipping split.")
-
-
-    # Step 2: Move all other files according to the map
-    print("\n--- Moving test files ---")
-    for old_path_str, new_path_str in FILE_MAP.items():
-        source_path = project_root / old_path_str
-        dest_path = project_root / new_path_str
-
-        if not source_path.exists():
-            print(f"🟡 SKIPPED: Source file not found: {source_path.relative_to(project_root)}")
-            continue
-
-        # Ensure destination directory exists
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Move the file
-        try:
-            source_path.rename(dest_path)
-            print(f"✅ MOVED: {source_path.relative_to(project_root)} -> {dest_path.relative_to(project_root)}")
-        except Exception as e:
-            print(f"🔴 FAILED to move {source_path.relative_to(project_root)}: {e}")
-
-    # Step 3: Clean up old directories
-    print("\n--- Cleaning up old directories ---")
-    old_test_dirs = [
-        project_root / "tests/application",
-        project_root / "tests/cli",
-        project_root / "tests/engine/sqlite",
-        project_root / "tests/engine",
-        project_root / "tests/integration",
-        project_root / "tests/runtime/acts",
-        project_root / "tests/runtime",
-    ]
-
-    for dir_path in old_test_dirs:
-        if dir_path.exists() and not any(dir_path.iterdir()):
-            try:
-                dir_path.rmdir()
-                print(f"🗑️ REMOVED empty directory: {dir_path.relative_to(project_root)}")
-            except OSError as e:
-                print(f"🟡 WARN: Could not remove {dir_path.relative_to(project_root)}: {e}")
-        elif dir_path.exists():
-             print(f"🟡 SKIPPED non-empty directory: {dir_path.relative_to(project_root)}")
-
-
-    # Create __init__.py files to make sure tests are discoverable
-    print("\n--- Ensuring test packages are valid ---")
-    for new_path_str in FILE_MAP.values():
-        current_path = project_root / new_path_str
-        # Iterate up to the 'tests' directory
-        while current_path.name != 'tests' and current_path.parent != current_path:
-            init_file = current_path.parent / "__init__.py"
-            if not init_file.exists():
-                print(f"✨ CREATED: {init_file.relative_to(project_root)}")
-                init_file.touch()
-            current_path = current_path.parent
-
-
-    print("\nRefactoring complete. Please run 'pytest' to verify the changes.")
-
-if __name__ == "__main__":
-    main()
-~~~~~
-
-### 下一步建议
-1.  **审查脚本**: 请仔细检查上面生成的 `refactor_tests.py` 脚本，特别是 `FILE_MAP` 的内容，确保它符合你的预期。
-2.  **执行脚本**: 在项目根目录运行 `python refactor_tests.py`。
-3.  **验证**: 运行 `pytest` 命令，确保所有测试依然能够被发现并成功通过。
-4.  **提交**: 在验证通过后，将 `refactor_tests.py` 脚本本身（作为重构的证据）以及所有被移动的文件提交到仓库。
-
-如果你同意这个计划，请确认，然后你就可以执行这个脚本了。
+### 📝 变更文件摘要:
+```
+packages/quipu-application/tests/__init__.py       |   0
+ packages/quipu-application/tests/conftest.py       |  37 ++++
+ packages/quipu-application/tests/unit/__init__.py  |   0
+ .../tests/unit/test_controller.py                  | 109 ++++++++++
+ .../quipu-application/tests/unit/test_utils.py     |  26 +++
+ packages/quipu-cli/tests/__init__.py               |   0
+ packages/quipu-cli/tests/conftest.py               |  13 ++
+ packages/quipu-cli/tests/integration/__init__.py   |   0
+ .../quipu-cli/tests/integration/sync/__init__.py   |   0
+ .../quipu-cli/tests/integration/sync/conftest.py   |  38 ++++
+ .../quipu-cli/tests/integration/sync/test_modes.py | 126 +++++++++++
+ .../tests/integration/sync/test_workflow.py        | 206 ++++++++++++++++++
+ .../tests/integration/test_cache_commands.py       | 129 +++++++++++
+ .../tests/integration/test_cli_interaction.py      |  34 +++
+ .../tests/integration/test_cli_workflow.py         | 240 +++++++++++++++++++++
+ .../tests/integration/test_export_command.py       | 200 +++++++++++++++++
+ .../tests/integration/test_navigation_commands.py  |  73 +++++++
+ .../tests/integration/test_query_commands.py       | 147 +++++++++++++
+ .../tests/integration/test_storage_selection.py    | 189 ++++++++++++++++
+ .../tests/integration/test_unfriendly_paths.py     | 165 ++++++++++++++
+ .../tests/integration/test_workspace_commands.py   |  60 ++++++
+ .../tests/integration/test_workspace_invariance.py |  77 +++++++
+ .../tests/integration/test_workspace_isolation.py  |  76 +++++++
+ packages/quipu-cli/tests/unit/__init__.py          |   0
+ packages/quipu-cli/tests/unit/tui/__init__.py      |   0
+ packages/quipu-cli/tests/unit/tui/test_logic.py    |  74 +++++++
+ .../quipu-cli/tests/unit/tui/test_reachability.py  |  78 +++++++
+ .../quipu-cli/tests/unit/tui/test_view_model.py    | 204 ++++++++++++++++++
+ packages/quipu-engine/tests/__init__.py            |   0
+ packages/quipu-engine/tests/conftest.py            |  34 +++
+ ...
+ 119 files changed, 5505 insertions(+), 5471 deletions(-)
+```
