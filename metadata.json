@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(tests): 标准化 query 命令的测试数据创建", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767771399.1643507, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[COMMIT] refactor(tests): 统一标准化辅助函数至 tests/helpers.py", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767771449.9287105, "duration_ms": 0}}
