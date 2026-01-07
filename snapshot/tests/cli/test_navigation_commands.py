@@ -3,21 +3,14 @@ from unittest.mock import ANY, MagicMock
 import pytest
 from pyquipu.cli.main import app
 
+from ..helpers import create_linear_history
+
 
 @pytest.fixture
 def populated_workspace(quipu_workspace):
     ws, _, engine = quipu_workspace
-
-    (ws / "a.txt").write_text("A")
-    hash_a = engine.git_db.get_tree_hash()
-    engine.create_plan_node(input_tree="_" * 40, output_tree=hash_a, plan_content="Plan A", summary_override="State A")
-
-    (ws / "b.txt").write_text("B")
-    (ws / "a.txt").unlink()
-    hash_b = engine.git_db.get_tree_hash()
-    engine.create_plan_node(input_tree=hash_a, output_tree=hash_b, plan_content="Plan B", summary_override="State B")
-
-    return ws, hash_a, hash_b
+    _, hashes = create_linear_history(engine)
+    return ws, hashes["a"], hashes["b"]
 
 
 def test_cli_back_forward_flow(runner, populated_workspace, monkeypatch):

@@ -356,3 +356,53 @@ def create_complex_link_history(engine: Engine) -> Engine:
     h4 = engine.git_db.get_tree_hash()
     engine.create_plan_node(h3, h4, "plan 4", summary_override="Child_Node")
     return engine
+
+
+def create_linear_history(engine: Engine) -> Tuple[Engine, Dict[str, str]]:
+    """
+    Creates a simple linear history A -> B.
+    - State A: a.txt
+    - State B: b.txt (a.txt is removed)
+    Returns the engine and a dictionary mapping state names ('a', 'b') to their output tree hashes.
+    """
+    ws = engine.root_dir
+
+    # State A
+    (ws / "a.txt").write_text("A")
+    hash_a = engine.git_db.get_tree_hash()
+    engine.create_plan_node(EMPTY_TREE_HASH, hash_a, "Plan A", summary_override="State A")
+
+    # State B
+    (ws / "b.txt").write_text("B")
+    (ws / "a.txt").unlink()
+    hash_b = engine.git_db.get_tree_hash()
+    engine.create_plan_node(hash_a, hash_b, "Plan B", summary_override="State B")
+
+    hashes = {"a": hash_a, "b": hash_b}
+    return engine, hashes
+
+
+def create_dirty_workspace_history(engine: Engine) -> Tuple[Engine, str]:
+    """
+    Creates a history A -> B, then makes the workspace dirty.
+    - State A: file.txt -> "v1"
+    - State B (HEAD): file.txt -> "v2"
+    - Dirty State: file.txt -> "v3"
+    Returns the engine and the hash of state A for checkout tests.
+    """
+    work_dir = engine.root_dir
+    file_path = work_dir / "file.txt"
+
+    # State A
+    file_path.write_text("v1")
+    hash_a = engine.git_db.get_tree_hash()
+    engine.capture_drift(hash_a, message="State A")
+
+    # State B (HEAD)
+    file_path.write_text("v2")
+    engine.capture_drift(engine.git_db.get_tree_hash(), message="State B")
+
+    # Dirty State
+    file_path.write_text("v3")
+
+    return engine, hash_a

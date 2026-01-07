@@ -1,1 +1,1 @@
-{"meta_version": "1.0", "summary": "[WIP] refactor(tests): 标准化历史创建逻辑并迁移至 helpers", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767771181.3509007, "duration_ms": 0}}
+{"meta_version": "1.0", "summary": "[WIP] refactor(tests): 提取线性历史和脏工作区创建逻辑", "type": "plan", "generator": {"id": "manual", "tool": "pyquipu-cli"}, "env": {"quipu": "0.1.0", "python": "3.13.5", "os": "linux"}, "exec": {"start": 1767771306.0026078, "duration_ms": 0}}

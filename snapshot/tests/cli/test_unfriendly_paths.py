@@ -5,30 +5,14 @@ import pytest
 from pyquipu.cli.main import app
 from typer.testing import CliRunner
 
+from ..helpers import create_dirty_workspace_history
+
 
 @pytest.fixture
 def dirty_workspace(quipu_workspace):
-    """
-    提供一个包含历史记录和未提交变更的工作区。
-    - State A: file.txt -> "v1"
-    - State B (HEAD): file.txt -> "v2"
-    - Dirty State: file.txt -> "v3"
-    """
+    """Provides a workspace with history and uncommitted changes."""
     work_dir, _, engine = quipu_workspace
-    file_path = work_dir / "file.txt"
-
-    # State A
-    file_path.write_text("v1")
-    hash_a = engine.git_db.get_tree_hash()
-    engine.capture_drift(hash_a, message="State A")
-
-    # State B (HEAD)
-    file_path.write_text("v2")
-    engine.capture_drift(engine.git_db.get_tree_hash(), message="State B")
-
-    # Dirty State
-    file_path.write_text("v3")
-
+    _, hash_a = create_dirty_workspace_history(engine)
     return work_dir, engine, hash_a
 
 
