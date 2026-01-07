@@ -72,7 +72,7 @@ class TestEngineFindNodes:
         """
         import time
 
-        from tests.helpers import (
+        from pyquipu.test_utils.helpers import (
             EMPTY_TREE_HASH,
             create_capture_node_with_change,
             create_plan_node_with_change,

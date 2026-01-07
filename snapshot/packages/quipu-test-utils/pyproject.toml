@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyquipu-test-utils"
+version = "0.1.0"
+authors = [
+  { name="doucx", email="doucxldh@gmail.com" },
+]
+description = "Common testing utilities for the Quipu ecosystem."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Framework :: Pytest",
+]
+dependencies = [
+    "pyquipu-interfaces",
+    "pyquipu-engine",
+    "typer"
+]
+
+[tool.uv.sources]
+pyquipu-interfaces = { workspace = true }
+pyquipu-engine = { workspace = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = true

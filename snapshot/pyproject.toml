@@ -21,6 +21,7 @@ dev = [
     "pyquipu-engine",
     "pyquipu-interfaces",
     "pyquipu-runtime",
+    "pyquipu-test-utils",
     # Dev tools
     "pytest",
     "pytest-cov",
@@ -40,6 +41,7 @@ pyquipu-common = { workspace = true }
 pyquipu-engine = { workspace = true }
 pyquipu-interfaces = { workspace = true }
 pyquipu-runtime = { workspace = true }
+pyquipu-test-utils = { workspace = true }
 
 [tool.pytest.ini_options]
 addopts = "-ra --cov=pyquipu --cov-report=term-missing"

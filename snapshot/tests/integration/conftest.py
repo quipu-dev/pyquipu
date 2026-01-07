@@ -1,6 +1,6 @@
 import pytest
 
-from ..helpers import run_git_command
+from pyquipu.test_utils.helpers import run_git_command
 
 
 @pytest.fixture(scope="module")

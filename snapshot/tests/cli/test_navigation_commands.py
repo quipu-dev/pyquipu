@@ -3,7 +3,7 @@ from unittest.mock import ANY, MagicMock
 import pytest
 from pyquipu.cli.main import app
 
-from ..helpers import create_linear_history
+from pyquipu.test_utils.helpers import create_linear_history
 
 
 @pytest.fixture

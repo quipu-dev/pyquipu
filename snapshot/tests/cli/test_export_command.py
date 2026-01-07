@@ -5,7 +5,7 @@ import pytest
 from pyquipu.cli.main import app
 from pyquipu.engine.state_machine import Engine
 
-from ..helpers import create_branching_history, create_complex_link_history
+from pyquipu.test_utils.helpers import create_branching_history, create_complex_link_history
 
 
 @pytest.fixture

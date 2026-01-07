@@ -5,7 +5,7 @@ import pytest
 from pyquipu.cli.main import app
 from typer.testing import CliRunner
 
-from ..helpers import create_dirty_workspace_history
+from pyquipu.test_utils.helpers import create_dirty_workspace_history
 
 
 @pytest.fixture

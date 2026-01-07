@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pyquipu.engine.state_machine import Engine
 
-from tests.helpers import EMPTY_TREE_HASH, InMemoryDB, InMemoryHistoryManager
+from pyquipu.test_utils.helpers import EMPTY_TREE_HASH, InMemoryDB, InMemoryHistoryManager
 
 
 @pytest.fixture

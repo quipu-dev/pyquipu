@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from pyquipu.cli.main import app
 
-from ..helpers import create_linear_history_from_specs, create_query_branching_history
+from pyquipu.test_utils.helpers import create_linear_history_from_specs, create_query_branching_history
 
 
 def test_log_empty(runner, quipu_workspace, monkeypatch):
