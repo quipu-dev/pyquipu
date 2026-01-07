@@ -4,51 +4,9 @@ from pyquipu.cli.main import app
 from pyquipu.common.identity import get_user_id_from_email
 from typer.testing import CliRunner
 
-from .helpers import run_git_command
+from ..helpers import create_node_via_cli, run_git_command
 
 runner = CliRunner()
-
-
-def get_local_quipu_heads(work_dir: Path) -> set[str]:
-    """Helper to get a set of all local quipu head commit hashes."""
-    refs_output = run_git_command(
-        work_dir, ["for-each-ref", "--format=%(objectname)", "refs/quipu/local/heads"], check=False
-    )
-    if not refs_output:
-        return set()
-    return set(refs_output.splitlines())
-
-
-def create_node(work_dir: Path, content: str) -> str:
-    """Helper to create a node and return its commit hash."""
-    heads_before = get_local_quipu_heads(work_dir)
-
-    # [FIX] Add an explicit title to the plan to ensure predictable node summary.
-    plan_title = f"Plan for {content}"
-    plan_file = work_dir / f"{content}.md"
-    plan_file.write_text(f"# {plan_title}\n\n~~~~~act\necho '{content}'\n~~~~~")
-
-    result = runner.invoke(app, ["run", str(plan_file), "--work-dir", str(work_dir), "-y"])
-    assert result.exit_code == 0
-
-    heads_after = get_local_quipu_heads(work_dir)
-    new_heads = heads_after - heads_before
-
-    if not new_heads:
-        raise AssertionError("No new Quipu nodes created.")
-
-    # If only 1 node created, return it.
-    if len(new_heads) == 1:
-        return new_heads.pop()
-
-    # If 2 nodes created (Capture + Plan), identify the Plan node by checking if
-    # the explicit title is present in the commit message.
-    for head in new_heads:
-        msg = run_git_command(work_dir, ["log", "-1", "--format=%B", head])
-        if plan_title in msg:
-            return head
-
-    raise AssertionError(f"Could not identify Plan node among {len(new_heads)} new heads: {new_heads}")
 
 
 class TestSyncModes:
@@ -59,11 +17,11 @@ class TestSyncModes:
         user_b_id = get_user_id_from_email("user.b@example.com")
 
         # User B creates a node and pushes it
-        node_b = create_node(user_b_path, "node_from_b")
+        node_b = create_node_via_cli(runner, user_b_path, "node_from_b")
         runner.invoke(app, ["sync", "--work-dir", str(user_b_path)])
 
         # User A creates a node
-        node_a = create_node(user_a_path, "node_from_a")
+        node_a = create_node_via_cli(runner, user_a_path, "node_from_a")
 
         # User A syncs with push-only
         sync_result = runner.invoke(app, ["sync", "--work-dir", str(user_a_path), "--mode", "push-only"])
@@ -86,7 +44,7 @@ class TestSyncModes:
         import yaml
 
         # User A creates a node and pushes
-        node_a = create_node(user_a_path, "node_from_a_for_pull")
+        node_a = create_node_via_cli(runner, user_a_path, "node_from_a_for_pull")
         runner.invoke(app, ["sync", "--work-dir", str(user_a_path)])
 
         # [FIX] User B must subscribe to User A to be able to pull their changes.
@@ -94,7 +52,7 @@ class TestSyncModes:
         runner.invoke(app, ["sync", "--work-dir", str(user_b_path)])
 
         # User B creates a node but doesn't push
-        node_b = create_node(user_b_path, "node_from_b_local")
+        node_b = create_node_via_cli(runner, user_b_path, "node_from_b_local")
 
         config_path_b = user_b_path / ".quipu" / "config.yml"
         with open(config_path_b, "r") as f:
@@ -124,8 +82,8 @@ class TestSyncModes:
         remote_path, user_a_path, _ = sync_test_environment
 
         # User A creates two nodes and pushes
-        node1 = create_node(user_a_path, "node_to_keep")
-        node2_stale = create_node(user_a_path, "node_to_delete")
+        node1 = create_node_via_cli(runner, user_a_path, "node_to_keep")
+        node2_stale = create_node_via_cli(runner, user_a_path, "node_to_delete")
         runner.invoke(app, ["sync", "--work-dir", str(user_a_path)])
 
         # Verify both exist on remote
@@ -152,8 +110,8 @@ class TestSyncModes:
         user_b_id = get_user_id_from_email("user.b@example.com")
 
         # User B creates two nodes and pushes
-        node1_b = create_node(user_b_path, "b_node_to_keep")
-        node2_b_stale = create_node(user_b_path, "b_node_to_delete")
+        node1_b = create_node_via_cli(runner, user_b_path, "b_node_to_keep")
+        node2_b_stale = create_node_via_cli(runner, user_b_path, "b_node_to_delete")
         runner.invoke(app, ["sync", "--work-dir", str(user_b_path)])
 
         # Now, on another device (simulated by remote), the stale ref is deleted

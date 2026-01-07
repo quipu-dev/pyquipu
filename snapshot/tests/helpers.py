@@ -236,3 +236,57 @@ class InMemoryHistoryManager(HistoryReader, HistoryWriter):
 
     def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:
         return {}
+
+
+# --- CLI/Integration Test Helpers ---
+import subprocess
+from typer.testing import CliRunner
+from pyquipu.cli.main import app
+
+
+def run_git_command(cwd: Path, args: list[str], check: bool = True) -> str:
+    """Helper to run a git command and return stdout."""
+    result = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, check=check)
+    return result.stdout.strip()
+
+
+def get_local_quipu_heads(work_dir: Path) -> set[str]:
+    """Helper to get a set of all local quipu head commit hashes."""
+    refs_output = run_git_command(
+        work_dir, ["for-each-ref", "--format=%(objectname)", "refs/quipu/local/heads"], check=False
+    )
+    if not refs_output:
+        return set()
+    return set(refs_output.splitlines())
+
+
+def create_node_via_cli(runner: CliRunner, work_dir: Path, content: str) -> str:
+    """Helper to create a node via the CLI runner and return its commit hash."""
+    heads_before = get_local_quipu_heads(work_dir)
+
+    # [FIX] Add an explicit title to the plan to ensure predictable node summary.
+    plan_title = f"Plan for {content}"
+    plan_file = work_dir / f"{content}.md"
+    plan_file.write_text(f"# {plan_title}\n\n~~~~~act\necho '{content}'\n~~~~~")
+
+    result = runner.invoke(app, ["run", str(plan_file), "--work-dir", str(work_dir), "-y"])
+    assert result.exit_code == 0
+
+    heads_after = get_local_quipu_heads(work_dir)
+    new_heads = heads_after - heads_before
+
+    if not new_heads:
+        raise AssertionError("No new Quipu nodes created.")
+
+    # If only 1 node created, return it.
+    if len(new_heads) == 1:
+        return new_heads.pop()
+
+    # If 2 nodes created (Capture + Plan), identify the Plan node by checking if
+    # the explicit title is present in the commit message.
+    for head in new_heads:
+        msg = run_git_command(work_dir, ["log", "-1", "--format=%B", head])
+        if plan_title in msg:
+            return head
+
+    raise AssertionError(f"Could not identify Plan node among {len(new_heads)} new heads: {new_heads}")
