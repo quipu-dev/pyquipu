@@ -1,0 +1,2 @@
+"TestCheckActs.setup_executor": |-
+  自动为每个测试注册 check acts

@@ -1,0 +1,52 @@
+{
+  "engine_instance": {
+    "baseline_code_signature_text": "def engine_instance(git_workspace: Path) -> Engine:",
+    "baseline_code_structure_hash": "508b467f12049f2a128a83de3b3bf26762a4f37b630e28c4eab7f4c34630d020",
+    "baseline_yaml_content_hash": "403cc8f0f78d572cc155ca684463631b1f5ba6324ce3af282de559f71beaf19c"
+  },
+  "executor": {
+    "baseline_code_signature_text": "def executor(tmp_path: Path):",
+    "baseline_code_structure_hash": "828bede5f3d6f8a39a42fb146f9ac9e2121d63b156b32cbb46241212812b1942",
+    "baseline_yaml_content_hash": "e9aab437641baa3dd0e7601bff2322bd8fe3e5f0b6963b7f1f953f8c670bde0c"
+  },
+  "git_workspace": {
+    "baseline_code_signature_text": "def git_workspace(tmp_path: Path) -> Path:",
+    "baseline_code_structure_hash": "212c48cd2bfdcb11d1b5cfa9bb9aacd9a8b97a695863b62ebbfabbfdcc3c4ebf",
+    "baseline_yaml_content_hash": "7ecbecbfaf55365313a253b6278d239776c153e9de4a2e570ff9d5cb8e9dbae9"
+  },
+  "isolated_vault": {
+    "baseline_code_signature_text": "def isolated_vault(executor) -> Path:",
+    "baseline_code_structure_hash": "4266808927f59d2f83309312cbfbe27adce4d15f5be9898b63a4246c41dcff7c",
+    "baseline_yaml_content_hash": "352469e818e940779676ed5e34c94b46ed6d0a09e0accb21cb01cb37bdcbe3d5"
+  },
+  "mock_engine": {
+    "baseline_code_signature_text": "def mock_engine():",
+    "baseline_code_structure_hash": "356e9fb160aafb3b3dff193494c8ec9808994d6794585f82c0f088c667dae738",
+    "baseline_yaml_content_hash": "976bf444795dbd71590d30bc8b6349dc05fd6e33c5f6c54f3d56d397ec3b3748"
+  },
+  "mock_runtime": {
+    "baseline_code_signature_text": "def mock_runtime():",
+    "baseline_code_structure_hash": "33afd9208fd13d1928de8848342ed791bf13f87918ea571de8ad156a621eca13",
+    "baseline_yaml_content_hash": "453f2e4be23abd849c1ff01698a96fe9e7987a05711639a24c399d56ee5fd569"
+  },
+  "mock_runtime_bus": {
+    "baseline_code_signature_text": "def mock_runtime_bus(monkeypatch):",
+    "baseline_code_structure_hash": "7cf21c2a06934f4c8699dfc2ede7d34009da427cb32a86b3c32fb864ef905462",
+    "baseline_yaml_content_hash": "5c7b8e7af4721575aeaf252a625c14b7d16506cca8834825ce937f605b6e8de8"
+  },
+  "quipu_workspace": {
+    "baseline_code_signature_text": "def quipu_workspace(engine_instance: Engine):",
+    "baseline_code_structure_hash": "802bd8d11b57f1ad06b0e92bb5f75d8cc3f2dc544f299177179d13f01bcaa448",
+    "baseline_yaml_content_hash": "20898e78d4b5d71119cbfcf21c0972aeae98ab242f7dd296dcca388c39a558e4"
+  },
+  "runner": {
+    "baseline_code_signature_text": "def runner() -> CliRunner:",
+    "baseline_code_structure_hash": "261ea21cb8282c88236db52b977b2618b009387fcd2317c1fdba9666e1ac4587",
+    "baseline_yaml_content_hash": "ca5ac14a60f7b317ba850b864d093cbcaaf5a9289225edcbca02e9b614b8cff3"
+  },
+  "sync_test_environment": {
+    "baseline_code_signature_text": "def sync_test_environment(tmp_path_factory):",
+    "baseline_code_structure_hash": "24a3961ed104cd64fdc6f9bb10972cdb4da79c48651ffc5368c42b00134f6149",
+    "baseline_yaml_content_hash": "d0bbfdf65068bb6e267682b7e216c143f13e2d31dda662cb7cf222a797a3db21"
+  }
+}

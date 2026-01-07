@@ -1,0 +1,8 @@
+{
+  "TestDeduplication": {},
+  "TestDeduplication.test_idempotent_plan_creation": {
+    "baseline_code_signature_text": "def test_idempotent_plan_creation(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "49848380f227b95e94ff612c2429e8cab5b71814b52c435d9ccce0da74e92210",
+    "baseline_yaml_content_hash": "04564e6fc17931b09bf8aedebfe68fd03b7c5681f9683a4c3329e0c581081849"
+  }
+}

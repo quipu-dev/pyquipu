@@ -1,0 +1,7 @@
+{
+  "test_run_command_with_piped_input_and_confirmation": {
+    "baseline_code_signature_text": "def test_run_command_with_piped_input_and_confirmation(runner: CliRunner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "b7a1eb5b96b292fd193b703476be50984991d54239dde16abfd096a140576e03",
+    "baseline_yaml_content_hash": "b4babbe679a74f7f6d13b61fcb7c52525f1f09291023e22e8369643cd553c2bf"
+  }
+}

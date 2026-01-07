@@ -1,0 +1,17 @@
+{
+  "_has_cycle": {
+    "baseline_code_signature_text": "def _has_cycle(nodes: List[QuipuNode]) -> bool:",
+    "baseline_code_structure_hash": "7b3f0f02c9e58ef8270df2e87657d59a94e0fa56397e3f9a09bfab510184146a",
+    "baseline_yaml_content_hash": "2fe01b7f1684fbbf6cfd433be2f7a34e5fc560074ee6903becd1d0742e89cdf8"
+  },
+  "repo_with_sqlite_db": {
+    "baseline_code_signature_text": "def repo_with_sqlite_db(tmp_path):",
+    "baseline_code_structure_hash": "bccfc013034fbde8e1b08bdd9bdf947f8c2aa320e6b6706c053cfb1b2fe73826",
+    "baseline_yaml_content_hash": "3d722d7643b6f7a4de56d8a3f88429d1e1de2680455bd06eb72c0ae5314d5890"
+  },
+  "test_load_all_nodes_handles_self_referencing_edge": {
+    "baseline_code_signature_text": "def test_load_all_nodes_handles_self_referencing_edge(repo_with_sqlite_db):",
+    "baseline_code_structure_hash": "1ed8e5d06d65127283856aa0a0d3db41d9e3f159567027d80a4e8d8c2b36ed1e",
+    "baseline_yaml_content_hash": "0b2675524bac857b5917dbf4968a6aa4eef744547ace3e461d5433bf1d479ce1"
+  }
+}

@@ -1,0 +1,8 @@
+"TestUiLogic.test_get_node_summary": |-
+  Tests if the TUI correctly uses the pre-loaded summary field.
+"TestUiLogic.test_graph_renderer_branching": |-
+  Smoke test for branching history rendering.
+"TestUiLogic.test_graph_renderer_simple_linear": |-
+  Smoke test for simple linear history rendering.
+"view_model_factory": |-
+  A factory to create a GraphViewModel instance with mock data for tests.

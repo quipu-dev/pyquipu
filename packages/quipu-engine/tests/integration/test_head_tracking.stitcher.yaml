@@ -1,0 +1,9 @@
+"TestHeadTracking.test_capture_drift_on_detached_head": |-
+  A more robust regression test. Ensures capture_drift uses the HEAD
+  pointer even when it's not pointing to the latest node in history.
+"TestHeadTracking.test_checkout_updates_head": |-
+  验证 engine.checkout 正确更新 HEAD
+"TestHeadTracking.test_drift_uses_head": |-
+  测试漂移捕获时使用 HEAD 作为父节点
+"TestHeadTracking.test_head_persistence": |-
+  测试 HEAD 指针的创建和更新

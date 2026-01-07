@@ -1,0 +1,8 @@
+"TestHydration.test_full_hydration_from_scratch": |-
+  测试从一个空的数据库开始，完整补水一个已有的 Git 历史。
+"TestHydration.test_hydration_idempotency": |-
+  测试重复运行补水不会产生副作用。
+"TestHydration.test_incremental_hydration": |-
+  测试只补水增量部分。
+"hydrator_setup": |-
+  创建一个包含 Git 仓库、DB 管理器和 Hydrator 实例的测试环境。

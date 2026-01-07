@@ -1,0 +1,27 @@
+{
+  "TestHeadTracking": {},
+  "TestHeadTracking.engine_with_repo": {
+    "baseline_code_signature_text": "def engine_with_repo(self, tmp_path):",
+    "baseline_code_structure_hash": "1c469657eb7f10bdfcd3daa4af207c6688aaf30e66f2a4a4422c3132b170dbac"
+  },
+  "TestHeadTracking.test_capture_drift_on_detached_head": {
+    "baseline_code_signature_text": "def test_capture_drift_on_detached_head(self, engine_with_repo):",
+    "baseline_code_structure_hash": "5227725e66d7c375dd404c876142d7954db252cb44f693e2951d90e679216128",
+    "baseline_yaml_content_hash": "035d3bbc517a59a9a35949149d72d0a3bef070775f81fa6433b610650ec6e269"
+  },
+  "TestHeadTracking.test_checkout_updates_head": {
+    "baseline_code_signature_text": "def test_checkout_updates_head(self, engine_with_repo):",
+    "baseline_code_structure_hash": "d5b2c80c9317ea09e10725b47e4105a7e6e1ca48c8048e00dfaca7de6310231a",
+    "baseline_yaml_content_hash": "a97a39cf406f18278da5d7960f554eb04fd61b55f4e3b26140c8d94a9c577e17"
+  },
+  "TestHeadTracking.test_drift_uses_head": {
+    "baseline_code_signature_text": "def test_drift_uses_head(self, engine_with_repo):",
+    "baseline_code_structure_hash": "ce77aea9d60a2aa0450155810aa64c7d36c4372d97ed8d6bfa7fdff4c28ca7b0",
+    "baseline_yaml_content_hash": "f52b31d950ea969b483b0976cd946218b86a0740817270962c063b8c4b3b0f7a"
+  },
+  "TestHeadTracking.test_head_persistence": {
+    "baseline_code_signature_text": "def test_head_persistence(self, engine_with_repo):",
+    "baseline_code_structure_hash": "b3e17d9608a788d317d66887ec840c395c3c6c227d0cc7931fa2f618bdcfe7ae",
+    "baseline_yaml_content_hash": "a0494265e17f3461444544f3e598c319e8690e3fbda874493da33da78c9803ed"
+  }
+}

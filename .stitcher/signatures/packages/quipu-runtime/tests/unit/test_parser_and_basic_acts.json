@@ -1,0 +1,62 @@
+{
+  "TestBasicActs": {},
+  "TestBasicActs.test_append_fail_not_found": {
+    "baseline_code_signature_text": "def test_append_fail_not_found(self, executor: Executor):",
+    "baseline_code_structure_hash": "597c08122134cd2947a92ab2c385c78512b95c388a5e0d1ff355ca58bd6529f6"
+  },
+  "TestBasicActs.test_append_file": {
+    "baseline_code_signature_text": "def test_append_file(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "dc30f0724b2d5113a020de409a9aca3a225b2b035e8eb1b1f977724d70a975a6"
+  },
+  "TestBasicActs.test_patch_file_fail_not_found": {
+    "baseline_code_signature_text": "def test_patch_file_fail_not_found(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "89c3a7e47f56b8dbf0e9fa79591111730e8f2c36085b31880ca7112460a9d115"
+  },
+  "TestBasicActs.test_patch_file_text": {
+    "baseline_code_signature_text": "def test_patch_file_text(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "5bd8647411a8e8cb948510415d1f479c5a9c9788058114a43212a98f0e73e9f3"
+  },
+  "TestBasicActs.test_variable_lang_parser_recognition": {
+    "baseline_code_signature_text": "def test_variable_lang_parser_recognition(self):",
+    "baseline_code_structure_hash": "c7b4a3187fd31075101ddc0749416f40ce52168a50f6dc1147b911160d692b40",
+    "baseline_yaml_content_hash": "a64aadeef0c23ec9a8d664fa446713a08138bee03b71c36d5168330d54edf175"
+  },
+  "TestBasicActs.test_write_file": {
+    "baseline_code_signature_text": "def test_write_file(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "6f8f21c0324c4f4d07e0efdb8cb36683434076f38f47a412030cc4c693c09bf6"
+  },
+  "TestHybridArgs": {},
+  "TestHybridArgs.test_act_parsing_error": {
+    "baseline_code_signature_text": "def test_act_parsing_error(self, executor: Executor):",
+    "baseline_code_structure_hash": "77c32863d1b007c582d9533a28fb0602de9f128a49b7c21602206dc06a0c4e35"
+  },
+  "TestHybridArgs.test_inline_quoted_args": {
+    "baseline_code_signature_text": "def test_inline_quoted_args(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "d34d3ba0196d7274303ccda19f87a16d3c8996a7bb2c6ce9c8d290d42975abb0"
+  },
+  "TestHybridArgs.test_inline_write_file": {
+    "baseline_code_signature_text": "def test_inline_write_file(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "781d11285553ffb23d961d0beaca8b03079bb94284014a560f8b88ab6301dac4"
+  },
+  "TestHybridArgs.test_mixed_git_commit": {
+    "baseline_code_signature_text": "def test_mixed_git_commit(self, executor: Executor):",
+    "baseline_code_structure_hash": "cdd2c300201cd0c859dee6760488f66646e9c7b0c296acb6621d17f5e65a97ba"
+  },
+  "TestParser": {},
+  "TestParser.test_backtick_parser": {
+    "baseline_code_signature_text": "def test_backtick_parser(self):",
+    "baseline_code_structure_hash": "679eb19cecbaf2af218b1c2cd3715e64407b0bea65429ab6e52213b43c6effc2"
+  },
+  "TestParser.test_end_block": {
+    "baseline_code_signature_text": "def test_end_block(self):",
+    "baseline_code_structure_hash": "d4375466b38509d9fe9eb6a330acc844c66aee2dd4019ebdcd3faaf4e72986aa"
+  },
+  "TestParser.test_factory": {
+    "baseline_code_signature_text": "def test_factory(self):",
+    "baseline_code_structure_hash": "99a3e899ce6291c70b4e4b9e1cd6684b4b115267707247d8abb3135df1a88aee"
+  },
+  "TestParser.test_tilde_parser": {
+    "baseline_code_signature_text": "def test_tilde_parser(self):",
+    "baseline_code_structure_hash": "11f29ff420672e04cc4d235d2555414c408c300306e8fa6c3b82161bb83055e6"
+  }
+}

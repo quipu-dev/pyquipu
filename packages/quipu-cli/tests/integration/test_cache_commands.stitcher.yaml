@@ -1,0 +1,12 @@
+"history_with_redundant_refs": |-
+  创建一个包含线性和分支历史的仓库，这将生成冗余的 head 引用。
+  History: root -> n1 -> n2 (branch point) -> n3a (leaf)
+                                          \-> n3b (leaf)
+  Expected redundant refs: root, n1, n2
+  Expected preserved refs: n3a, n3b
+"test_cache_prune_refs_empty_repo": |-
+  测试在空仓库（无任何 quipu 引用）上运行 prune-refs。
+"test_cache_prune_refs_no_redundancy": |-
+  测试在没有冗余引用的情况下运行 prune-refs。
+"test_cache_prune_refs_with_redundancy": |-
+  测试 prune-refs 命令是否能正确识别并删除冗余引用。

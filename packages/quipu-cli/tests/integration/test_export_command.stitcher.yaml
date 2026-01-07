@@ -1,0 +1,16 @@
+"history_for_all_links": |-
+  Provides a complex history for testing all navigation link types.
+"populated_history": |-
+  Provides a common branching history for export tests.
+"test_export_basic": |-
+  测试基本的导出功能。
+"test_export_edge_cases": |-
+  测试边界情况。
+"test_export_filtering": |-
+  测试过滤选项。
+"test_export_hide_link_type": |-
+  验证 --hide-link-type 选项能成功禁用特定类型的导航链接。
+"test_export_hide_multiple_link_types": |-
+  验证可以同时禁用多种链接类型。
+"test_export_reachable_only": |-
+  测试 --reachable-only 选项是否能过滤掉无关分支。

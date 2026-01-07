@@ -1,0 +1,12 @@
+{
+  "__all__": {},
+  "_auto_mock_runtime_bus": {
+    "baseline_code_signature_text": "def _auto_mock_runtime_bus(mock_runtime_bus):",
+    "baseline_code_structure_hash": "83c93dce8d9710ad0f8868a102ce8d7357c40cbd9fe42d4cc1c6a05fbcf5d3b6"
+  },
+  "pytest_configure": {
+    "baseline_code_signature_text": "def pytest_configure(config):",
+    "baseline_code_structure_hash": "8033a723e2db4323d4998ec32f8f9c47549bda338ba8ac9f17f25bd465f26059",
+    "baseline_yaml_content_hash": "57d65ca860df7d736658ade8a45184bca0ed01d858d8097055f6303250ee2848"
+  }
+}

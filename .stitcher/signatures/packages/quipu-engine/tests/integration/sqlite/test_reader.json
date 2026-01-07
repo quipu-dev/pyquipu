@@ -1,0 +1,56 @@
+{
+  "TestSQLiteHistoryReader": {},
+  "TestSQLiteHistoryReader.test_load_linear_history_from_db": {
+    "baseline_code_signature_text": "def test_load_linear_history_from_db(self, sqlite_reader_setup):",
+    "baseline_code_structure_hash": "0101753d595874cff9323b12dced32c355526849b9432407b94cc0bdedc7f362",
+    "baseline_yaml_content_hash": "0f7191ff262e95f66933ad97e91f58f48472736eecda7af03877dc4dbce340a3"
+  },
+  "TestSQLiteHistoryReader.test_read_through_cache": {
+    "baseline_code_signature_text": "def test_read_through_cache(self, sqlite_reader_setup):",
+    "baseline_code_structure_hash": "aa9f695b41fa19feb99ef4e5bb5e170ac913fe1153eb4f0911ec326f38beebcb",
+    "baseline_yaml_content_hash": "980fe7d3b75add599631333f4ae3dc93dd65110f631f5eaec77230966181aa3a"
+  },
+  "TestSQLiteReaderPaginated": {},
+  "TestSQLiteReaderPaginated.test_get_ancestors_with_cte": {
+    "baseline_code_signature_text": "def test_get_ancestors_with_cte(self, populated_db):",
+    "baseline_code_structure_hash": "2d527b6bbd8c8522c14e44816f0bfac6cc7f0cb04d0203f2e2ca223f5278f34c"
+  },
+  "TestSQLiteReaderPaginated.test_get_node_count": {
+    "baseline_code_signature_text": "def test_get_node_count(self, populated_db):",
+    "baseline_code_structure_hash": "9254f7bc13ec9a1049ca38b97fa7489a406477bea5294581ec27bed03ff3cee2"
+  },
+  "TestSQLiteReaderPaginated.test_get_private_data_found": {
+    "baseline_code_signature_text": "def test_get_private_data_found(self, populated_db):",
+    "baseline_code_structure_hash": "18c53cd7c05389b571a0223bf0dc21384d5a8ef389578bd4a519dd9e936fec97"
+  },
+  "TestSQLiteReaderPaginated.test_get_private_data_not_found": {
+    "baseline_code_signature_text": "def test_get_private_data_not_found(self, populated_db):",
+    "baseline_code_structure_hash": "df1cb3f71e5705af3a687c44ccdc4619eb785acfd92f0e53925dc2871d5db056"
+  },
+  "TestSQLiteReaderPaginated.test_load_first_page": {
+    "baseline_code_signature_text": "def test_load_first_page(self, populated_db):",
+    "baseline_code_structure_hash": "662c15f799474a3e5798735e90498cd44527afee4a3c49b4700d7cd99fb61cb1"
+  },
+  "TestSQLiteReaderPaginated.test_load_last_page_partial": {
+    "baseline_code_signature_text": "def test_load_last_page_partial(self, populated_db):",
+    "baseline_code_structure_hash": "4214cf0baf2cf75992a0fe33cee662ae4a5cbe5fbdedd0c3a1273fa9d093b8ac"
+  },
+  "TestSQLiteReaderPaginated.test_load_middle_page": {
+    "baseline_code_signature_text": "def test_load_middle_page(self, populated_db):",
+    "baseline_code_structure_hash": "437ac927ab34207188e1480fd8a424f0f2dde4281698485598f06cfac9ed42cf"
+  },
+  "TestSQLiteReaderPaginated.test_load_out_of_bounds": {
+    "baseline_code_signature_text": "def test_load_out_of_bounds(self, populated_db):",
+    "baseline_code_structure_hash": "53391aefd296284815b0ed3cd8f2417926afc82f18ac2ac0143702134d69482b"
+  },
+  "populated_db": {
+    "baseline_code_signature_text": "def populated_db(tmp_path_factory):",
+    "baseline_code_structure_hash": "1b5aebc6dcc7e5392e1ef7671b7e34ae4fcbc536b8b7a819b33d40fd58c5ba23",
+    "baseline_yaml_content_hash": "bf5d8d605e7f2bfd48bded6ead804e791fc8266fa3af5a1d10e3708cfd3d9cb3"
+  },
+  "sqlite_reader_setup": {
+    "baseline_code_signature_text": "def sqlite_reader_setup(tmp_path: Path):",
+    "baseline_code_structure_hash": "3a86ffc6c01bce4c85b545e3a790cd999ceb9886ccaa82730087223ce2454c9b",
+    "baseline_yaml_content_hash": "b46f37dac293006af164f61ad314a03aef8b47dcc04134fcc8b4321db43583d5"
+  }
+}

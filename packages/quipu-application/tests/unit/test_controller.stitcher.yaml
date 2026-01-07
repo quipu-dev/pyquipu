@@ -1,0 +1,9 @@
+"TestControllerUnit": |-
+  对 Application 层 Controller 的纯单元测试。
+  使用 Mock 替代真实的 Engine 和 Runtime，仅验证编排逻辑。
+"TestControllerUnit.test_run_quipu_empty_plan": |-
+  测试空计划的处理。
+"TestControllerUnit.test_run_quipu_execution_error": |-
+  测试执行器抛出异常时的错误处理流程。
+"TestControllerUnit.test_run_quipu_success": |-
+  测试正常执行流程：应正确初始化组件并按顺序调用。

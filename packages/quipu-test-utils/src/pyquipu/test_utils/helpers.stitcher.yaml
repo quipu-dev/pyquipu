@@ -1,0 +1,49 @@
+"InMemoryDB": |-
+  一个模拟 GitDB 接口的内存数据库，用于快速测试。
+"InMemoryDB.get_tree_hash": |-
+  对当前 VFS 内容进行确定性哈希。
+"InMemoryHistoryManager": |-
+  同时实现 Reader 和 Writer 接口的内存历史管理器。
+"VirtualFileSystem": |-
+  一个简单的内存虚拟文件系统。
+"create_branching_history": |-
+  Creates a common branching history for testing.
+  History:
+  - n0 (root) -> n1 -> n2 (branch point) -> n3a (branch A) -> n4 (summary)
+                                        \-> n3b (branch B)
+"create_capture_node_with_change": |-
+  Creates a file change in the workspace and generates a new Capture node.
+  The new node is parented to the current HEAD of the engine.
+  Returns the output_tree hash of the new node.
+"create_complex_link_history": |-
+  Creates a complex history to ensure a specific node has all navigation link types.
+  Node n3 will have: a parent (n2b), a child (n4), an ancestor branch point (n1),
+  and an ancestor summary node (n_summary).
+"create_dirty_workspace_history": |-
+  Creates a history A -> B, then makes the workspace dirty.
+  - State A: file.txt -> "v1"
+  - State B (HEAD): file.txt -> "v2"
+  - Dirty State: file.txt -> "v3"
+  Returns the engine and the hash of state A for checkout tests.
+"create_linear_history": |-
+  Creates a simple linear history A -> B.
+  - State A: a.txt
+  - State B: b.txt (a.txt is removed)
+  Returns the engine and a dictionary mapping state names ('a', 'b') to their output tree hashes.
+"create_linear_history_from_specs": |-
+  Creates a linear history based on a list of specifications.
+  Each spec is a dict: {'type': 'plan'|'capture', 'summary': str, 'content': Optional[str]}
+"create_node_via_cli": |-
+  Helper to create a node via the CLI runner and return its commit hash.
+"create_plan_node_with_change": |-
+  Creates a file change in the workspace and generates a new Plan node.
+  Returns the output_tree hash of the new node.
+"create_query_branching_history": |-
+  Creates a specific branching history for query reachability tests.
+  History: root -> A -> B (HEAD)
+                 \-> C (unreachable)
+  Returns the engine and the hash of state B (the HEAD).
+"get_local_quipu_heads": |-
+  Helper to get a set of all local quipu head commit hashes.
+"run_git_command": |-
+  Helper to run a git command and return stdout.

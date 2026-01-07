@@ -1,0 +1,43 @@
+{
+  "TestArgStrategy": {},
+  "TestArgStrategy.executor": {
+    "baseline_code_signature_text": "def executor(self, tmp_path):",
+    "baseline_code_structure_hash": "123856db28f7c5faed981fae18a6ab243518c60672257f999ba4807771bef7b1",
+    "baseline_yaml_content_hash": "96d3655d378aeb212459d14fb8d6a9a967f90d073e43385aad0669252ad2e3c6"
+  },
+  "TestArgStrategy.test_block_only_mode": {
+    "baseline_code_signature_text": "def test_block_only_mode(self, executor):",
+    "baseline_code_structure_hash": "fc70df322add45a199826cd97571f093c4162ffae05aacdb44d01d1d51d405ee",
+    "baseline_yaml_content_hash": "32c4fc2a4965808073e0ce156c1b629fbfe415d9d1487158746e632b04d88635"
+  },
+  "TestArgStrategy.test_block_only_no_block": {
+    "baseline_code_signature_text": "def test_block_only_no_block(self, executor):",
+    "baseline_code_structure_hash": "9aadcf01e9964cec7a659368c6876748254dc80c54c6ea5b501b0c240bfd1493",
+    "baseline_yaml_content_hash": "bcb68818b2cca4918449759ed41679c5f6e3216bcb8bcb7dab36f3fccf310c9e"
+  },
+  "TestArgStrategy.test_exclusive_mode_fallback_to_block": {
+    "baseline_code_signature_text": "def test_exclusive_mode_fallback_to_block(self, executor):",
+    "baseline_code_structure_hash": "7cb05a6c12160ac27edbf0d78296267afba61c0948f1c5ba0e65c3d5bcc84750",
+    "baseline_yaml_content_hash": "36126341a85c01032c9a0731d0e641e240e7e584134b707dbfd084a9128409d2"
+  },
+  "TestArgStrategy.test_exclusive_mode_inline_priority": {
+    "baseline_code_signature_text": "def test_exclusive_mode_inline_priority(self, executor):",
+    "baseline_code_structure_hash": "baaba24cd9cb0be3d585a33489491364a55f8893c50f6a18abed2aad19b87a9f",
+    "baseline_yaml_content_hash": "57fa0f679a890c91d60223046d81828150f3da175c343847f26a532702493973"
+  },
+  "TestArgStrategy.test_hybrid_mode_merge": {
+    "baseline_code_signature_text": "def test_hybrid_mode_merge(self, executor):",
+    "baseline_code_structure_hash": "75b43e3df2f1ecd4c5ea6acd3321af4d49009339ce9821bde8109a35984eb79c",
+    "baseline_yaml_content_hash": "81ab633be2fb1e2b3ad879ec7da7d9835fed8976ab0c67240e74ee5cceb04d7c"
+  },
+  "TestArgStrategy.test_hybrid_mode_only_inline": {
+    "baseline_code_signature_text": "def test_hybrid_mode_only_inline(self, executor):",
+    "baseline_code_structure_hash": "9668efecb4bda20f0f590c2d84b2b80aeda2310667f737204ea0ca1986ee8c66",
+    "baseline_yaml_content_hash": "834e6ff960bf3865d45d6429c4678b74ca40a47f2a192e25fdd6e032e61ca6f5"
+  },
+  "TestArgStrategy.test_invalid_mode_registration": {
+    "baseline_code_signature_text": "def test_invalid_mode_registration(self, executor):",
+    "baseline_code_structure_hash": "9257a54d5574e56edd39997f4091f9472d3e0514ef5202711e3a5c120d76b062",
+    "baseline_yaml_content_hash": "2a472d4b66a59510415361842780f2b1a8260e13fc981945bb7f6f5b1dd27b7e"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "TestPluginResilience": {},
+  "TestPluginResilience.executor": {
+    "baseline_code_signature_text": "def executor(self, tmp_path) -> Executor:",
+    "baseline_code_structure_hash": "540e12ca82f237df6806798a282d1589e6fd288c97405e3d2c3ce1b6538c3e2b"
+  },
+  "TestPluginResilience.plugin_dir": {
+    "baseline_code_signature_text": "def plugin_dir(self, tmp_path) -> Path:",
+    "baseline_code_structure_hash": "f1e791584929709e756beb4666086d2852f0bbd52ab99fd3b3bfaa7606c24f15"
+  },
+  "TestPluginResilience.test_load_plugin_with_registration_error": {
+    "baseline_code_signature_text": "def test_load_plugin_with_registration_error(self, executor: Executor, plugin_dir: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "8223411cec979a7cb5c96a7f4d319a22bff9a87fb03390d33bd154cfbbc55f93",
+    "baseline_yaml_content_hash": "ff8c2b09c3c3ea15325c5dcfb523a18d5346b564860bdd05cc161b2be88d952d"
+  },
+  "TestPluginResilience.test_load_plugin_with_syntax_error": {
+    "baseline_code_signature_text": "def test_load_plugin_with_syntax_error(self, executor: Executor, plugin_dir: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "db20baccd41276d2ac86acf2ac67573d9b081495c4ba747a3621a5b4a4e58d5c",
+    "baseline_yaml_content_hash": "6beabb47b328e0ce3410a3649eeaea3078c76500e7e9aae87ecf129ef4fd6489"
+  }
+}

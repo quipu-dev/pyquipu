@@ -1,0 +1,33 @@
+{
+  "TestShellActs": {},
+  "TestShellActs.setup_executor": {
+    "baseline_code_signature_text": "def setup_executor(self, executor: Executor):",
+    "baseline_code_structure_hash": "bf1dccc78029de0ea896a1ba97ad4f88c5165a2bfeb69e107331a276d11b0894"
+  },
+  "TestShellActs.test_run_command_does_not_swallow_blocks": {
+    "baseline_code_signature_text": "def test_run_command_does_not_swallow_blocks(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "4029d761584fe9c0654a98be5ccdeeff140c8a7466bc1f0725a86ca858bab18b",
+    "baseline_yaml_content_hash": "9ba0fdc4d49734488a5df2f97060e7cfac7a698199b6f7496ee245df639c466c"
+  },
+  "TestShellActs.test_run_command_failure": {
+    "baseline_code_signature_text": "def test_run_command_failure(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "e6366aed4e8c5dd2495a1a1471abdb8d2a88b697bdc64de1ec3068fa349ddf2a"
+  },
+  "TestShellActs.test_run_command_missing_args": {
+    "baseline_code_signature_text": "def test_run_command_missing_args(self, executor: Executor):",
+    "baseline_code_structure_hash": "a2aacc9829413ff3fbeff6c90f3cc79d77b40bf178ea672917abf0d603293fa5"
+  },
+  "TestShellActs.test_run_command_multiline_script": {
+    "baseline_code_signature_text": "def test_run_command_multiline_script(self, executor: Executor, isolated_vault, mock_runtime_bus):",
+    "baseline_code_structure_hash": "d6d96e9f525c407e13bec8caff6cb398994109a7c08964ad689a111a8ebbe9e2",
+    "baseline_yaml_content_hash": "d1c9ac7ca6c473a72c6b5065aadb612b21e204beed17953711422b89c9ccbc29"
+  },
+  "TestShellActs.test_run_command_stderr": {
+    "baseline_code_signature_text": "def test_run_command_stderr(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "844283e152b17c6a7d4149144eb953d309c0574c132d6824c785c10cb72f4a3f"
+  },
+  "TestShellActs.test_run_command_success": {
+    "baseline_code_signature_text": "def test_run_command_success(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "be3b917226e82c9d2d410ac0e62e29cce058686ff7f30a9c9c73e988f028585e"
+  }
+}

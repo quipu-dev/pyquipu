@@ -1,0 +1,8 @@
+"TestPluginLoading.custom_plugin_dir": |-
+  创建一个模拟的外部插件目录
+"TestPluginLoading.test_find_git_repository_root": |-
+  测试 Git 项目根目录检测逻辑
+"TestPluginLoading.test_ignore_invalid_files": |-
+  测试忽略非 Python 文件和无 register 函数的文件
+"TestPluginLoading.test_load_external_plugin": |-
+  测试从任意路径加载插件文件

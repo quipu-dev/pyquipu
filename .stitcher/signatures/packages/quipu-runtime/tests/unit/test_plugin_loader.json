@@ -1,0 +1,23 @@
+{
+  "TestPluginLoading": {},
+  "TestPluginLoading.custom_plugin_dir": {
+    "baseline_code_signature_text": "def custom_plugin_dir(self, tmp_path):",
+    "baseline_code_structure_hash": "1947ec9653c1fd32a634a897d4fb89b2d634001f563a982e6b5eb31ad741ba57",
+    "baseline_yaml_content_hash": "f7a58557cfdf25ac339e31124f072dbb1f631ce07f3f21fceca5068364ce020a"
+  },
+  "TestPluginLoading.test_find_git_repository_root": {
+    "baseline_code_signature_text": "def test_find_git_repository_root(self, tmp_path):",
+    "baseline_code_structure_hash": "4cef04fa8c2a84ce7987599b968b148cecc0f68e8995e03b39ea31e36326d762",
+    "baseline_yaml_content_hash": "99e19d237f8d6739814b2d481603e206badb927f7a2934d7fc1a66d440f102aa"
+  },
+  "TestPluginLoading.test_ignore_invalid_files": {
+    "baseline_code_signature_text": "def test_ignore_invalid_files(self, executor: Executor, custom_plugin_dir):",
+    "baseline_code_structure_hash": "f156506c066e2e237ce688c5f25f360b8fb54f041c4c424933b8a4926b6c9973",
+    "baseline_yaml_content_hash": "29030420a4fed74c07cf63a974ea497988d455de07f8f13c343c9368bdcf4088"
+  },
+  "TestPluginLoading.test_load_external_plugin": {
+    "baseline_code_signature_text": "def test_load_external_plugin(self, executor: Executor, custom_plugin_dir, mock_runtime_bus):",
+    "baseline_code_structure_hash": "9c2d0d1778d3106c2c5a955d4c946d3e821a22337873d555e660d86d64a6002f",
+    "baseline_yaml_content_hash": "9bfe1d9dac72898e9b7deee8904b6b45830cdcb4748a1366e94d92f45eb24436"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "TestAutoDetect": {},
+  "TestAutoDetect.test_case_insensitivity": {
+    "baseline_code_signature_text": "def test_case_insensitivity(self):",
+    "baseline_code_structure_hash": "5021a28216c8e84c556785228accff0f4619ddd54da8c55d78988b480b9da144"
+  },
+  "TestAutoDetect.test_default_fallback": {
+    "baseline_code_signature_text": "def test_default_fallback(self):",
+    "baseline_code_structure_hash": "8bfd12d175f802d7312b65723882fa9718c0e0d9d4cd7bbb44d79ad5d58702cf",
+    "baseline_yaml_content_hash": "5fec0d80e211902a5592af17270252e64434cac641555630d5a4adee9df045b9"
+  },
+  "TestAutoDetect.test_detect_backtick_simple": {
+    "baseline_code_signature_text": "def test_detect_backtick_simple(self):",
+    "baseline_code_structure_hash": "5a0ed13b6a5eff6aae903ac773af07bf9040f1d82e35929f81034903ebc5a0e6"
+  },
+  "TestAutoDetect.test_detect_first_act_wins": {
+    "baseline_code_signature_text": "def test_detect_first_act_wins(self):",
+    "baseline_code_structure_hash": "8aff5ffc0c3acf1d910668f0673918895e4d7230fcfb2ff121c1447c89b009bf",
+    "baseline_yaml_content_hash": "06a4d470d5647f6522c6e1d4ead5f0a994ad6cc85f374e14193122998a608a7c"
+  },
+  "TestAutoDetect.test_detect_tilde_simple": {
+    "baseline_code_signature_text": "def test_detect_tilde_simple(self):",
+    "baseline_code_structure_hash": "4b1063ec4d0d1192cda6a26d5a8f971ad19efc0d112e3e46604aa4347756a9b0"
+  },
+  "TestAutoDetect.test_detect_variable_length_backtick": {
+    "baseline_code_signature_text": "def test_detect_variable_length_backtick(self):",
+    "baseline_code_structure_hash": "b25857bed7acff4ede753f38cfe8c9a20c2a5fc9e14560cb1af3e8a204e936da",
+    "baseline_yaml_content_hash": "e3fdd4194f6526fb6193ffa280c58abbacd01ed47e2c0eabcad2e236810792cf"
+  },
+  "TestAutoDetect.test_detect_variable_length_tilde": {
+    "baseline_code_signature_text": "def test_detect_variable_length_tilde(self):",
+    "baseline_code_structure_hash": "84b0db591b888c83a209e5138eb2b93a7d907bb9e530e2e712ec8747b78a2d98",
+    "baseline_yaml_content_hash": "4d8bf42cf5f2571ef1ca86199c25085d305e91abf54bd9b46c247f60cf67c20c"
+  },
+  "TestAutoDetect.test_detect_with_interference": {
+    "baseline_code_signature_text": "def test_detect_with_interference(self):",
+    "baseline_code_structure_hash": "ff2c09594694566b280fd3a92ed06b4ff7880a92df71e854272fa999e0c23c24",
+    "baseline_yaml_content_hash": "dfdada75509293750f943191476d58aaee941de3b7e8fe2384971992a3d49f44"
+  }
+}

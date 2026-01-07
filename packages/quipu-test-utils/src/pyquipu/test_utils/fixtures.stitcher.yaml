@@ -1,0 +1,24 @@
+"engine_instance": |-
+  提供一个绑定到 git_workspace 的、功能完备的 Engine 实例。
+"executor": |-
+  为运行时测试提供一个隔离的 Executor 实例。
+"git_workspace": |-
+  提供一个已初始化 Git 的干净工作区路径。
+"isolated_vault": |-
+  提供 Executor 实例的根工作目录。
+"mock_engine": |-
+  提供一个模拟的 Engine 实例。
+  用于测试 Application 层在不触及真实 Git/文件系统的情况下的编排逻辑。
+"mock_runtime": |-
+  提供一个模拟的 Runtime (Executor) 实例。
+"mock_runtime_bus": |-
+  自动 patch 所有 runtime 模块中导入的 'bus' 实例。
+"quipu_workspace": |-
+  为 CLI 测试提供 Engine 实例及其工作目录。
+  返回: (work_dir_path, git_db, engine)
+"runner": |-
+  提供一个可复用的 CliRunner 实例。
+"sync_test_environment": |-
+  Sets up a full sync test environment:
+  1. A bare remote repository.
+  2. Two user workspaces cloned from the remote.

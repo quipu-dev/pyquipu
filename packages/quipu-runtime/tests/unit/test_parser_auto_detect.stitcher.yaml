@@ -1,0 +1,10 @@
+"TestAutoDetect.test_default_fallback": |-
+  如果没有 act 块，默认回退到 backtick
+"TestAutoDetect.test_detect_first_act_wins": |-
+  测试以第一个出现的 act 块为准
+"TestAutoDetect.test_detect_variable_length_backtick": |-
+  测试变长反引号
+"TestAutoDetect.test_detect_variable_length_tilde": |-
+  测试变长波浪号
+"TestAutoDetect.test_detect_with_interference": |-
+  测试文档前言中包含代码块，但不含 act 关键字，应忽略

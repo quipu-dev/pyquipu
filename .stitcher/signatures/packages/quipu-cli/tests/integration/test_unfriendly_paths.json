@@ -1,0 +1,37 @@
+{
+  "dirty_workspace": {
+    "baseline_code_signature_text": "def dirty_workspace(quipu_workspace):",
+    "baseline_code_structure_hash": "2e21a04c31fcadd3ea8e469fec63422e1ce5b75561112df12de728c27f74b3e8",
+    "baseline_yaml_content_hash": "5bed6e3039e496c11d98fc2b249280f74bd037164b009c5fbc3af57d2f9a6e4f"
+  },
+  "test_checkout_in_non_interactive_env": {
+    "baseline_code_signature_text": "def test_checkout_in_non_interactive_env(runner: CliRunner, dirty_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "4ad6d409c201a3173b442cd20bdd38253f2a4329f8e01e474c04fe9d0b754017",
+    "baseline_yaml_content_hash": "4ec0d2396766aa813aff6dbcbce400906b658c0b15850541b3a77ef5ecc85aac"
+  },
+  "test_checkout_user_cancellation": {
+    "baseline_code_signature_text": "def test_checkout_user_cancellation(runner: CliRunner, dirty_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "d6c21dc1811a023416a82a234cc6a685dfd8b842be888a712c420c0e618d4885",
+    "baseline_yaml_content_hash": "76a38f21122b5a690b7d3b7465d7c4d1be94907090f429af36958a732d4b32f1"
+  },
+  "test_discard_in_non_interactive_env": {
+    "baseline_code_signature_text": "def test_discard_in_non_interactive_env(runner: CliRunner, dirty_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "e3f72c1cc13e955d62414710620ddfc9b674c6ae8d65fe660ae4fee3564768d5",
+    "baseline_yaml_content_hash": "ad7efde9de5f5b4ef8ffc3cacedcad8767f5589f049549bb4c5b40c8aa6db921"
+  },
+  "test_discard_user_cancellation": {
+    "baseline_code_signature_text": "def test_discard_user_cancellation(runner: CliRunner, dirty_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "5e3d67e54b8d6a8cd7cedcd9fc06153015b6b3c1a9fff02e08b9f450cf4b54b4",
+    "baseline_yaml_content_hash": "570c6d533b6409d6d9e01607946322693ed6d5ec1f56ffa93507fe60b3799ec4"
+  },
+  "test_run_command_in_non_interactive_env": {
+    "baseline_code_signature_text": "def test_run_command_in_non_interactive_env(runner: CliRunner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "fb98a329a4ba65c6550aae26248b1d83c9167e2bfb91c247ecc2e14b81035983",
+    "baseline_yaml_content_hash": "b8c76bad715dbc936972350ab5c3e35abf640bd982065994e95dc0d2a65db370"
+  },
+  "test_run_command_user_cancellation": {
+    "baseline_code_signature_text": "def test_run_command_user_cancellation(runner: CliRunner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "103f18ff252599d41ca36818ebee240a22561924fef59d20ce1ffd3aefe3ca48",
+    "baseline_yaml_content_hash": "c73c717b14edc724b631418fd411905774a71ad63d9aa92e8c97b26b3489c5d4"
+  }
+}

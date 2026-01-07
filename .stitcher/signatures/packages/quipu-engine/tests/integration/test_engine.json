@@ -1,0 +1,55 @@
+{
+  "TestEngineFindNodes": {},
+  "TestEngineFindNodes.populated_engine": {
+    "baseline_code_signature_text": "def populated_engine(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "50651e3094f85bd402e66ea1cad8769a18ece2afc2182d6fc98634de4bcaa044",
+    "baseline_yaml_content_hash": "8a37135e78447888c33e25af2257e8d64af42aeb413e271507a9e9f6467bf95d"
+  },
+  "TestEngineFindNodes.test_find_by_summary_regex": {
+    "baseline_code_signature_text": "def test_find_by_summary_regex(self, populated_engine):",
+    "baseline_code_structure_hash": "3f1f694ee2d83830350eb8eb92ea10a39e8bfea39133c9efe19555c1eb02667d"
+  },
+  "TestEngineFindNodes.test_find_by_type": {
+    "baseline_code_signature_text": "def test_find_by_type(self, populated_engine):",
+    "baseline_code_structure_hash": "9032a6d89a644448647cf32bfaf0e4759a131a6d1bfe4e6f545d5b35244639fc"
+  },
+  "TestEngineFindNodes.test_find_combined_filters": {
+    "baseline_code_signature_text": "def test_find_combined_filters(self, populated_engine):",
+    "baseline_code_structure_hash": "49b2101b597d3fe226a458c36320542fd9fa5d54c576908a7e9bd2ddde8f2a07"
+  },
+  "TestEngineFindNodes.test_find_limit": {
+    "baseline_code_signature_text": "def test_find_limit(self, populated_engine):",
+    "baseline_code_structure_hash": "c8e9645bba6d575c165d6b3ab7cc9af2e40a539e9c47cf7ea48820a38d71955a"
+  },
+  "TestPersistentIgnores": {},
+  "TestPersistentIgnores.test_sync_appends_to_existing_file": {
+    "baseline_code_signature_text": "def test_sync_appends_to_existing_file(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "a1957530932ffd9e881a4af2f91860feda8cf39cb0ce9d6e7dc8907f47af4b2d",
+    "baseline_yaml_content_hash": "4e3106fc1a867e9035352d14db007da4970090e3963fcfe00faf967835f919a1"
+  },
+  "TestPersistentIgnores.test_sync_creates_file_if_not_exists": {
+    "baseline_code_signature_text": "def test_sync_creates_file_if_not_exists(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "83ec0b1fc9ac6de3bb0a78b62b8710964b3473cb9a1cc41a4b502e62430244eb",
+    "baseline_yaml_content_hash": "391073fb5283a7b62ae3de8cfaa7f602e5e1307da8a35c7a81d7769ff5348704"
+  },
+  "TestPersistentIgnores.test_sync_updates_existing_block": {
+    "baseline_code_signature_text": "def test_sync_updates_existing_block(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "eb6bfecce48ea85c716c377e44d505f58c266b0d04b94e060be84663139b6a93",
+    "baseline_yaml_content_hash": "29d572db9ba54e381f3fe6b7a2714a6a6c3321ef96ecb9068ef6bd0a57bc2037"
+  },
+  "TestPersistentIgnores.test_sync_uses_user_config": {
+    "baseline_code_signature_text": "def test_sync_uses_user_config(self, engine_instance: Engine):",
+    "baseline_code_structure_hash": "2e4eb5c0b2e40b636152104c149ecbd98c17c6035bd7512c8256018111f6bf83",
+    "baseline_yaml_content_hash": "a371b24a8f9c9749a9d08e712b7dbcef682b383bcea9a54d9973e3ac8d49d4c9"
+  },
+  "test_align_orphan_state": {
+    "baseline_code_signature_text": "def test_align_orphan_state(engine_instance: Engine):",
+    "baseline_code_structure_hash": "43f8a3ef39ab9685ad8337f7bf67b29793caf5a9f4b07df5b6eb649197317cde",
+    "baseline_yaml_content_hash": "c26a2489f447dc9a38f0313e200f0f1da08e71cf52b711210ff78993f72715b7"
+  },
+  "test_capture_drift_git_object": {
+    "baseline_code_signature_text": "def test_capture_drift_git_object(engine_instance: Engine):",
+    "baseline_code_structure_hash": "942504bf64c6a956bf0b92ec22f97aa2d35a09b396f499aef21299678f4f5642",
+    "baseline_yaml_content_hash": "401e94188f52ecf4e438b44dd3fcc2d12410ab402144052b2b3334908e11ca79"
+  }
+}

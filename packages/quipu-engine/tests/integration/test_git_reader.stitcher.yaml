@@ -1,0 +1,12 @@
+"TestGitObjectHistoryReader.test_corrupted_node_missing_metadata": |-
+  测试：Commit 存在但缺少 metadata.json
+"TestGitObjectHistoryReader.test_corrupted_node_missing_trailer": |-
+  测试：Commit 存在但缺少 Output Tree Trailer
+"TestGitObjectHistoryReader.test_load_empty_history": |-
+  测试：没有 Quipu 历史时的行为
+"TestGitObjectHistoryReader.test_load_forked_history": |-
+  测试：正确加载分叉的历史 A -> B and A -> C
+"TestGitObjectHistoryReader.test_load_linear_history": |-
+  测试：标准的线性历史 A -> B -> C
+"TestGitObjectHistoryReader.test_parent_linking_with_gap": |-
+  测试：如果父 Commit 是损坏的节点，子节点应断开链接并视为新的根

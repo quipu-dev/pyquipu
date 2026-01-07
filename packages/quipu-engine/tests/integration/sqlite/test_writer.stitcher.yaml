@@ -1,0 +1,5 @@
+"TestSQLiteWriterIntegration.test_dual_write_and_link": |-
+  验证 SQLiteHistoryWriter 是否能正确地双写到 Git 和 DB，并建立父子关系。
+  不依赖 application 层的 run_quipu。
+"sqlite_setup": |-
+  创建一个配置为使用 SQLite 后端的 Git 环境。

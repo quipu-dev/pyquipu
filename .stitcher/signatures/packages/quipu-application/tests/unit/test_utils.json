@@ -1,0 +1,7 @@
+{
+  "TestRootDiscovery": {},
+  "TestRootDiscovery.test_find_git_repository_root": {
+    "baseline_code_signature_text": "def test_find_git_repository_root(self, tmp_path: Path):",
+    "baseline_code_structure_hash": "512797d245dc49e41a5d3c7c638481b2b0bc3efa3c6be7b89b058842beea7641"
+  }
+}

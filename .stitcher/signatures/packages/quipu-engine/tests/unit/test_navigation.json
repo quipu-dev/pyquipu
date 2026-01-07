@@ -1,0 +1,24 @@
+{
+  "TestNavigationEngine": {},
+  "TestNavigationEngine.test_basic_back_and_forward": {
+    "baseline_code_signature_text": "def test_basic_back_and_forward(self, nav_workspace):",
+    "baseline_code_structure_hash": "c5c5753879a66e21b857f416869327d7f4ac9ba70e6369cb015b081f4b67a42a"
+  },
+  "TestNavigationEngine.test_boundary_conditions": {
+    "baseline_code_signature_text": "def test_boundary_conditions(self, nav_workspace):",
+    "baseline_code_structure_hash": "83ab1805458f258c0e12a00877f256a44ddba8cacc7bc6068781b79b2e3194d8"
+  },
+  "TestNavigationEngine.test_history_truncation_on_new_visit": {
+    "baseline_code_signature_text": "def test_history_truncation_on_new_visit(self, nav_workspace):",
+    "baseline_code_structure_hash": "ab21f6a14da16c8904714923005315d5a37c121f6345409d8967de1455ef50f5"
+  },
+  "TestNavigationEngine.test_visit_idempotency": {
+    "baseline_code_signature_text": "def test_visit_idempotency(self, nav_workspace):",
+    "baseline_code_structure_hash": "12a2f74fd57e2e1995da57d7854db9c49bfd258e17cf9b3ad10ba06bf71c4c91"
+  },
+  "nav_workspace": {
+    "baseline_code_signature_text": "def nav_workspace(engine_instance: Engine):",
+    "baseline_code_structure_hash": "ba4d7a62822dd21717c6f0a00707b8b35bcd3148be07771b85f396038accf688",
+    "baseline_yaml_content_hash": "1c825b0588274c71af6bc3dfabeb79d4b21be2e9beb86409b8331a3b7181a541"
+  }
+}

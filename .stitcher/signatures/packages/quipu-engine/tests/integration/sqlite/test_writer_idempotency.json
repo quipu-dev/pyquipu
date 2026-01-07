@@ -1,0 +1,12 @@
+{
+  "repo_with_sqlite_db": {
+    "baseline_code_signature_text": "def repo_with_sqlite_db(tmp_path):",
+    "baseline_code_structure_hash": "bccfc013034fbde8e1b08bdd9bdf947f8c2aa320e6b6706c053cfb1b2fe73826",
+    "baseline_yaml_content_hash": "da63d7b39bf31fc4a06d341158a6e81ebec1c01399932a31e9c2924ddee6b273"
+  },
+  "test_writer_handles_idempotent_operations_correctly": {
+    "baseline_code_signature_text": "def test_writer_handles_idempotent_operations_correctly(repo_with_sqlite_db):",
+    "baseline_code_structure_hash": "ff447ab02b31c6285bb2bf95c32f28820b3710d3bd14f90b231ee0c98e9aac2a",
+    "baseline_yaml_content_hash": "d0603a2ab263d11ee91d65c2d2e53ce590081d076a590a61debaa32fcd1c7642"
+  }
+}

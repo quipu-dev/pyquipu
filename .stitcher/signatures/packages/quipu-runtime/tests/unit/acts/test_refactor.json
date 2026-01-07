@@ -1,0 +1,31 @@
+{
+  "TestRefactorActs": {},
+  "TestRefactorActs.setup_executor": {
+    "baseline_code_signature_text": "def setup_executor(self, executor: Executor):",
+    "baseline_code_structure_hash": "bf1dccc78029de0ea896a1ba97ad4f88c5165a2bfeb69e107331a276d11b0894"
+  },
+  "TestRefactorActs.test_delete_dir_success": {
+    "baseline_code_signature_text": "def test_delete_dir_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "e29f582716b58ddb0a78b60e85fc964945e1b1117502b2d9154f98a8457674d1"
+  },
+  "TestRefactorActs.test_delete_file_success": {
+    "baseline_code_signature_text": "def test_delete_file_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "2512eec7a88a72b36de2b071b8684dedf0c31157cacaff9ed7a7d4a6359203f6"
+  },
+  "TestRefactorActs.test_delete_skipped": {
+    "baseline_code_signature_text": "def test_delete_skipped(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "e201453baabca3125e55f4c1ca1c99f08035f1fd02fa1e4e558fce99ea1af098"
+  },
+  "TestRefactorActs.test_move_file_permission_error": {
+    "baseline_code_signature_text": "def test_move_file_permission_error(self, executor: Executor, isolated_vault: Path, monkeypatch):",
+    "baseline_code_structure_hash": "db93ca1e409a04142ed6fd6f75015e5f96d2ad5cec6a1c2a081f05db4622bc3e"
+  },
+  "TestRefactorActs.test_move_file_src_not_found": {
+    "baseline_code_signature_text": "def test_move_file_src_not_found(self, executor: Executor):",
+    "baseline_code_structure_hash": "faac783f28c01d08fa0388c55a9eae2fe9499bec1ca568074e34027602351896"
+  },
+  "TestRefactorActs.test_move_file_success": {
+    "baseline_code_signature_text": "def test_move_file_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "a81f48189a04a0823c984cdb0de2201fd2efdbac3cd8f4ac60833d759bcc348a"
+  }
+}

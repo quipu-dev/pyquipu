@@ -1,0 +1,36 @@
+{
+  "test_find_command": {
+    "baseline_code_signature_text": "def test_find_command(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "03aca2eee1965f53ddad328ec4628d07d80157fef75cb4219eecfba1d175693a"
+  },
+  "test_find_json_output": {
+    "baseline_code_signature_text": "def test_find_json_output(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "f22b45b2e829f5f6b18818cb50510a62ec55b9e8b4af698421ab6696fcced299"
+  },
+  "test_log_empty": {
+    "baseline_code_signature_text": "def test_log_empty(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "3129afec2dd777317329097169d643f76f1d221dc284727d2c64dedf8559ff10"
+  },
+  "test_log_filtering": {
+    "baseline_code_signature_text": "def test_log_filtering(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "99be88d8fe0a454e5c1aff067f6ec29b7048fd3d1e687c40fa4156a65d5aba66",
+    "baseline_yaml_content_hash": "1b8c49b339d250dffc00e618ea60ddc46b4a61d67bff6f2c2de9fca7d8ab74f9"
+  },
+  "test_log_json_empty": {
+    "baseline_code_signature_text": "def test_log_json_empty(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "9a9c2272fcf5b7b1f3d14b45d15f99fb424f11bf852b4718b49af018d3bbd1f2"
+  },
+  "test_log_json_output": {
+    "baseline_code_signature_text": "def test_log_json_output(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "ca87d055ff4a2f4430cdeb56875a33ff988d6357e52a28eda0c96c2563c366ab"
+  },
+  "test_log_output": {
+    "baseline_code_signature_text": "def test_log_output(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "6f1526c53ac86c618bb7d00329a1917acea5db8ac7cb88c86b893d784d7c9f7c"
+  },
+  "test_log_reachable_only": {
+    "baseline_code_signature_text": "def test_log_reachable_only(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "13f651bc8de431c9417d2e7dc8273c4c9bd4b2e138beb838c1d48fd5dc6a622f",
+    "baseline_yaml_content_hash": "637d169549c1fa3444781a84282c5b76e89b61f6d55ec4f4114c99c2d3d4c6cd"
+  }
+}

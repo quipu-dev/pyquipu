@@ -1,0 +1,11 @@
+{
+  "branching_env": {
+    "baseline_code_signature_text": "def branching_env(tmp_path):",
+    "baseline_code_structure_hash": "e3e313af326f036c6d113149f3e6c8efd06eed1fcbc8b9ac3aaac5c1f3c13499"
+  },
+  "test_branching_creation": {
+    "baseline_code_signature_text": "def test_branching_creation(branching_env):",
+    "baseline_code_structure_hash": "011fd77728ebf9a322106a133a0e5f99aafdf814655cc68d9bba1b5c12cef90a",
+    "baseline_yaml_content_hash": "0e86aa02afe246c9fc35d34b744f095943da385f0c25dce189d82f285286c5b9"
+  }
+}

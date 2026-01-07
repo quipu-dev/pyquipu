@@ -1,0 +1,39 @@
+{
+  "TestReadActs": {},
+  "TestReadActs.setup_executor": {
+    "baseline_code_signature_text": "def setup_executor(self, executor: Executor):",
+    "baseline_code_structure_hash": "bf1dccc78029de0ea896a1ba97ad4f88c5165a2bfeb69e107331a276d11b0894"
+  },
+  "TestReadActs.test_read_file_is_dir": {
+    "baseline_code_signature_text": "def test_read_file_is_dir(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "8b179272dc02d18f8bab1098f5f1847b1fba677909eca142c2e7b1eab0bf830b"
+  },
+  "TestReadActs.test_read_file_not_found": {
+    "baseline_code_signature_text": "def test_read_file_not_found(self, executor: Executor):",
+    "baseline_code_structure_hash": "ff8bea74f86d2994a8415e32a1610655d20f71ae385c0b98f25adab576cef112"
+  },
+  "TestReadActs.test_search_args_error": {
+    "baseline_code_signature_text": "def test_search_args_error(self, executor: Executor):",
+    "baseline_code_structure_hash": "841e87b0bf984ef9b512deff8dd4f1636582f9449f488a19b6fb267431d4402e"
+  },
+  "TestReadActs.test_search_binary_file_resilience": {
+    "baseline_code_signature_text": "def test_search_binary_file_resilience(self, executor: Executor, isolated_vault: Path, monkeypatch):",
+    "baseline_code_structure_hash": "a2bb813a77339061129bace244836f9544dca1dbc721cc57432d225f635b7df0"
+  },
+  "TestReadActs.test_search_no_match": {
+    "baseline_code_signature_text": "def test_search_no_match(self, executor: Executor, isolated_vault: Path, monkeypatch, mock_runtime_bus):",
+    "baseline_code_structure_hash": "15fdc002d1f10ea0ce3975b5b477899003823e1d12cf6ca7aeab28a82f83a2cf"
+  },
+  "TestReadActs.test_search_python_fallback": {
+    "baseline_code_signature_text": "def test_search_python_fallback(self, executor: Executor, isolated_vault: Path, monkeypatch, mock_runtime_bus):",
+    "baseline_code_structure_hash": "4f43e6a804cdf7b793006a50d712632da0c6cf598f2a81162e25142a4beb85dc"
+  },
+  "TestReadActs.test_search_scoped_path": {
+    "baseline_code_signature_text": "def test_search_scoped_path(self, executor: Executor, isolated_vault: Path, monkeypatch, mock_runtime_bus):",
+    "baseline_code_structure_hash": "42e70a6cb5ba6019650e885fccd77cd90eee0c6621461a9911d0f3907f0eccae"
+  },
+  "TestReadActs.test_search_with_ripgrep": {
+    "baseline_code_signature_text": "def test_search_with_ripgrep(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "5e8c33ce95171d311af88273b35c3bc4ce45d529fe7b2d658f82485a3a8deb81"
+  }
+}

@@ -1,0 +1,8 @@
+"TestEngineWithMemoryBackend.test_align_clean_genesis": |-
+  测试在创世状态下的对齐。
+"TestEngineWithMemoryBackend.test_capture_drift_from_genesis": |-
+  测试从创世状态捕获漂移。
+"TestEngineWithMemoryBackend.test_plan_node_creation": |-
+  测试 Plan 节点的创建流程。
+"memory_engine": |-
+  创建一个使用完整内存后端的 Engine 实例。

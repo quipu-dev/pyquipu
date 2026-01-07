@@ -1,0 +1,13 @@
+{
+  "TestSQLiteWriterIntegration": {},
+  "TestSQLiteWriterIntegration.test_dual_write_and_link": {
+    "baseline_code_signature_text": "def test_dual_write_and_link(self, sqlite_setup):",
+    "baseline_code_structure_hash": "e1dd97173ab9daf2ec93334513a89e45083d6e9a7a4c28d9678865605b963909",
+    "baseline_yaml_content_hash": "c6666bfdcc3d90ea22f4a9ed2d8d7e22b60d4709322514cbe853172c62fddf46"
+  },
+  "sqlite_setup": {
+    "baseline_code_signature_text": "def sqlite_setup(tmp_path: Path):",
+    "baseline_code_structure_hash": "9b47aaa24f190d992650c5b7af720c2a3ff4f4e519f5502cceb74a3736a65e30",
+    "baseline_yaml_content_hash": "852f63f9361e384162001140319a83ae8fdca55285246bc32c882af054217a83"
+  }
+}

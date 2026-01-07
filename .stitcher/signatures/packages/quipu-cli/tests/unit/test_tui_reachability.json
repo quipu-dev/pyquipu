@@ -1,0 +1,18 @@
+{
+  "TestUiReachability": {},
+  "TestUiReachability.test_filter_unreachable_nodes_in_populate": {
+    "baseline_code_signature_text": "def test_filter_unreachable_nodes_in_populate(self, view_model_factory):",
+    "baseline_code_structure_hash": "b88b70eaa4f539a34b6b0a25874d6163d25bc918ef7d5ead8955fa9221038908",
+    "baseline_yaml_content_hash": "88531bc864e9df16d59dae3f24130dadff7fb028e1272e459928e12d9871d7e4"
+  },
+  "TestUiReachability.test_ui_uses_view_model_for_reachability": {
+    "baseline_code_signature_text": "def test_ui_uses_view_model_for_reachability(self, view_model_factory):",
+    "baseline_code_structure_hash": "892f7d489f4b55979333984def110a0e6bcdb22d8b0e2ce16b568bae54a17b0d",
+    "baseline_yaml_content_hash": "48b7c15eeb524238eadcd9adbedee3f16268cf43093f7eb64896d2ec42ba69b8"
+  },
+  "view_model_factory": {
+    "baseline_code_signature_text": "def view_model_factory():",
+    "baseline_code_structure_hash": "7d30c611e0a94b411effde8031bf7b387ada43208da9bfc501d26e12a69d5ab4",
+    "baseline_yaml_content_hash": "ea0749d0cf96145872727e0ffb5f2471ee52f874ec6c5fd84de09ae6f79f63f9"
+  }
+}

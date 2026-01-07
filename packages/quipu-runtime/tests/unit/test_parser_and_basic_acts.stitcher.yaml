@@ -1,0 +1,2 @@
+"TestBasicActs.test_variable_lang_parser_recognition": |-
+  测试解析器能够识别并捕获 python.old 或 python.new 等后缀语言块的内容

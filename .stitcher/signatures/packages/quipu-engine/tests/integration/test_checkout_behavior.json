@@ -1,0 +1,18 @@
+{
+  "TestCheckoutBehavior": {},
+  "TestCheckoutBehavior.test_checkout_optimization_mtime": {
+    "baseline_code_signature_text": "def test_checkout_optimization_mtime(self, git_env):",
+    "baseline_code_structure_hash": "3a76586fe44028cfa3b6b8746333e98fc0fb6d70e650ea866450994877227fe0",
+    "baseline_yaml_content_hash": "3e0d355c4e1176d972b2e199b0d0ab9a243403277cde368f79692cc828f2d495"
+  },
+  "TestCheckoutBehavior.test_checkout_resets_dirty_index": {
+    "baseline_code_signature_text": "def test_checkout_resets_dirty_index(self, git_env):",
+    "baseline_code_structure_hash": "b8430996145d72261a7c959c9eabdcce01db9b48826f15bf4034f8f6bec143eb",
+    "baseline_yaml_content_hash": "dd1a280985458fcf2ed6d7612825d3f904722a37cb8c43dc86c2d20f949ddcbb"
+  },
+  "git_env": {
+    "baseline_code_signature_text": "def git_env(tmp_path: Path):",
+    "baseline_code_structure_hash": "34f1cfe8dd13be60c0fb2751beca78f29cf9c2869f4589140148f0d03430eef8",
+    "baseline_yaml_content_hash": "aaa90b50425576f94591e0ffd50984f07b484e748defe17cb015b9c06afea325"
+  }
+}

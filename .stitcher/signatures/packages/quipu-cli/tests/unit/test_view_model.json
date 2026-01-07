@@ -1,0 +1,94 @@
+{
+  "MockHistoryReader": {
+    "baseline_yaml_content_hash": "5ea7a29607945c9f6f75145825abbbc2d2d3fdaa77e4e534bbf9818b23e9d6ce"
+  },
+  "MockHistoryReader.__init__": {
+    "baseline_code_signature_text": "def __init__(self, nodes: List[QuipuNode], ancestors: Set[str] = None, descendants: Set[str] = None, private_data: dict[str, str] = None):",
+    "baseline_code_structure_hash": "ef2b1458e8279e4155b891ed741aa6dad62608b6712181437373333eb1de1da5"
+  },
+  "MockHistoryReader._ancestors": {},
+  "MockHistoryReader._descendants": {},
+  "MockHistoryReader._nodes": {},
+  "MockHistoryReader._private_data": {},
+  "MockHistoryReader.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc"
+  },
+  "MockHistoryReader.get_ancestor_output_trees": {
+    "baseline_code_signature_text": "def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "5ae091ca177977fc323d5563cb7f0c6e7af44ac50237f951d24c9793c2336220"
+  },
+  "MockHistoryReader.get_descendant_output_trees": {
+    "baseline_code_signature_text": "def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "8eb09e56e11e9534720ef7286af9a75507b606322ada07811813f6b3278f5edd"
+  },
+  "MockHistoryReader.get_node_blobs": {
+    "baseline_code_signature_text": "def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "48acf7a37a5612c09d5062797e966133a5c15ba17d05e10407be3235bb076f3d"
+  },
+  "MockHistoryReader.get_node_content": {
+    "baseline_code_signature_text": "def get_node_content(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "72fb728d5fb5468b523a77045d87750229fb34202f36e0bfe8861de1ab999ed8"
+  },
+  "MockHistoryReader.get_node_count": {
+    "baseline_code_signature_text": "def get_node_count(self) -> int:",
+    "baseline_code_structure_hash": "f248a486494c998cc0f98482e50a5e3292f3132d247377d5088251762489517e"
+  },
+  "MockHistoryReader.get_node_position": {
+    "baseline_code_signature_text": "def get_node_position(self, output_tree_hash: str) -> int:",
+    "baseline_code_structure_hash": "eeb815e029cbffaf43c5365481a21a4251ca6fb30632886a63a5716104041b0e"
+  },
+  "MockHistoryReader.get_private_data": {
+    "baseline_code_signature_text": "def get_private_data(self, node_commit_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772"
+  },
+  "MockHistoryReader.load_all_nodes": {
+    "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be"
+  },
+  "MockHistoryReader.load_nodes_paginated": {
+    "baseline_code_signature_text": "def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "cf4d892bf90a00fa3f083ef8e4bb292b58bf36a417cf53e04002657744c0022e"
+  },
+  "TestGraphViewModel": {},
+  "TestGraphViewModel.test_calculate_initial_page_not_found": {
+    "baseline_code_signature_text": "def test_calculate_initial_page_not_found(self, sample_nodes):",
+    "baseline_code_structure_hash": "25e925c8fb1fa7c817a2d230c425971b84ffe794776bafba6056fdbb3363095b",
+    "baseline_yaml_content_hash": "6bc12664cd0cc3c54921f067d7f6efa8034bbd3191e1e51c847c81eb27b01132"
+  },
+  "TestGraphViewModel.test_get_content_bundle": {
+    "baseline_code_signature_text": "def test_get_content_bundle(self):",
+    "baseline_code_structure_hash": "6f1a20e112a7b9303c019cbf3a654aee6578511e1270ea733251611243257caf",
+    "baseline_yaml_content_hash": "6bc796d363fb3b8d8e794d618b8c3ae4d8033e65867e57c880efb5e61d22a461"
+  },
+  "TestGraphViewModel.test_initialization_and_reachability": {
+    "baseline_code_signature_text": "def test_initialization_and_reachability(self, sample_nodes):",
+    "baseline_code_structure_hash": "e426ad8b8731cadc1df7f45e9d0c4aba401fd004cb219ccf1648dc82f412759f",
+    "baseline_yaml_content_hash": "3dfc9b933c6374f4b1f067a86c491151a098eee94f04c6de1aca853ad48bf6ed"
+  },
+  "TestGraphViewModel.test_is_reachable": {
+    "baseline_code_signature_text": "def test_is_reachable(self, sample_nodes):",
+    "baseline_code_structure_hash": "824b6008037f1ad814e948e203e3f9b73a0d99dd73cc9c0cadaf21ad110f0ad8",
+    "baseline_yaml_content_hash": "661641363fba0996c19ed4d6b5993927120aaa168ad05b4a8c7508eca6b57a49"
+  },
+  "TestGraphViewModel.test_is_reachable_no_current_hash": {
+    "baseline_code_signature_text": "def test_is_reachable_no_current_hash(self, sample_nodes):",
+    "baseline_code_structure_hash": "373b11c72af10d7acb51d19832ae86b4edf413a2433720c745e0c372627fd0fd",
+    "baseline_yaml_content_hash": "4ca82d7963a523e1e65202221609c7554d506e4ff37a437021f1cabe0e31b8ab"
+  },
+  "TestGraphViewModel.test_pagination_flow": {
+    "baseline_code_signature_text": "def test_pagination_flow(self, sample_nodes):",
+    "baseline_code_structure_hash": "c19847daf60fd16e36c259afbfa5f7f8da5699c12172150a76ffe0e5b1f57d1e",
+    "baseline_yaml_content_hash": "7efe2eebfdc1a32d390e6896cd785504c85b6a5ce2000b21a9ae62e5435ae786"
+  },
+  "TestGraphViewModel.test_select_node_by_key_missing": {
+    "baseline_code_signature_text": "def test_select_node_by_key_missing(self, sample_nodes):",
+    "baseline_code_structure_hash": "861dc32efd1c639506a43e23cbc354ca8ab2f3bcdea1458d60fd763073e5f4ec",
+    "baseline_yaml_content_hash": "5ffcfc3463ee192ed69f781fc45f49b5e45f2351b7cd8c9a37f23982b9d7fc50"
+  },
+  "sample_nodes": {
+    "baseline_code_signature_text": "def sample_nodes():",
+    "baseline_code_structure_hash": "3d43af052f5e782c3e74a2b0d2aac84f421c1df02f6c8f9f1e3b389fe5a0d352",
+    "baseline_yaml_content_hash": "ef253a549b1231ac906f415f60763d4930bfd1b99e5a2af0fe13093c570af509"
+  }
+}

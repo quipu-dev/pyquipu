@@ -1,0 +1,19 @@
+{
+  "TestMemoryActs": {},
+  "TestMemoryActs.setup_executor": {
+    "baseline_code_signature_text": "def setup_executor(self, executor: Executor):",
+    "baseline_code_structure_hash": "bf1dccc78029de0ea896a1ba97ad4f88c5165a2bfeb69e107331a276d11b0894"
+  },
+  "TestMemoryActs.test_log_thought_missing_args": {
+    "baseline_code_signature_text": "def test_log_thought_missing_args(self, executor: Executor):",
+    "baseline_code_structure_hash": "41dfef59523af984fa88f4e980ce724c30b128def9ec6f4b6bc191ed7201b1cf"
+  },
+  "TestMemoryActs.test_log_thought_success": {
+    "baseline_code_signature_text": "def test_log_thought_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "800e8dc01d4e66d407af99a22f3dbca584c2d74630c6b20a15119107d6b80b55"
+  },
+  "TestMemoryActs.test_log_thought_write_error": {
+    "baseline_code_signature_text": "def test_log_thought_write_error(self, executor: Executor, isolated_vault: Path, monkeypatch):",
+    "baseline_code_structure_hash": "cddd8a34f94b6f8ec57364e2c8a5f95e2a0bfcb61abed24bcd3f58fb981d215b"
+  }
+}

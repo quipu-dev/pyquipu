@@ -1,0 +1,88 @@
+{
+  "TestGitDBPlumbing": {},
+  "TestGitDBPlumbing.test_anchor_commit_persistence": {
+    "baseline_code_signature_text": "def test_anchor_commit_persistence(self, git_repo, db):",
+    "baseline_code_structure_hash": "814f738b4be97308ea13b160099198127d92ed7f81d6cfe1abfde81ffc4ccbd4",
+    "baseline_yaml_content_hash": "d4bb52d7386b3cb4c60ea3f053afc1ac1c3a17b50976ec408afc32ef193a074a"
+  },
+  "TestGitDBPlumbing.test_batch_cat_file": {
+    "baseline_code_signature_text": "def test_batch_cat_file(self, git_repo, db):",
+    "baseline_code_structure_hash": "ef994945e4bdf10178ce08ff1c323979d72eead9c9318fe43ffc75919e9e1259",
+    "baseline_yaml_content_hash": "38c0ef6e60e67272eb5c99e824775f183d6a48f39e969619ac8f7f5dbc23953b"
+  },
+  "TestGitDBPlumbing.test_cat_file_types": {
+    "baseline_code_signature_text": "def test_cat_file_types(self, git_repo, db):",
+    "baseline_code_structure_hash": "c7ea4f5fcb0595e42a24558199b787b32c2a0757e249978a0b961760c16c9d58",
+    "baseline_yaml_content_hash": "2a7b379d04e5ad0898b0c618d6f078b1f2836f1dc2af6ca5b2a559d9f26e7a20"
+  },
+  "TestGitDBPlumbing.test_checkout_tree": {
+    "baseline_code_signature_text": "def test_checkout_tree(self, git_repo: Path, db: GitDB):",
+    "baseline_code_structure_hash": "262a95a655fd9d84ccb9371fd75a21a9e2a947df7a5386a30d53aa99ab16ebf5",
+    "baseline_yaml_content_hash": "e472f3beae9b4133871e51a738198288614a9f7c6d85fa40ab47787a88b2696a"
+  },
+  "TestGitDBPlumbing.test_checkout_tree_messaging": {
+    "baseline_code_signature_text": "def test_checkout_tree_messaging(self, git_repo: Path, db: GitDB, monkeypatch):",
+    "baseline_code_structure_hash": "9de293605b3a4fbe4315af86bed01ae8ad602349c264f06aac9005d107a38423",
+    "baseline_yaml_content_hash": "71ec5f823a4fd09c49eac713acd9bbdec53266440d5bf13b2adb1740f236f93e"
+  },
+  "TestGitDBPlumbing.test_exclude_quipu_dir": {
+    "baseline_code_signature_text": "def test_exclude_quipu_dir(self, git_repo, db):",
+    "baseline_code_structure_hash": "887b99e2926b9a8c7082e75e49c4fa10fa0641a8855be95c7252cbdc97555714",
+    "baseline_yaml_content_hash": "cf57916496adb57565e3e32c1ac019289766ded615c02db51428c74559fffc5e"
+  },
+  "TestGitDBPlumbing.test_get_diff_name_status": {
+    "baseline_code_signature_text": "def test_get_diff_name_status(self, git_repo: Path, db: GitDB):",
+    "baseline_code_structure_hash": "2b3a62307bc177d9703eb16cac14924ee807b1175c5f7e783fbb0f4f2cf7bf70",
+    "baseline_yaml_content_hash": "ae4aaea628caaea7ef5a260f12f8dd2ddcb21ce6bdd56fb9be88c17e2629d279"
+  },
+  "TestGitDBPlumbing.test_get_tree_hash_sensitivity": {
+    "baseline_code_signature_text": "def test_get_tree_hash_sensitivity(self, git_repo, db):",
+    "baseline_code_structure_hash": "8f8af9a95a75fb5f969f776de306bad9ad9072bf83a9e96d9990c71f0ddd914b",
+    "baseline_yaml_content_hash": "31c3a2161887af59a1e35dcc820325b2de97ea7bcc0f66e17d5f231df0cf4ccd"
+  },
+  "TestGitDBPlumbing.test_get_tree_hash_stability": {
+    "baseline_code_signature_text": "def test_get_tree_hash_stability(self, git_repo, db):",
+    "baseline_code_structure_hash": "4f498445a7c435b3eba0ba19600818894397bfcd4c44ea923d4d3f811c8101e5",
+    "baseline_yaml_content_hash": "24e32b7efd03c672364f89852097771b38642a724b7d59d8999cc9135510ceda"
+  },
+  "TestGitDBPlumbing.test_hash_object": {
+    "baseline_code_signature_text": "def test_hash_object(self, db):",
+    "baseline_code_structure_hash": "d441928a19f0d737b355f25c16df375f6209ab9499358f8eccf38214c000e252",
+    "baseline_yaml_content_hash": "63a20f59deb4b7b09d4020c53732483f13c89859b77fd9fe2edfc261c11e28b7"
+  },
+  "TestGitDBPlumbing.test_is_ancestor": {
+    "baseline_code_signature_text": "def test_is_ancestor(self, git_repo, db, caplog):",
+    "baseline_code_structure_hash": "ac4dafc7855dc14f3c92405c315a9f9347b6b5e8ba09bfd4c58f4ebf22b6381a",
+    "baseline_yaml_content_hash": "99452b51909e98c7385e58849444e6266adafa4828dd380dff60319dc81d5dbd"
+  },
+  "TestGitDBPlumbing.test_log_ref_basic": {
+    "baseline_code_signature_text": "def test_log_ref_basic(self, git_repo, db):",
+    "baseline_code_structure_hash": "44f75b08fc22af5634a25fd93fcbcb33455c9c8401f089d16406e52fe0aab727",
+    "baseline_yaml_content_hash": "06296fcb419575cfef6e2f93ccefde35e335beadd171feb1fd1e5eda3c757f3e"
+  },
+  "TestGitDBPlumbing.test_log_ref_non_existent": {
+    "baseline_code_signature_text": "def test_log_ref_non_existent(self, db):",
+    "baseline_code_structure_hash": "ea89ae7a4a31f21c0e838ff469e2b8a72e2b05f406c9bcd280e7440df2f446b5",
+    "baseline_yaml_content_hash": "07e6736db7b0bb5298dd97945363cc37c3206d7f911b82d901921d822aae7a64"
+  },
+  "TestGitDBPlumbing.test_mktree_and_commit_tree": {
+    "baseline_code_signature_text": "def test_mktree_and_commit_tree(self, db):",
+    "baseline_code_structure_hash": "aca8cf2e7c52f24004179212427ee27a4cf86721b5d0b8393a532fd307744473",
+    "baseline_yaml_content_hash": "eda645754460ccdf7b647b13b302db451b669d73cd498bae474ba74227293377"
+  },
+  "TestGitDBPlumbing.test_shadow_index_isolation": {
+    "baseline_code_signature_text": "def test_shadow_index_isolation(self, git_repo, db):",
+    "baseline_code_structure_hash": "fa1bcbe63256b688f9b5e4067b3c1ad16e082e47ba9abe10bf9d14d4d7342a24",
+    "baseline_yaml_content_hash": "9fad58c59231e7e64e6835dfe89abedf4589205771a9b64c31ca21aab2be0dd1"
+  },
+  "db": {
+    "baseline_code_signature_text": "def db(git_repo):",
+    "baseline_code_structure_hash": "2954f79699fc25ab3596985f472544b6f4405175e13bb6fd92a9f4933059113c",
+    "baseline_yaml_content_hash": "e2d6eac2a0d53e99baf9cb15d13f416abc2260110b45ae91781695f0f8ad60ef"
+  },
+  "git_repo": {
+    "baseline_code_signature_text": "def git_repo(tmp_path):",
+    "baseline_code_structure_hash": "20c4df373fb1b7cdc091e2a45d93fe808c9b8101b602b1ed520fd6a9bbd4060f",
+    "baseline_yaml_content_hash": "12bd76434a0e471be02b1c7bcdef742a804d37e46835c20e28df4726eddb9a75"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "TestHydration": {},
+  "TestHydration.test_full_hydration_from_scratch": {
+    "baseline_code_signature_text": "def test_full_hydration_from_scratch(self, hydrator_setup):",
+    "baseline_code_structure_hash": "ad761b8d933d9cdb08d406c73150808b345b93ee38898979fc6d0d0da4b15bc7",
+    "baseline_yaml_content_hash": "c7bca51da3cd0238526647f5f75916815699a1f00f4e0663916a17b22bb73624"
+  },
+  "TestHydration.test_hydration_idempotency": {
+    "baseline_code_signature_text": "def test_hydration_idempotency(self, hydrator_setup):",
+    "baseline_code_structure_hash": "849151a1f702957ac7110cba2d84fcd286ec8137c42c09ef9ce244281fd150ed",
+    "baseline_yaml_content_hash": "5e893ceaa5c2263ec19e7299f8762ca2d0615ff3c9223272ca8f9ec3ff935ae0"
+  },
+  "TestHydration.test_incremental_hydration": {
+    "baseline_code_signature_text": "def test_incremental_hydration(self, hydrator_setup):",
+    "baseline_code_structure_hash": "072f76b9fb694b1c05e86cf004689a52288f6a813735676e5307df6297fbf469",
+    "baseline_yaml_content_hash": "24ffb25b967d95c2f548e2cfca0f0a3e3cecd5355b8774e38ebf1920f391a751"
+  },
+  "hydrator_setup": {
+    "baseline_code_signature_text": "def hydrator_setup(tmp_path: Path):",
+    "baseline_code_structure_hash": "d0a560af07b75aa61e6d9c4cc91201a99702f1c8f645f2018294f18cb92e408b",
+    "baseline_yaml_content_hash": "3968a7e95d628d0985ddd45f4248ce78ac30b3da577880116b160851d4dd001c"
+  }
+}

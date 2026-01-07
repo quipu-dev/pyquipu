@@ -1,0 +1,13 @@
+{
+  "TestPatchAmbiguity": {},
+  "TestPatchAmbiguity.test_patch_file_fails_on_ambiguous_multiline_content": {
+    "baseline_code_signature_text": "def test_patch_file_fails_on_ambiguous_multiline_content(self, executor: Executor, isolated_vault):",
+    "baseline_code_structure_hash": "c2177805bb8f954d166e5a5702694b3147aa22f4c0ce77e61bfaf8c9e8bb54be",
+    "baseline_yaml_content_hash": "35a0b40eead309a7e2d476a1a4856d4dfa16f0ccd9a68ebccf942345046ce402"
+  },
+  "TestPatchAmbiguity.test_patch_file_should_fail_on_ambiguous_content": {
+    "baseline_code_signature_text": "def test_patch_file_should_fail_on_ambiguous_content(self, executor: Executor, isolated_vault):",
+    "baseline_code_structure_hash": "1a06c91eb157f2cfb82c7cffcfc962cf129677c9240ae62ff6377153ca240def",
+    "baseline_yaml_content_hash": "7ee9e62707c799f2ece269a7438176a8379427c4248b9201d5df4feed09f5d18"
+  }
+}

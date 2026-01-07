@@ -1,0 +1,23 @@
+{
+  "TestEngineWithMemoryBackend": {},
+  "TestEngineWithMemoryBackend.test_align_clean_genesis": {
+    "baseline_code_signature_text": "def test_align_clean_genesis(self, memory_engine: Engine):",
+    "baseline_code_structure_hash": "2c9307de3a7fd94ca29601bed8884ce3735b824f92a49d7f9eb72a65211346a2",
+    "baseline_yaml_content_hash": "dbfbdad04ef4cd054349b662f6c6f86a9395ad2ed4e921d5e2536a2e0dfaf8e0"
+  },
+  "TestEngineWithMemoryBackend.test_capture_drift_from_genesis": {
+    "baseline_code_signature_text": "def test_capture_drift_from_genesis(self, memory_engine: Engine):",
+    "baseline_code_structure_hash": "54c6fcb60ce97cb8bae0c784e5688f89806b5a4dc0cb5bb9868e290314b99a6e",
+    "baseline_yaml_content_hash": "aae2f68bafff65a221553e549bb08289109af105724fa39dbde9b4bea696b761"
+  },
+  "TestEngineWithMemoryBackend.test_plan_node_creation": {
+    "baseline_code_signature_text": "def test_plan_node_creation(self, memory_engine: Engine):",
+    "baseline_code_structure_hash": "d57566dc1cab0dd203725a5450afe5249b985e055e3cdedc25ef753f09339979",
+    "baseline_yaml_content_hash": "e1ccd58d970c0b2ef55cec3153769cb1dcc1a50d0c335abe48bf27074d017128"
+  },
+  "memory_engine": {
+    "baseline_code_signature_text": "def memory_engine(tmp_path: Path) -> Engine:",
+    "baseline_code_structure_hash": "081f02a24b307cb72e79680b16fe5aa0f8f0fe3c0ad024adf4327d1fc8970b9f",
+    "baseline_yaml_content_hash": "de242b7d2115458bf663e2c0300ac8f473a906add33c9b43276f680e7bc9b31b"
+  }
+}

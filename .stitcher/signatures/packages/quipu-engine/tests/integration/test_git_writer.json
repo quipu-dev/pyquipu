@@ -1,0 +1,21 @@
+{
+  "TestGitObjectHistoryWriterIntegration": {
+    "baseline_yaml_content_hash": "59425b9340ea4d92de52cdf0bfdc9e063d966bb0415fcc3049edd0fab861ed70"
+  },
+  "TestGitObjectHistoryWriterIntegration.test_create_node_end_to_end": {
+    "baseline_code_signature_text": "def test_create_node_end_to_end(self, git_writer_setup):",
+    "baseline_code_structure_hash": "3b4469eb4cc8e842dc05b8559ea5c9cfb9781783d720239ed8f5e50b493abe0c"
+  },
+  "TestGitObjectHistoryWriterUnit": {
+    "baseline_yaml_content_hash": "1bb9c5d0bc806862b85ba9dbba94857c2c87d912410345cfd60c3f44a8c315b9"
+  },
+  "TestGitObjectHistoryWriterUnit.test_generate_summary": {
+    "baseline_code_signature_text": "def test_generate_summary(self, node_type, content, kwargs, mock_changes, expected_summary):",
+    "baseline_code_structure_hash": "6930c901e0158611a16dd22aa449b0e21c97eab17f48f5d29cd7a94e6f14cab8"
+  },
+  "git_writer_setup": {
+    "baseline_code_signature_text": "def git_writer_setup(tmp_path):",
+    "baseline_code_structure_hash": "6c82d74bbc4ee9f6aa5ff52011d8a037e146c97f965ddd960d5a7ed5e8af1df1",
+    "baseline_yaml_content_hash": "e65243de04d8521c581e34284c1bb9f279b32be8bac3c8c9364d24bd698246e7"
+  }
+}

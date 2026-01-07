@@ -1,0 +1,24 @@
+{
+  "TestCheckActs": {},
+  "TestCheckActs.setup_executor": {
+    "baseline_code_signature_text": "def setup_executor(self, executor: Executor):",
+    "baseline_code_structure_hash": "bf1dccc78029de0ea896a1ba97ad4f88c5165a2bfeb69e107331a276d11b0894",
+    "baseline_yaml_content_hash": "5b87f859e3c7c45a3928d4467f8ee30696e385f253cfdcb9f4ed173562dc9de4"
+  },
+  "TestCheckActs.test_check_cwd_match_fail": {
+    "baseline_code_signature_text": "def test_check_cwd_match_fail(self, executor: Executor):",
+    "baseline_code_structure_hash": "734c838854b285cf39549f55158000b1d9a7e0b136720775069f17042aeb7e87"
+  },
+  "TestCheckActs.test_check_cwd_match_success": {
+    "baseline_code_signature_text": "def test_check_cwd_match_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "6504eae1d087e3c877ed83490748e3ca4b48caa4fa0d8a31e2819158ed50a61a"
+  },
+  "TestCheckActs.test_check_files_exist_fail": {
+    "baseline_code_signature_text": "def test_check_files_exist_fail(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "799e1eeef81cf0e87c33ebecefa5f6589c61588d553cfb6e1b69bf6bbf76ed86"
+  },
+  "TestCheckActs.test_check_files_exist_success": {
+    "baseline_code_signature_text": "def test_check_files_exist_success(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "2b8feddd1970331acf4daf59445d49201ce813e16e62c23ce19cbd2624d289f1"
+  }
+}

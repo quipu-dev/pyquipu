@@ -1,0 +1,37 @@
+{
+  "TestGitObjectHistoryReader": {},
+  "TestGitObjectHistoryReader.test_corrupted_node_missing_metadata": {
+    "baseline_code_signature_text": "def test_corrupted_node_missing_metadata(self, reader_setup):",
+    "baseline_code_structure_hash": "9270eb9353e118b72421692c064e41308891645f1bfe809f8b6ad115e3e11d58",
+    "baseline_yaml_content_hash": "d3fd3490f6cfc2c44a9829a1f0fe38179377c7b03ea827a6cdfdbcde6c6edef8"
+  },
+  "TestGitObjectHistoryReader.test_corrupted_node_missing_trailer": {
+    "baseline_code_signature_text": "def test_corrupted_node_missing_trailer(self, reader_setup):",
+    "baseline_code_structure_hash": "f800f3b56e1b42b53182f84a55b741e1f40e5fe3ea7d2d9f71d7e487bc7eb57e",
+    "baseline_yaml_content_hash": "0dec78e44fbe4a79c2d51968ba17bed080256a03f5277e73f6d8a132d5167edf"
+  },
+  "TestGitObjectHistoryReader.test_load_empty_history": {
+    "baseline_code_signature_text": "def test_load_empty_history(self, reader_setup):",
+    "baseline_code_structure_hash": "455172424bf64ae8cd0e4b3b2993f8ff8a3d74fa5c955e546b420a4c9c636324",
+    "baseline_yaml_content_hash": "f41158b733626afeb3f7c3200b9830bc1728f6f1a22d710fafd23893b21ecc86"
+  },
+  "TestGitObjectHistoryReader.test_load_forked_history": {
+    "baseline_code_signature_text": "def test_load_forked_history(self, reader_setup):",
+    "baseline_code_structure_hash": "cf52b575b5738f6eaaeb83e1667ff570afc00c2e6e30b3e18f332901c68662eb",
+    "baseline_yaml_content_hash": "55c172381e170264254723d7d6efdb1afaf0bc3528f0ff804858ff55fc2c6519"
+  },
+  "TestGitObjectHistoryReader.test_load_linear_history": {
+    "baseline_code_signature_text": "def test_load_linear_history(self, reader_setup):",
+    "baseline_code_structure_hash": "89456c361aa31396b6342e0b4101ea9ebadd2ae56e6dee930a60adedeb09664c",
+    "baseline_yaml_content_hash": "44b918de878272fc09f04eeaa0ad763ad51327f3d378e7865a9a356b2e2eceeb"
+  },
+  "TestGitObjectHistoryReader.test_parent_linking_with_gap": {
+    "baseline_code_signature_text": "def test_parent_linking_with_gap(self, reader_setup):",
+    "baseline_code_structure_hash": "b07a4e0ce6229dfb36196ea315ad4aa2f6571636eecf592cac328c7811b8ec1e",
+    "baseline_yaml_content_hash": "2b0fe2db162cf3edd935e54e3e98d3c6757e5784036faf1ee8783d434b7a2ff7"
+  },
+  "reader_setup": {
+    "baseline_code_signature_text": "def reader_setup(tmp_path):",
+    "baseline_code_structure_hash": "dd184b9330c958577e1326d3e4b6620a5f919ae765d4a278609fa697199af8e4"
+  }
+}

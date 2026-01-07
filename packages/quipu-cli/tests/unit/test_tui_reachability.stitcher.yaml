@@ -1,0 +1,6 @@
+"TestUiReachability.test_filter_unreachable_nodes_in_populate": |-
+  Tests the filtering logic within the _populate_table method.
+"TestUiReachability.test_ui_uses_view_model_for_reachability": |-
+  Tests that the UI correctly queries the ViewModel to check reachability.
+"view_model_factory": |-
+  A factory to create a GraphViewModel instance with mock data for tests.

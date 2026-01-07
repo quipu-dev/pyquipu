@@ -1,0 +1,18 @@
+{
+  "TestParserRobustness": {},
+  "TestParserRobustness.test_parse_complex_language_tags": {
+    "baseline_code_signature_text": "def test_parse_complex_language_tags(self):",
+    "baseline_code_structure_hash": "4d9550612dc346dcb40b4e706b1b752fe585fcaa64668ba7e41b05d4dcbee1c5",
+    "baseline_yaml_content_hash": "f21dc0025573d69d16dc44a11820a3e006b28b4a7d08975b58e0b66d96634906"
+  },
+  "TestParserRobustness.test_parse_with_spaces_in_fence": {
+    "baseline_code_signature_text": "def test_parse_with_spaces_in_fence(self):",
+    "baseline_code_structure_hash": "48c14b3e07223b83cf5cb76f1f8fbf301264d9db8df730e25ffee18a65c54365",
+    "baseline_yaml_content_hash": "5ab13e2d2ea78554b46714f859887b045dcef4dd5867068785b2111ed6699561"
+  },
+  "TestParserRobustness.test_unclosed_block_handling": {
+    "baseline_code_signature_text": "def test_unclosed_block_handling(self):",
+    "baseline_code_structure_hash": "0dc2616703f28f3f4ff2b8961f4ac64dfa2601c874281f424756dc4604de266b",
+    "baseline_yaml_content_hash": "246c4ce6a6f5189c5fb46d8a95977645a4ac3358b36178fcdba6a2b9a6821d76"
+  }
+}

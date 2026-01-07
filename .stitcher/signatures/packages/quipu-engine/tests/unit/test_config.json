@@ -1,0 +1,32 @@
+{
+  "test_config_get_defaults": {
+    "baseline_code_signature_text": "def test_config_get_defaults(work_dir: Path):",
+    "baseline_code_structure_hash": "f405e2faa55c2d1314e6e624b3f007d8abe01fac46eff028e280747fbff7186e",
+    "baseline_yaml_content_hash": "11fd0509c4663b4e4dbf5a6b5123723f82106dc05fbcca244291a0d9bc0d052b"
+  },
+  "test_config_load_from_file": {
+    "baseline_code_signature_text": "def test_config_load_from_file(work_dir: Path):",
+    "baseline_code_structure_hash": "c1a41b00dcca8a4f310b18aa30853a7508aa17d14a88d929459ecf35469b0d70",
+    "baseline_yaml_content_hash": "a0b8c7f0bb4cd8be2fdd58ebd103ec9d6fef45ff1abd013e6ca2a4418d26c53d"
+  },
+  "test_config_nested_set_and_save": {
+    "baseline_code_signature_text": "def test_config_nested_set_and_save(work_dir: Path):",
+    "baseline_code_structure_hash": "a7c379eade818a835d46a4fd48cec5d020d92ba4bda1c512df10e713835d75aa",
+    "baseline_yaml_content_hash": "b0683e58cc9d20717108462a32981099986fbd4318762a01e04a1975c79f700d"
+  },
+  "test_config_round_trip_consistency": {
+    "baseline_code_signature_text": "def test_config_round_trip_consistency(work_dir: Path):",
+    "baseline_code_structure_hash": "e67ba42a2f5f44d5a0e93b396ebc5ac1940427f8e138d7ccec6d2026febadd1e",
+    "baseline_yaml_content_hash": "49c0d2c1dfc5c3adfb793c34878cd00f9b1102cd7f0d7b59dba1714e04aa37ec"
+  },
+  "test_config_set_and_save": {
+    "baseline_code_signature_text": "def test_config_set_and_save(work_dir: Path):",
+    "baseline_code_structure_hash": "4dcdc47c04570ec79f455182335ab652f4e2aa9b7db6ed6d98f102b423ccf78d",
+    "baseline_yaml_content_hash": "0cd41b72c4a5fb6c5de130e2de59a0b30b801a9c8f59e15d9d0af0a149d15655"
+  },
+  "work_dir": {
+    "baseline_code_signature_text": "def work_dir(tmp_path: Path) -> Path:",
+    "baseline_code_structure_hash": "be22f8981bd1d663560348b0452c431a24bc710dbbedbcbebd40bd8c22eb6809",
+    "baseline_yaml_content_hash": "bf733d01708d4e335a1098064bd9a6da0c7358ef2113ffb164049d850cf3dbeb"
+  }
+}

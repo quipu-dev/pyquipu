@@ -1,0 +1,17 @@
+"TestEngineFindNodes.populated_engine": |-
+  Populates an engine instance with a linear history using shared test helpers.
+  History: (Genesis) -> Plan -> Capture -> Plan
+"TestPersistentIgnores.test_sync_appends_to_existing_file": |-
+  测试：如果 exclude 文件已存在，应追加 Quipu 块而不是覆盖。
+"TestPersistentIgnores.test_sync_creates_file_if_not_exists": |-
+  测试：如果 exclude 文件不存在，应能根据默认配置创建它。
+"TestPersistentIgnores.test_sync_updates_existing_block": |-
+  测试：如果 Quipu 块已存在，应更新其内容。
+"TestPersistentIgnores.test_sync_uses_user_config": |-
+  测试：应优先使用 .quipu/config.yml 中的用户配置。
+"test_align_orphan_state": |-
+  测试场景：在一个没有历史记录的项目中运行时，
+  引擎应能正确识别为 "ORPHAN" 状态 (适用于两种后端)。
+"test_capture_drift_git_object": |-
+  测试场景 (GitObject Backend)：当工作区处于 DIRTY 状态时，引擎应能成功捕获变化，
+  创建一个新的 Capture 节点，并更新 Git 引用。

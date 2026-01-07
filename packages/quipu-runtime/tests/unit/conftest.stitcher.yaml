@@ -1,0 +1,2 @@
+"pytest_configure": |-
+  注册自定义标记以消除警告

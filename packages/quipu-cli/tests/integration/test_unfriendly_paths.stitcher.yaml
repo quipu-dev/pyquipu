@@ -1,0 +1,14 @@
+"dirty_workspace": |-
+  Provides a workspace with history and uncommitted changes.
+"test_checkout_in_non_interactive_env": |-
+  不友好路径测试: 验证 `checkout` 在非交互式环境中安全中止。
+"test_checkout_user_cancellation": |-
+  不友好路径测试: 验证 `checkout` 操作可以被用户取消。
+"test_discard_in_non_interactive_env": |-
+  不友好路径测试: 验证 `discard` 在非交互式环境中安全中止。
+"test_discard_user_cancellation": |-
+  不友好路径测试: 验证 `discard` 操作可以被用户取消。
+"test_run_command_in_non_interactive_env": |-
+  不友好路径测试: 验证在非交互式环境 (无法 getchar) 中，`run` 操作会自动中止。
+"test_run_command_user_cancellation": |-
+  不友好路径测试: 验证当用户输入 'n' 时，`run` 操作会被正确取消。

@@ -1,0 +1,4 @@
+"TestPluginResilience.test_load_plugin_with_registration_error": |-
+  验证插件在 register() 函数中抛出异常不会使程序崩溃。
+"TestPluginResilience.test_load_plugin_with_syntax_error": |-
+  验证加载有语法错误的插件不会使程序崩溃。

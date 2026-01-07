@@ -1,0 +1,16 @@
+"TestArgStrategy.executor": |-
+  创建一个干净的 Executor 用于测试参数逻辑
+"TestArgStrategy.test_block_only_mode": |-
+  测试 Block Only 模式：始终忽略行内参数
+"TestArgStrategy.test_block_only_no_block": |-
+  测试 Block Only 模式：行内被忽略，且无块 -> 空参数
+"TestArgStrategy.test_exclusive_mode_fallback_to_block": |-
+  测试 Exclusive 模式：如果无行内参数，应使用块
+"TestArgStrategy.test_exclusive_mode_inline_priority": |-
+  测试 Exclusive 模式：如果有行内参数，应忽略块
+"TestArgStrategy.test_hybrid_mode_merge": |-
+  测试 Hybrid 模式：行内 + 块
+"TestArgStrategy.test_hybrid_mode_only_inline": |-
+  测试 Hybrid 模式：仅行内
+"TestArgStrategy.test_invalid_mode_registration": |-
+  测试注册非法模式应报错

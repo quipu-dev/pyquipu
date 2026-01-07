@@ -1,0 +1,2 @@
+"test_run_command_with_piped_input_and_confirmation": |-
+  测试核心场景: 通过管道输入 plan，并对需要确认的 act (run_command) 进行交互。

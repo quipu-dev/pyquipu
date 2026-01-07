@@ -1,0 +1,21 @@
+{
+  "TestGitActs": {},
+  "TestGitActs.setup_git_env": {
+    "baseline_code_signature_text": "def setup_git_env(self, executor: Executor, isolated_vault: Path):",
+    "baseline_code_structure_hash": "31f95e6095ceebde9252e6dbd3124052d2351ec22e60f2dea2591cc1c973c41c",
+    "baseline_yaml_content_hash": "d047754f7ce4274706d819f2764c215b9bdd4ae4d6a80a6cf594ac8340514ada"
+  },
+  "TestGitActs.test_git_init_idempotent": {
+    "baseline_code_signature_text": "def test_git_init_idempotent(self, executor: Executor, mock_runtime_bus):",
+    "baseline_code_structure_hash": "2bacf4c6de0aad0e35f81a62f079cc317614de04632e0358f37e2a70c154adf5"
+  },
+  "TestGitActs.test_git_status_output_stream": {
+    "baseline_code_signature_text": "def test_git_status_output_stream(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "f2c544447e5549c796caa53ba4ac98bbd7d32db61ddd9cc1e403fcaeee952774",
+    "baseline_yaml_content_hash": "9b6d841ba571cda1699fb5a073b7249761d5213c428ee7b39d0082c13c086c4f"
+  },
+  "TestGitActs.test_git_workflow": {
+    "baseline_code_signature_text": "def test_git_workflow(self, executor: Executor, isolated_vault: Path, mock_runtime_bus):",
+    "baseline_code_structure_hash": "c61a6b39a70b097acfec7e02299928d58b0f9265d820ef3a2f7137076de33bb8"
+  }
+}

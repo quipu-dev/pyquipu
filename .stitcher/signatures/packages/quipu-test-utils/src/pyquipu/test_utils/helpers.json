@@ -1,0 +1,158 @@
+{
+  "EMPTY_TREE_HASH": {},
+  "InMemoryDB": {
+    "baseline_yaml_content_hash": "714f100b1e4903d66fd29115505e2661b21b859932255a5bf32bdbb4888c2355"
+  },
+  "InMemoryDB.__init__": {
+    "baseline_code_signature_text": "def __init__(self):",
+    "baseline_code_structure_hash": "9bab2b1dd22fea04e58176b09f65ef4f673738c47abf25fca7e0c62af472206f"
+  },
+  "InMemoryDB.checkout_tree": {
+    "baseline_code_signature_text": "def checkout_tree(self, new_tree_hash: str, old_tree_hash: Optional[str] = None):",
+    "baseline_code_structure_hash": "5665baaadaf6a2b3e5f09812ec429cd57f9cd0ee96ec6a6fd9b574de0638f5a5"
+  },
+  "InMemoryDB.get_diff_name_status": {
+    "baseline_code_signature_text": "def get_diff_name_status(self, old_tree: str, new_tree: str) -> List[Tuple[str, str]]:",
+    "baseline_code_structure_hash": "807343877a65b864a254b3e3719d15a6cc0edb17c4e792ea1bba00c60f0be910"
+  },
+  "InMemoryDB.get_diff_stat": {
+    "baseline_code_signature_text": "def get_diff_stat(self, old_tree: str, new_tree: str) -> str:",
+    "baseline_code_structure_hash": "ce6f966e1089f6eb26f95e61986f232700fdcaf765f9b31111d9d7ebb473ea47"
+  },
+  "InMemoryDB.get_tree_hash": {
+    "baseline_code_signature_text": "def get_tree_hash(self) -> str:",
+    "baseline_code_structure_hash": "9fd88b05fd5c0e70ea2ea2a59b07ed091770257177751914385e56deeb306eff",
+    "baseline_yaml_content_hash": "cb535e9975aa9306b562ffa12f99d3312ffb75428f8e0199185d408f686c1f4a"
+  },
+  "InMemoryDB.nodes": {},
+  "InMemoryDB.snapshots": {},
+  "InMemoryDB.vfs": {},
+  "InMemoryHistoryManager": {
+    "baseline_yaml_content_hash": "03552d97d7f88d918b91a8cc8590b052b2eb21169dcfddfb4d1dd79f6921c241"
+  },
+  "InMemoryHistoryManager.__init__": {
+    "baseline_code_signature_text": "def __init__(self, db: InMemoryDB):",
+    "baseline_code_structure_hash": "d83218c094372a8d28cf658577483ef46c9069b26b63410c35e75ace59ba0329"
+  },
+  "InMemoryHistoryManager.create_node": {
+    "baseline_code_signature_text": "def create_node(self, node_type: str, input_tree: str, output_tree: str, content: str, summary_override: Optional[str] = None, **kwargs: Any = {}) -> QuipuNode:",
+    "baseline_code_structure_hash": "0b3e983f67b1351f7a4361e31a7c9144d1988621951d626bf72c09424a75d639"
+  },
+  "InMemoryHistoryManager.db": {},
+  "InMemoryHistoryManager.find_nodes": {
+    "baseline_code_signature_text": "def find_nodes(self, summary_regex: Optional[str] = None, node_type: Optional[str] = None, limit: int = 10) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "3d04cb357877311ed8d37041f5ad5d0f322ed4105e52f5b88cfd40b6f110f6cc"
+  },
+  "InMemoryHistoryManager.get_ancestor_output_trees": {
+    "baseline_code_signature_text": "def get_ancestor_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "5ae091ca177977fc323d5563cb7f0c6e7af44ac50237f951d24c9793c2336220"
+  },
+  "InMemoryHistoryManager.get_descendant_output_trees": {
+    "baseline_code_signature_text": "def get_descendant_output_trees(self, start_output_tree_hash: str) -> Set[str]:",
+    "baseline_code_structure_hash": "8eb09e56e11e9534720ef7286af9a75507b606322ada07811813f6b3278f5edd"
+  },
+  "InMemoryHistoryManager.get_node_blobs": {
+    "baseline_code_signature_text": "def get_node_blobs(self, commit_hash: str) -> Dict[str, bytes]:",
+    "baseline_code_structure_hash": "48acf7a37a5612c09d5062797e966133a5c15ba17d05e10407be3235bb076f3d"
+  },
+  "InMemoryHistoryManager.get_node_content": {
+    "baseline_code_signature_text": "def get_node_content(self, node: QuipuNode) -> str:",
+    "baseline_code_structure_hash": "72fb728d5fb5468b523a77045d87750229fb34202f36e0bfe8861de1ab999ed8"
+  },
+  "InMemoryHistoryManager.get_node_count": {
+    "baseline_code_signature_text": "def get_node_count(self) -> int:",
+    "baseline_code_structure_hash": "f248a486494c998cc0f98482e50a5e3292f3132d247377d5088251762489517e"
+  },
+  "InMemoryHistoryManager.get_node_position": {
+    "baseline_code_signature_text": "def get_node_position(self, output_tree_hash: str) -> int:",
+    "baseline_code_structure_hash": "eeb815e029cbffaf43c5365481a21a4251ca6fb30632886a63a5716104041b0e"
+  },
+  "InMemoryHistoryManager.get_private_data": {
+    "baseline_code_signature_text": "def get_private_data(self, node_commit_hash: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "b03c5152ce31de33095b38682a69df3dcfcd6551fd2d0e5109137fb9a8e6a772"
+  },
+  "InMemoryHistoryManager.load_all_nodes": {
+    "baseline_code_signature_text": "def load_all_nodes(self) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "860f1b0ce953562bf9798d8e0e7a6d05c0aada817fc5e88689012cb45876f7be"
+  },
+  "InMemoryHistoryManager.load_nodes_paginated": {
+    "baseline_code_signature_text": "def load_nodes_paginated(self, limit: int, offset: int) -> List[QuipuNode]:",
+    "baseline_code_structure_hash": "cf4d892bf90a00fa3f083ef8e4bb292b58bf36a417cf53e04002657744c0022e"
+  },
+  "VirtualFileSystem": {
+    "baseline_yaml_content_hash": "accf835093fb05ca2b02008090d01bfe53de6eb34f0688e88e1ea9cd7d1c6eb5"
+  },
+  "VirtualFileSystem.__init__": {
+    "baseline_code_signature_text": "def __init__(self):",
+    "baseline_code_structure_hash": "9bab2b1dd22fea04e58176b09f65ef4f673738c47abf25fca7e0c62af472206f"
+  },
+  "VirtualFileSystem._files": {},
+  "VirtualFileSystem.copy": {
+    "baseline_code_signature_text": "def copy(self) -> VirtualFileSystem:",
+    "baseline_code_structure_hash": "568018bce5cb8d6b0a2a72c2f8d4dc40dfc67db2792096d93e525d1ff339d823"
+  },
+  "VirtualFileSystem.files": {},
+  "VirtualFileSystem.read": {
+    "baseline_code_signature_text": "def read(self, path: str) -> Optional[str]:",
+    "baseline_code_structure_hash": "610c3197a70c8c4e0dc5ddd1a636a625ed5cda307bdbca93d0fb017850a06d1c"
+  },
+  "VirtualFileSystem.write": {
+    "baseline_code_signature_text": "def write(self, path: str, content: str):",
+    "baseline_code_structure_hash": "50fd606d639eaaac881ea1fa5f2f2a97c4919d258818e279b911bc1f4d7031b3"
+  },
+  "create_branching_history": {
+    "baseline_code_signature_text": "def create_branching_history(engine: Engine) -> Engine:",
+    "baseline_code_structure_hash": "df7ba659995fe344b131ba341c3e5941b1f2b7fae977485e0dd0d5ff9b7fa337",
+    "baseline_yaml_content_hash": "622b8e44354723eae5369e6f842f05d5f9ca5145b4469eb661b2089953a1cd41"
+  },
+  "create_capture_node_with_change": {
+    "baseline_code_signature_text": "def create_capture_node_with_change(engine: Engine, file_name: str, content: str, message: str) -> str:",
+    "baseline_code_structure_hash": "494564c8a001bce88c6cf3e5c16759210b0516459d7d4c23619b1130504d5401",
+    "baseline_yaml_content_hash": "41d3dc3faab09e4586b20f0cdb867d6e68453b386633a172c126f703763d15c4"
+  },
+  "create_complex_link_history": {
+    "baseline_code_signature_text": "def create_complex_link_history(engine: Engine) -> Engine:",
+    "baseline_code_structure_hash": "9b3bf012779979584d371aa9e851f4880c5e330650aae5e1981bf4ed570fbf0d",
+    "baseline_yaml_content_hash": "c79287ea03f2c0909f08addc90d1cc5af12b19beeaa83f16c22f316473c69844"
+  },
+  "create_dirty_workspace_history": {
+    "baseline_code_signature_text": "def create_dirty_workspace_history(engine: Engine) -> Tuple[Engine, str]:",
+    "baseline_code_structure_hash": "9a1b473936bc06f3c7c301e66140295213df44abc420f8775246d5987b8c1cb0",
+    "baseline_yaml_content_hash": "8d7f612f45ad3777457ff959d088074704488e9225523671007628e3eb3268ba"
+  },
+  "create_linear_history": {
+    "baseline_code_signature_text": "def create_linear_history(engine: Engine) -> Tuple[Engine, Dict[str, str]]:",
+    "baseline_code_structure_hash": "3ada516acb039d0433939843fde70504f99dee0302a1342292fc8d6c9fabf883",
+    "baseline_yaml_content_hash": "dc6397ea372b89e05fde33374a2e4814cfefebe06fc988fcd377f9977a96c7b7"
+  },
+  "create_linear_history_from_specs": {
+    "baseline_code_signature_text": "def create_linear_history_from_specs(engine: Engine, specs: List[Dict[str, Any]]):",
+    "baseline_code_structure_hash": "4e0464d5d219a29b0877daa0db5127754a0527bb0e2ce2b667521475b6913f19",
+    "baseline_yaml_content_hash": "f49d7d15b792ea0c2afebe13999ded63f300b8e105d7557b76331b03c67fff87"
+  },
+  "create_node_via_cli": {
+    "baseline_code_signature_text": "def create_node_via_cli(runner: CliRunner, work_dir: Path, content: str) -> str:",
+    "baseline_code_structure_hash": "5d80af898918da29c7bf47de2fc50c82d26e55da1ed94e52cf8706bd7b84c9d8",
+    "baseline_yaml_content_hash": "b91cf097c6e0c8976ad9cb598b798414e3d95bf2dcd6f4ac9b0370242ccc2a30"
+  },
+  "create_plan_node_with_change": {
+    "baseline_code_signature_text": "def create_plan_node_with_change(engine: Engine, parent_hash: str, file_name: str, content: str, message: str) -> str:",
+    "baseline_code_structure_hash": "cf61ae48f737c72cd80bbfb1fb68af0b154ff553270f31e181603b9445bc2022",
+    "baseline_yaml_content_hash": "ff9be09f49423e04706c2080a84d2003993355beee1f95f35044c8737382e7a2"
+  },
+  "create_query_branching_history": {
+    "baseline_code_signature_text": "def create_query_branching_history(engine: Engine) -> Tuple[Engine, str]:",
+    "baseline_code_structure_hash": "b5df830ed85fcd3b85c442eadaf3dfbe4ccc48a4f81f70f89bc0d94d02ea232e",
+    "baseline_yaml_content_hash": "4e60d9f617ccacb1a53054d0249994619a75fc37a895a28ff8cfc0a7d331f4d3"
+  },
+  "get_local_quipu_heads": {
+    "baseline_code_signature_text": "def get_local_quipu_heads(work_dir: Path) -> set[str]:",
+    "baseline_code_structure_hash": "98f18e5a64b1643d42f06af5b609169f653f638e973dd802ce642250bd754793",
+    "baseline_yaml_content_hash": "0bf8664c073c779cd4a0717871d5212472c7910fb91da1a9fcd0605a49847e22"
+  },
+  "run_git_command": {
+    "baseline_code_signature_text": "def run_git_command(cwd: Path, args: list[str], check: bool = True) -> str:",
+    "baseline_code_structure_hash": "ab5208c68cb72aff451337e18f15003513c4e1c630a1f8604568417243f200d7",
+    "baseline_yaml_content_hash": "43ccc1396bea67aa9586d5d5789ff93916c1b116ebdc3ddeab18358c73efdb07"
+  }
+}

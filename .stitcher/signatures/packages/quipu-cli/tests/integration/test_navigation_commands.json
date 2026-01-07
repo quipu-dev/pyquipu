@@ -1,0 +1,18 @@
+{
+  "populated_workspace": {
+    "baseline_code_signature_text": "def populated_workspace(quipu_workspace):",
+    "baseline_code_structure_hash": "c59fd4dc20ce857fa9138cf6a141777d82bf81b65fa1291a92ecce757b547f80"
+  },
+  "test_checkout_not_found": {
+    "baseline_code_signature_text": "def test_checkout_not_found(runner, populated_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "7c619ddf1fe0f07f2f9edaeefea3ebc53f6acfeb7c0fcda2b27a15e6c51c4935"
+  },
+  "test_cli_back_forward_flow": {
+    "baseline_code_signature_text": "def test_cli_back_forward_flow(runner, populated_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "4b431c5c04adb0a9f19632764cb48b459a05fba4fa2df3334bef20a5cb3c4abb"
+  },
+  "test_cli_boundary_messages": {
+    "baseline_code_signature_text": "def test_cli_boundary_messages(runner, populated_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "7fe22f8180cf5ed7c08f3b02249658cb8d2d1c6475f000c64c16fd0becee0e13"
+  }
+}

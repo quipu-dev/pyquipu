@@ -1,0 +1,23 @@
+{
+  "TestUiLogic": {},
+  "TestUiLogic.test_get_node_summary": {
+    "baseline_code_signature_text": "def test_get_node_summary(self, view_model_factory):",
+    "baseline_code_structure_hash": "d06bb028ee711198fcf8b0a04b88efcf61facff75f55342f7ccb949739b20225",
+    "baseline_yaml_content_hash": "8b8fe47f1e6d8b7239829b478ef9fac04199a17075cc0c5bba10dab2b9619a57"
+  },
+  "TestUiLogic.test_graph_renderer_branching": {
+    "baseline_code_signature_text": "def test_graph_renderer_branching(self, view_model_factory):",
+    "baseline_code_structure_hash": "49a25600ce7bafdc6b30f2592a394bf363803320c88acb4d9c8f16382e8f4c30",
+    "baseline_yaml_content_hash": "a31091dede16776c3f24a8c22b36add60eb7f998c35ec6bc4fe7ac3ff0e7b8c5"
+  },
+  "TestUiLogic.test_graph_renderer_simple_linear": {
+    "baseline_code_signature_text": "def test_graph_renderer_simple_linear(self, view_model_factory):",
+    "baseline_code_structure_hash": "2580e7ab2a95149aefed8064510dd98455ba85401ede16a971d2824537714e74",
+    "baseline_yaml_content_hash": "9014bbc469b0910f6d4797a1e01df6b89bf9cbffda5a4b7696a16c243c81a346"
+  },
+  "view_model_factory": {
+    "baseline_code_signature_text": "def view_model_factory():",
+    "baseline_code_structure_hash": "7d30c611e0a94b411effde8031bf7b387ada43208da9bfc501d26e12a69d5ab4",
+    "baseline_yaml_content_hash": "ea0749d0cf96145872727e0ffb5f2471ee52f874ec6c5fd84de09ae6f79f63f9"
+  }
+}

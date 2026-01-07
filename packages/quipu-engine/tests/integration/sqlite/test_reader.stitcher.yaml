@@ -1,0 +1,10 @@
+"TestSQLiteHistoryReader.test_load_linear_history_from_db": |-
+  测试从 DB 加载一个简单的线性历史。
+"TestSQLiteHistoryReader.test_read_through_cache": |-
+  测试通读缓存是否能正确工作（从未缓存到已缓存）。
+"populated_db": |-
+  一个预填充了15个节点和一些私有数据的数据库环境。
+  此 Fixture 具有 class 作用域，仅为 TestSQLiteReaderPaginated 类设置一次。
+"sqlite_reader_setup": |-
+  创建一个包含 Git 仓库、DB 管理器、Writer 和 Reader 的测试环境。
+  此 Fixture 保持 function 作用域，为需要隔离的测试提供服务。

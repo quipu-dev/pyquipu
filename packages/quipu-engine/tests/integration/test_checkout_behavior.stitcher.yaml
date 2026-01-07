@@ -1,0 +1,8 @@
+"TestCheckoutBehavior.test_checkout_optimization_mtime": |-
+  验证：对于未发生变更的文件，checkout_tree 不会更新其 mtime。
+  这证明了 read-tree -u 的 diff 优化生效了。
+"TestCheckoutBehavior.test_checkout_resets_dirty_index": |-
+  验证：当索引/工作区不干净（有未提交的 add）时，checkout_tree 能强制重置并成功。
+  这是为了修复之前遇到的 'Entry not uptodate' 崩溃问题。
+"git_env": |-
+  Setup a real Git environment for testing plumbing commands.

@@ -1,0 +1,6 @@
+"TestGitObjectHistoryWriterIntegration": |-
+  对 GitObjectHistoryWriter 与真实 Git 仓库的交互进行集成测试。
+"TestGitObjectHistoryWriterUnit": |-
+  对 GitObjectHistoryWriter 的内部逻辑进行单元测试。
+"git_writer_setup": |-
+  创建一个包含 Git 仓库、GitDB 和 GitObjectHistoryWriter 实例的测试环境。

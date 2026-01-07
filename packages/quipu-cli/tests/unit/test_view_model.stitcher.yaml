@@ -1,0 +1,18 @@
+"MockHistoryReader": |-
+  一个用于测试的、可配置的 HistoryReader 模拟实现。
+"TestGraphViewModel.test_calculate_initial_page_not_found": |-
+  测试当 HEAD 节点在历史中找不到时，应回退到第一页。
+"TestGraphViewModel.test_get_content_bundle": |-
+  测试公共和私有内容的格式化逻辑。
+"TestGraphViewModel.test_initialization_and_reachability": |-
+  测试 ViewModel 初始化是否正确计算可达性集合。
+"TestGraphViewModel.test_is_reachable": |-
+  测试可达性检查逻辑。
+"TestGraphViewModel.test_is_reachable_no_current_hash": |-
+  测试在没有当前哈希时，所有节点都应被视为可达。
+"TestGraphViewModel.test_pagination_flow": |-
+  测试分页加载逻辑是否正确。
+"TestGraphViewModel.test_select_node_by_key_missing": |-
+  测试选择不存在的 key。
+"sample_nodes": |-
+  生成一组用于测试的节点。

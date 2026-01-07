@@ -1,0 +1,8 @@
+"TestParserRobustness.test_parse_complex_language_tags": |-
+  验证解析器能否处理包含特殊字符的语言标签。
+  当前的 RegexBlockParser 会在 python-new 和 c++ 上失败。
+"TestParserRobustness.test_parse_with_spaces_in_fence": |-
+  验证解析器能否处理围栏后的空格（CommonMark 标准允许）。
+  例如: '~~~~~ python'
+"TestParserRobustness.test_unclosed_block_handling": |-
+  验证未闭合的块是否被安全处理（例如忽略或报错，但不应崩溃）。

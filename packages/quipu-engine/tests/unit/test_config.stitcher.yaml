@@ -1,0 +1,12 @@
+"test_config_get_defaults": |-
+  Test that default values are returned when no config file exists.
+"test_config_load_from_file": |-
+  Test loading configuration from an existing config.yml file.
+"test_config_nested_set_and_save": |-
+  Test that setting a nested key creates the necessary dictionaries.
+"test_config_round_trip_consistency": |-
+  Test the full cycle: create, set, save, then create a new instance and load.
+"test_config_set_and_save": |-
+  Test setting a simple value and saving it to a new file.
+"work_dir": |-
+  Creates a temporary directory to act as a project root.

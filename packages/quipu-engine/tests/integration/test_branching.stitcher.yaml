@@ -1,0 +1,8 @@
+"test_branching_creation": |-
+  测试分支创建场景：
+  1. A -> B
+  2. Checkout A -> C
+  结果应为:
+    A -> B
+     \-> C
+  Reader 应能读取到所有节点。

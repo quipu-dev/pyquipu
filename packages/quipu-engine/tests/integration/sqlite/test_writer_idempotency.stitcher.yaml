@@ -1,0 +1,9 @@
+"repo_with_sqlite_db": |-
+  创建一个包含初始化 Git 仓库和 SQLite 数据库的临时环境。
+  (从 test_sqlite_reader_integrity.py 复制并简化)
+"test_writer_handles_idempotent_operations_correctly": |-
+  ## test: Verify parent-child linkage during idempotent operations.
+
+  When two consecutive nodes produce the exact same Output Tree Hash (idempotent operation),
+  the SQLite writer must ensure that the second node points to the first node as its parent,
+  rather than pointing to itself (self-loop) or getting confused by the identical tree hash.

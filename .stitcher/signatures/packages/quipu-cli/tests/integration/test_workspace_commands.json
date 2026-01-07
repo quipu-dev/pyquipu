@@ -1,0 +1,18 @@
+{
+  "test_discard_changes": {
+    "baseline_code_signature_text": "def test_discard_changes(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "9d34b0df041164aad4cdecd2d05c8b6d682439cf47d07a75acac43bed200148b"
+  },
+  "test_discard_interactive_abort": {
+    "baseline_code_signature_text": "def test_discard_interactive_abort(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "4bfaeed5322a2cedecc7fd2a1e7b4c958ba4ca1e2c98bd1b3e1c2c01a89b4249"
+  },
+  "test_save_clean_workspace": {
+    "baseline_code_signature_text": "def test_save_clean_workspace(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "910b44c7643132b27f13c012cfa79871466906b839b7f6804db07395474bfe90"
+  },
+  "test_save_with_changes": {
+    "baseline_code_signature_text": "def test_save_with_changes(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "9ea9ffcf0904028d70743dbfc9d741268a8bca6d67d704ab1e76d9e02360aa03"
+  }
+}

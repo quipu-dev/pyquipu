@@ -1,0 +1,30 @@
+{
+  "history_with_redundant_refs": {
+    "baseline_code_signature_text": "def history_with_redundant_refs(engine_instance: Engine):",
+    "baseline_code_structure_hash": "2c98108bc225f816e9e0645ed36942ceebd59a144a10a42fd87a71e725b193d6",
+    "baseline_yaml_content_hash": "d5b9224ac1de18508550e34d518ab4d66e8e4c5a8d0a68560ae67c7de69e2343"
+  },
+  "test_cache_prune_refs_empty_repo": {
+    "baseline_code_signature_text": "def test_cache_prune_refs_empty_repo(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "d4ce253da27790d6db1ef53900d924f5c5b3c53d837a8f5b7b78824e3c051692",
+    "baseline_yaml_content_hash": "71edd5435e0b67d80be2e449fed08539b5cdde84cf255eddbdfb043b45272fe3"
+  },
+  "test_cache_prune_refs_no_redundancy": {
+    "baseline_code_signature_text": "def test_cache_prune_refs_no_redundancy(runner, history_with_redundant_refs, monkeypatch):",
+    "baseline_code_structure_hash": "8c4a3698e87d114eaedced5c87cb74fd7c9ca4e7725ff8222fa232fe4e6b242e",
+    "baseline_yaml_content_hash": "75fe5b56a5a2b7f9b825bee5ee7440bad6e0dff1e42449eab93f8907aec871fb"
+  },
+  "test_cache_prune_refs_with_redundancy": {
+    "baseline_code_signature_text": "def test_cache_prune_refs_with_redundancy(runner, history_with_redundant_refs, monkeypatch):",
+    "baseline_code_structure_hash": "c58e2d5ba6da187c407e8e6385b4176ef39fa4fa0f433704ad8b986475a92e09",
+    "baseline_yaml_content_hash": "43a5c61b653169031e2af51c102b044d0f7e8c07b6092594a6ef6d6b2789bce3"
+  },
+  "test_cache_rebuild_no_db": {
+    "baseline_code_signature_text": "def test_cache_rebuild_no_db(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "5fc1415e872b411ada16684d562ffe119117dd58492884f7286c8bfb4ff7de96"
+  },
+  "test_cache_sync": {
+    "baseline_code_signature_text": "def test_cache_sync(runner, quipu_workspace, monkeypatch):",
+    "baseline_code_structure_hash": "7d4e6de318c26e5dd5da259d87ddca79c608cb1bd280175da305fc3eb2d032fd"
+  }
+}

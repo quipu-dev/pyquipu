@@ -1,0 +1,35 @@
+"TestGitDBPlumbing.test_anchor_commit_persistence": |-
+  测试：创建影子锚点
+"TestGitDBPlumbing.test_batch_cat_file": |-
+  测试 batch_cat_file 的批量读取能力
+"TestGitDBPlumbing.test_cat_file_types": |-
+  测试 cat_file 处理不同类型对象的能力
+"TestGitDBPlumbing.test_checkout_tree": |-
+  Test the low-level hard reset functionality of checkout_tree.
+"TestGitDBPlumbing.test_checkout_tree_messaging": |-
+  Verify checkout_tree emits correct messages via the bus.
+"TestGitDBPlumbing.test_exclude_quipu_dir": |-
+  测试：.quipu 目录内的变化不应改变 Tree Hash
+"TestGitDBPlumbing.test_get_diff_name_status": |-
+  Test the file status diffing functionality.
+"TestGitDBPlumbing.test_get_tree_hash_sensitivity": |-
+  测试：内容变化，Hash 必变
+"TestGitDBPlumbing.test_get_tree_hash_stability": |-
+  测试：内容不变，Hash 不变 (State Truth)
+"TestGitDBPlumbing.test_hash_object": |-
+  测试 hash_object 能否正确创建 blob 并返回 hash。
+"TestGitDBPlumbing.test_is_ancestor": |-
+  测试血统检测，并验证无错误日志
+"TestGitDBPlumbing.test_log_ref_basic": |-
+  测试 log_ref 能正确解析 Git 日志格式
+"TestGitDBPlumbing.test_log_ref_non_existent": |-
+  测试读取不存在的引用返回空列表而不是报错
+"TestGitDBPlumbing.test_mktree_and_commit_tree": |-
+  测试 mktree 和 commit_tree 的协同工作。
+"TestGitDBPlumbing.test_shadow_index_isolation": |-
+  测试关键特性：零污染 (Zero Pollution)
+  Quipu 计算 Hash 的过程绝对不能把文件加入到用户的暂存区。
+"db": |-
+  返回绑定到该仓库的 GitDB 实例
+"git_repo": |-
+  创建一个初始化的 Git 仓库

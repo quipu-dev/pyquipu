@@ -1,0 +1,5 @@
+"TestShellActs.test_run_command_does_not_swallow_blocks": |-
+  验证 run_command 不会吞噬后续指令。
+  这是一个更底层的测试，直接使用 executor.execute。
+"TestShellActs.test_run_command_multiline_script": |-
+  验证多行脚本可以被正确执行。

@@ -1,0 +1,20 @@
+{
+  "TestControllerUnit": {
+    "baseline_yaml_content_hash": "0cd5d80b1a917d0d104a3010c4538d54b742cb1290ef03ff77dc878de6eb85a6"
+  },
+  "TestControllerUnit.test_run_quipu_empty_plan": {
+    "baseline_code_signature_text": "def test_run_quipu_empty_plan(self, tmp_path, mock_engine, mock_runtime):",
+    "baseline_code_structure_hash": "d5d7459ace504109a1e35f058714a51eb8119c0ea9051168960d877179082f55",
+    "baseline_yaml_content_hash": "47052429f33e57c8cd731ed6f5b38e72307197490329dd093ee940d1ebfe8a87"
+  },
+  "TestControllerUnit.test_run_quipu_execution_error": {
+    "baseline_code_signature_text": "def test_run_quipu_execution_error(self, tmp_path, mock_engine, mock_runtime):",
+    "baseline_code_structure_hash": "97f2e3585c826243e7b61c6b4e3ae485f9986b81c50ef6c72058494a5b12960b",
+    "baseline_yaml_content_hash": "975ef4cbcfd02519b3c6546452971f5307d8ec5e4d5460cc4ca1c190303c7b39"
+  },
+  "TestControllerUnit.test_run_quipu_success": {
+    "baseline_code_signature_text": "def test_run_quipu_success(self, tmp_path, mock_engine, mock_runtime):",
+    "baseline_code_structure_hash": "eed582f286876d423157f91ac81d1e7963b67cf3eaf66750e14526adf7832146",
+    "baseline_yaml_content_hash": "7836132a4f67bc709899bc3c42f1734ec37b236f7a769a3ee5383201842147cf"
+  }
+}
