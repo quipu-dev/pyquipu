@@ -35,10 +35,14 @@ class CodeVisitor(ast.NodeVisitor):
         # Pattern 2: QuipuResult(message="key.id", ...)
         elif isinstance(node.func, ast.Name) and node.func.id == "QuipuResult":
             for keyword in node.keywords:
-                if keyword.arg == "message" and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str):
+                if (
+                    keyword.arg == "message"
+                    and isinstance(keyword.value, ast.Constant)
+                    and isinstance(keyword.value.value, str)
+                ):
                     key = keyword.value.value
                     self.keys.add(key)
-                    break # Found it, no need to check other keywords
+                    break  # Found it, no need to check other keywords
 
         self.generic_visit(node)
 
